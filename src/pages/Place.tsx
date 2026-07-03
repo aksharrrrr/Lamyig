@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState } from 'react'
+import { Fragment, useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/useAuth'
@@ -18,7 +18,7 @@ export default function Place() {
   const [reportReason, setReportReason] = useState<typeof REPORT_REASONS[number]>('incorrect')
   const [status, setStatus] = useState<string | null>(null)
 
-  async function load() {
+  const load = useCallback(async () => {
     if (!supabase || !placeId) return
     const [{ data: placeData }, { data: photoData }, { data: noteData }] = await Promise.all([
       supabase.from('places').select('*').eq('id', placeId).single(),
@@ -28,9 +28,9 @@ export default function Place() {
     if (placeData) setPlace(placeData as PlaceT)
     if (photoData) setPhotos(photoData as PlacePhoto[])
     if (noteData) setNotes(noteData as CommunityNote[])
-  }
+  }, [placeId])
 
-  useEffect(() => { load() }, [placeId])
+  useEffect(() => { load() }, [load])
 
   async function verify() {
     if (!supabase || !session || !placeId) return

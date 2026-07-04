@@ -6,8 +6,16 @@ import { CATEGORIES, categoryDef } from '../lib/categories'
 import { compressImage } from '../lib/compressImage'
 import type { Region, Village } from '../lib/types'
 
-const MIN_PHOTOS = 3
 const MAX_PHOTOS = 6
+const NEW_VILLAGE = '__new__'
+
+// Loose on purpose — accepts +country codes, spaces, dashes, parens — but
+// rejects "ajbnfkdsj"-style garbage so at least it's plausibly a phone number.
+const PHONE_PATTERN = '^[0-9+][0-9+\\-\\s()]{6,19}$'
+
+function slugify(text: string) {
+  return text.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+}
 
 export default function AddEditPlace() {
   const { placeId } = useParams()
@@ -25,6 +33,7 @@ export default function AddEditPlace() {
   const [lng, setLng] = useState('')
   const [regionId, setRegionId] = useState('')
   const [villageId, setVillageId] = useState('')
+  const [newVillageName, setNewVillageName] = useState('')
   const [phone, setPhone] = useState('')
   const [whatsapp, setWhatsapp] = useState('')
   const [priceRange, setPriceRange] = useState('')
@@ -32,6 +41,7 @@ export default function AddEditPlace() {
   const [photos, setPhotos] = useState<File[]>([])
 
   const [submitting, setSubmitting] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -91,24 +101,40 @@ export default function AddEditPlace() {
     setError(null)
 
     if (!supabase || !session) return
-    if (!isEdit && photos.length < MIN_PHOTOS) {
-      setError(`Upload at least ${MIN_PHOTOS} photos.`)
+    const minPhotos = def?.minPhotos ?? 0
+    if (!isEdit && photos.length < minPhotos) {
+      setError(`Upload at least ${minPhotos} photo${minPhotos === 1 ? '' : 's'} for a ${def?.label.toLowerCase()}.`)
       return
     }
     if (!regionId || !villageId) {
       setError('Select a region and village.')
       return
     }
+    if (villageId === NEW_VILLAGE && !newVillageName.trim()) {
+      setError('Enter the new village name.')
+      return
+    }
 
     setSubmitting(true)
     try {
+      let resolvedVillageId = villageId
+      if (villageId === NEW_VILLAGE) {
+        const { data: newVillage, error: villageError } = await supabase
+          .from('villages')
+          .insert({ name: newVillageName.trim(), slug: slugify(newVillageName), region_id: regionId })
+          .select('id')
+          .single()
+        if (villageError) throw villageError
+        resolvedVillageId = newVillage.id
+      }
+
       const payload = {
         name,
         category,
         lat: Number(lat),
         lng: Number(lng),
         region_id: regionId,
-        village_id: villageId,
+        village_id: resolvedVillageId,
         description,
         phone: phone || null,
         whatsapp: whatsapp || null,
@@ -128,21 +154,27 @@ export default function AddEditPlace() {
           .single()
         if (insertError) throw insertError
         id = data.id
+
+        // You just personally confirmed this place exists — that's a verification.
+        await supabase.from('place_verifications').insert({ place_id: id, verified_by: session.user.id })
       }
 
-      for (const file of photos) {
+      for (const [index, file] of photos.entries()) {
+        setUploadProgress(`Uploading photo ${index + 1} of ${photos.length}…`)
         const compressed = await compressImage(file)
         const path = `${id}/${crypto.randomUUID()}.webp`
         const { error: uploadError } = await supabase.storage.from('place-photos').upload(path, compressed)
         if (uploadError) throw uploadError
         await supabase.from('place_photos').insert({ place_id: id, storage_path: path, uploaded_by: session.user.id })
       }
+      setUploadProgress(null)
 
       navigate(`/place/${id}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong.')
     } finally {
       setSubmitting(false)
+      setUploadProgress(null)
     }
   }
 
@@ -206,7 +238,7 @@ export default function AddEditPlace() {
 
       <label className="flex flex-col gap-1 text-sm">
         Region
-        <select required value={regionId} onChange={(e) => { setRegionId(e.target.value); setVillageId('') }} className="rounded-md border border-neutral-300 px-3 py-2">
+        <select required value={regionId} onChange={(e) => { setRegionId(e.target.value); setVillageId(''); setNewVillageName('') }} className="rounded-md border border-neutral-300 px-3 py-2">
           <option value="" disabled>Select a region…</option>
           {regions.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
         </select>
@@ -217,8 +249,16 @@ export default function AddEditPlace() {
         <select required value={villageId} onChange={(e) => setVillageId(e.target.value)} disabled={!regionId} className="rounded-md border border-neutral-300 px-3 py-2 disabled:opacity-50">
           <option value="" disabled>Select a village…</option>
           {villages.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
+          <option value={NEW_VILLAGE}>+ Add a village not on this list…</option>
         </select>
       </label>
+
+      {villageId === NEW_VILLAGE && (
+        <label className="flex flex-col gap-1 text-sm">
+          New village name
+          <input required value={newVillageName} onChange={(e) => setNewVillageName(e.target.value)} className="rounded-md border border-neutral-300 px-3 py-2" />
+        </label>
+      )}
 
       {def && def.fields.length > 0 && (
         <fieldset className="flex flex-col gap-3 rounded-md border border-neutral-200 p-3">
@@ -283,11 +323,25 @@ export default function AddEditPlace() {
 
       <label className="flex flex-col gap-1 text-sm">
         Phone (optional)
-        <input value={phone} onChange={(e) => setPhone(e.target.value)} className="rounded-md border border-neutral-300 px-3 py-2" />
+        <input
+          type="tel"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          pattern={PHONE_PATTERN}
+          title="Digits only, optionally with +, spaces, dashes, or parentheses"
+          className="rounded-md border border-neutral-300 px-3 py-2"
+        />
       </label>
       <label className="flex flex-col gap-1 text-sm">
         WhatsApp (optional)
-        <input value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} className="rounded-md border border-neutral-300 px-3 py-2" />
+        <input
+          type="tel"
+          value={whatsapp}
+          onChange={(e) => setWhatsapp(e.target.value)}
+          pattern={PHONE_PATTERN}
+          title="Digits only, optionally with +, spaces, dashes, or parentheses"
+          className="rounded-md border border-neutral-300 px-3 py-2"
+        />
       </label>
       <label className="flex flex-col gap-1 text-sm">
         Price range (optional)
@@ -296,7 +350,7 @@ export default function AddEditPlace() {
 
       {!isEdit && (
         <label className="flex flex-col gap-1 text-sm">
-          Photos (min {MIN_PHOTOS}, max {MAX_PHOTOS})
+          Photos {def && def.minPhotos > 0 ? `(min ${def.minPhotos}, max ${MAX_PHOTOS})` : `(optional, max ${MAX_PHOTOS})`}
           <input type="file" accept="image/*" multiple onChange={handlePhotoChange} />
           {photos.length > 0 && <span className="text-neutral-500">{photos.length} selected</span>}
         </label>
@@ -309,7 +363,7 @@ export default function AddEditPlace() {
         disabled={submitting}
         className="rounded-md bg-neutral-900 px-3 py-2 text-sm text-white disabled:opacity-50"
       >
-        {submitting ? 'Submitting…' : isEdit ? 'Save changes' : 'Submit'}
+        {submitting ? (uploadProgress ?? 'Submitting…') : isEdit ? 'Save changes' : 'Submit'}
       </button>
     </form>
   )

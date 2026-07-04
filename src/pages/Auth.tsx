@@ -29,7 +29,7 @@ export default function Auth() {
         <h1 className="text-2xl font-medium">You're signed in</h1>
         <p className="mt-2 text-neutral-500">Signed in as {session.user.email}.</p>
         <button
-          className="mt-4 rounded-md border border-neutral-300 px-3 py-1.5 text-sm dark:border-neutral-700"
+          className="mt-4 rounded-md border border-neutral-300 px-3 py-1.5 text-sm"
           onClick={() => supabase!.auth.signOut()}
         >
           Sign out
@@ -69,7 +69,7 @@ export default function Auth() {
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-500 dark:border-neutral-700 dark:bg-neutral-900"
+          className="rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-500"
         />
         <input
           type="password"
@@ -78,13 +78,13 @@ export default function Auth() {
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-500 dark:border-neutral-700 dark:bg-neutral-900"
+          className="rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-500"
         />
         {error && <p className="text-sm text-red-600">{error}</p>}
         <button
           type="submit"
           disabled={submitting}
-          className="rounded-md bg-neutral-900 px-3 py-2 text-sm text-white disabled:opacity-50 dark:bg-neutral-100 dark:text-neutral-900"
+          className="rounded-md bg-neutral-900 px-3 py-2 text-sm text-white disabled:opacity-50"
         >
           {mode === 'sign-in' ? 'Sign in' : 'Sign up'}
         </button>

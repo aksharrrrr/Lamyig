@@ -112,11 +112,11 @@ export default function Place() {
 
       {session ? (
         <div className="mt-4 flex gap-2">
-          <button onClick={verify} className="rounded-md border border-neutral-300 px-3 py-1.5 text-sm dark:border-neutral-700">Still accurate</button>
-          <select value={reportReason} onChange={(e) => setReportReason(e.target.value as typeof reportReason)} className="rounded-md border border-neutral-300 px-2 py-1.5 text-sm dark:border-neutral-700 dark:bg-neutral-900">
+          <button onClick={verify} className="rounded-md border border-neutral-300 px-3 py-1.5 text-sm">Still accurate</button>
+          <select value={reportReason} onChange={(e) => setReportReason(e.target.value as typeof reportReason)} className="rounded-md border border-neutral-300 px-2 py-1.5 text-sm">
             {REPORT_REASONS.map((r) => <option key={r} value={r}>{r}</option>)}
           </select>
-          <button onClick={report} className="rounded-md border border-neutral-300 px-3 py-1.5 text-sm dark:border-neutral-700">Report</button>
+          <button onClick={report} className="rounded-md border border-neutral-300 px-3 py-1.5 text-sm">Report</button>
         </div>
       ) : (
         <p className="mt-4 text-sm">
@@ -128,7 +128,7 @@ export default function Place() {
       <h2 className="mt-8 text-lg font-medium">Community notes</h2>
       <div className="mt-2 flex flex-col gap-3">
         {notes.map((n) => (
-          <p key={n.id} className="rounded-md bg-neutral-100 p-3 text-sm dark:bg-neutral-900">{n.body}</p>
+          <p key={n.id} className="rounded-md bg-neutral-100 p-3 text-sm">{n.body}</p>
         ))}
         {notes.length === 0 && <p className="text-sm text-neutral-500">No notes yet.</p>}
       </div>
@@ -138,9 +138,9 @@ export default function Place() {
             value={newNote}
             onChange={(e) => setNewNote(e.target.value)}
             placeholder="Stayed June 2026. Meals included. Cash only…"
-            className="flex-1 rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900"
+            className="flex-1 rounded-md border border-neutral-300 px-3 py-2 text-sm"
           />
-          <button onClick={submitNote} className="rounded-md bg-neutral-900 px-3 py-2 text-sm text-white dark:bg-neutral-100 dark:text-neutral-900">Post</button>
+          <button onClick={submitNote} className="rounded-md bg-neutral-900 px-3 py-2 text-sm text-white">Post</button>
         </div>
       )}
     </div>

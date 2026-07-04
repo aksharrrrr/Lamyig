@@ -10,7 +10,7 @@ import Profile from './pages/Profile'
 export default function App() {
   return (
     <div className="flex h-svh flex-col">
-      <header className="flex items-center justify-between border-b border-neutral-200 px-4 py-2 dark:border-neutral-800">
+      <header className="flex items-center justify-between border-b border-neutral-200 px-4 py-2">
         <Link to="/" className="font-medium">Lamyig</Link>
         <nav className="flex items-center gap-4 text-sm">
           <Link to="/add">+ Add place</Link>

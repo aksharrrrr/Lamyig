@@ -162,7 +162,7 @@ export default function AddEditPlace() {
       <div className="p-6">
         <h1 className="text-2xl font-medium">Add a place</h1>
         <p className="mt-2 text-neutral-500">Sign in to contribute.</p>
-        <Link to="/auth" className="mt-4 inline-block rounded-md bg-neutral-900 px-3 py-2 text-sm text-white dark:bg-neutral-100 dark:text-neutral-900">
+        <Link to="/auth" className="mt-4 inline-block rounded-md bg-neutral-900 px-3 py-2 text-sm text-white">
           Sign in
         </Link>
       </div>
@@ -175,29 +175,29 @@ export default function AddEditPlace() {
 
       <label className="flex flex-col gap-1 text-sm">
         Category
-        <select value={category} onChange={(e) => { setCategory(e.target.value); setAttributes({}) }} className="rounded-md border border-neutral-300 px-3 py-2 dark:border-neutral-700 dark:bg-neutral-900">
+        <select value={category} onChange={(e) => { setCategory(e.target.value); setAttributes({}) }} className="rounded-md border border-neutral-300 px-3 py-2">
           {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
         </select>
       </label>
 
       <label className="flex flex-col gap-1 text-sm">
         Name
-        <input required value={name} onChange={(e) => setName(e.target.value)} className="rounded-md border border-neutral-300 px-3 py-2 dark:border-neutral-700 dark:bg-neutral-900" />
+        <input required value={name} onChange={(e) => setName(e.target.value)} className="rounded-md border border-neutral-300 px-3 py-2" />
       </label>
 
       <label className="flex flex-col gap-1 text-sm">
         Description
-        <textarea required value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className="rounded-md border border-neutral-300 px-3 py-2 dark:border-neutral-700 dark:bg-neutral-900" />
+        <textarea required value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className="rounded-md border border-neutral-300 px-3 py-2" />
       </label>
 
       <div className="flex gap-2">
         <label className="flex flex-1 flex-col gap-1 text-sm">
           Latitude
-          <input required type="number" step="any" value={lat} onChange={(e) => setLat(e.target.value)} className="rounded-md border border-neutral-300 px-3 py-2 dark:border-neutral-700 dark:bg-neutral-900" />
+          <input required type="number" step="any" value={lat} onChange={(e) => setLat(e.target.value)} className="rounded-md border border-neutral-300 px-3 py-2" />
         </label>
         <label className="flex flex-1 flex-col gap-1 text-sm">
           Longitude
-          <input required type="number" step="any" value={lng} onChange={(e) => setLng(e.target.value)} className="rounded-md border border-neutral-300 px-3 py-2 dark:border-neutral-700 dark:bg-neutral-900" />
+          <input required type="number" step="any" value={lng} onChange={(e) => setLng(e.target.value)} className="rounded-md border border-neutral-300 px-3 py-2" />
         </label>
       </div>
       <button type="button" onClick={useMyLocation} className="self-start text-sm text-neutral-500 underline">
@@ -206,7 +206,7 @@ export default function AddEditPlace() {
 
       <label className="flex flex-col gap-1 text-sm">
         Region
-        <select required value={regionId} onChange={(e) => { setRegionId(e.target.value); setVillageId('') }} className="rounded-md border border-neutral-300 px-3 py-2 dark:border-neutral-700 dark:bg-neutral-900">
+        <select required value={regionId} onChange={(e) => { setRegionId(e.target.value); setVillageId('') }} className="rounded-md border border-neutral-300 px-3 py-2">
           <option value="" disabled>Select a region…</option>
           {regions.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
         </select>
@@ -214,14 +214,14 @@ export default function AddEditPlace() {
 
       <label className="flex flex-col gap-1 text-sm">
         Village
-        <select required value={villageId} onChange={(e) => setVillageId(e.target.value)} disabled={!regionId} className="rounded-md border border-neutral-300 px-3 py-2 disabled:opacity-50 dark:border-neutral-700 dark:bg-neutral-900">
+        <select required value={villageId} onChange={(e) => setVillageId(e.target.value)} disabled={!regionId} className="rounded-md border border-neutral-300 px-3 py-2 disabled:opacity-50">
           <option value="" disabled>Select a village…</option>
           {villages.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
         </select>
       </label>
 
       {def && def.fields.length > 0 && (
-        <fieldset className="flex flex-col gap-3 rounded-md border border-neutral-200 p-3 dark:border-neutral-800">
+        <fieldset className="flex flex-col gap-3 rounded-md border border-neutral-200 p-3">
           <legend className="px-1 text-sm font-medium">{def.label} details</legend>
           {def.fields.map((f) => (
             <label key={f.key} className="flex flex-col gap-1 text-sm">
@@ -240,14 +240,14 @@ export default function AddEditPlace() {
                 <input
                   value={(attributes[f.key] as string) ?? ''}
                   onChange={(e) => setAttributes({ ...attributes, [f.key]: e.target.value })}
-                  className="rounded-md border border-neutral-300 px-3 py-2 dark:border-neutral-700 dark:bg-neutral-900"
+                  className="rounded-md border border-neutral-300 px-3 py-2"
                 />
               )}
               {f.type === 'select' && (
                 <select
                   value={(attributes[f.key] as string) ?? ''}
                   onChange={(e) => setAttributes({ ...attributes, [f.key]: e.target.value })}
-                  className="rounded-md border border-neutral-300 px-3 py-2 dark:border-neutral-700 dark:bg-neutral-900"
+                  className="rounded-md border border-neutral-300 px-3 py-2"
                 >
                   <option value="" disabled>Select…</option>
                   {f.options?.map((o) => <option key={o} value={o}>{o}</option>)}
@@ -268,7 +268,7 @@ export default function AddEditPlace() {
                             [f.key]: selected ? current.filter((v) => v !== o) : [...current, o],
                           })
                         }}
-                        className={`rounded-full border px-3 py-1 text-xs ${selected ? 'border-neutral-900 bg-neutral-900 text-white dark:border-neutral-100 dark:bg-neutral-100 dark:text-neutral-900' : 'border-neutral-300 dark:border-neutral-700'}`}
+                        className={`rounded-full border px-3 py-1 text-xs ${selected ? 'border-neutral-900 bg-neutral-900 text-white' : 'border-neutral-300'}`}
                       >
                         {o}
                       </button>
@@ -283,15 +283,15 @@ export default function AddEditPlace() {
 
       <label className="flex flex-col gap-1 text-sm">
         Phone (optional)
-        <input value={phone} onChange={(e) => setPhone(e.target.value)} className="rounded-md border border-neutral-300 px-3 py-2 dark:border-neutral-700 dark:bg-neutral-900" />
+        <input value={phone} onChange={(e) => setPhone(e.target.value)} className="rounded-md border border-neutral-300 px-3 py-2" />
       </label>
       <label className="flex flex-col gap-1 text-sm">
         WhatsApp (optional)
-        <input value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} className="rounded-md border border-neutral-300 px-3 py-2 dark:border-neutral-700 dark:bg-neutral-900" />
+        <input value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} className="rounded-md border border-neutral-300 px-3 py-2" />
       </label>
       <label className="flex flex-col gap-1 text-sm">
         Price range (optional)
-        <input value={priceRange} onChange={(e) => setPriceRange(e.target.value)} placeholder="e.g. ₹800–1200/night" className="rounded-md border border-neutral-300 px-3 py-2 dark:border-neutral-700 dark:bg-neutral-900" />
+        <input value={priceRange} onChange={(e) => setPriceRange(e.target.value)} placeholder="e.g. ₹800–1200/night" className="rounded-md border border-neutral-300 px-3 py-2" />
       </label>
 
       {!isEdit && (
@@ -307,7 +307,7 @@ export default function AddEditPlace() {
       <button
         type="submit"
         disabled={submitting}
-        className="rounded-md bg-neutral-900 px-3 py-2 text-sm text-white disabled:opacity-50 dark:bg-neutral-100 dark:text-neutral-900"
+        className="rounded-md bg-neutral-900 px-3 py-2 text-sm text-white disabled:opacity-50"
       >
         {submitting ? 'Submitting…' : isEdit ? 'Save changes' : 'Submit'}
       </button>

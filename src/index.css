@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+/* Light-only for now — no dark theme until the Figma design lands. This also
+   stops browsers' own "force dark mode for web content" from repainting
+   inputs/buttons inconsistently on top of our (light-only) styles. */
+:root {
+  color-scheme: light;
+}
+
 html, body, #root {
   height: 100%;
   margin: 0;

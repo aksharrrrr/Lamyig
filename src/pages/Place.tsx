@@ -123,7 +123,7 @@ export default function Place() {
 
       <p className="mt-4 text-sm text-neutral-500">
         {place.last_verified_at
-          ? `Last verified ${new Date(place.last_verified_at).toLocaleDateString()} by ${place.verified_count} rider${place.verified_count === 1 ? '' : 's'}`
+          ? `Last verified ${new Date(place.last_verified_at).toLocaleDateString()}`
           : 'Not yet verified'}
       </p>
 

@@ -11,7 +11,11 @@ const NEW_VILLAGE = '__new__'
 
 // Loose on purpose — accepts +country codes, spaces, dashes, parens — but
 // rejects "ajbnfkdsj"-style garbage so at least it's plausibly a phone number.
-const PHONE_PATTERN = '^[0-9+][0-9+\\-\\s()]{6,19}$'
+// The parens MUST be escaped inside the character class: HTML5's `pattern`
+// compiles with the regex "v" flag, which treats bare ( ) inside [...] as a
+// syntax error - and an unparseable pattern is spec'd to silently impose no
+// restriction at all, so validation looked like it was doing nothing.
+const PHONE_PATTERN = '^[0-9+][0-9+\\-\\s\\(\\)]{6,19}$'
 
 function slugify(text: string) {
   return text.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')

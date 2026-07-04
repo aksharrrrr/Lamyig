@@ -39,6 +39,7 @@ export const CATEGORIES: CategoryDef[] = [
     fields: [
       { key: 'services', label: 'Services', type: 'multiselect', options: ['puncture repair', 'general repair', 'spare parts'] },
       { key: 'vehicle_types', label: 'Vehicle types serviced', type: 'multiselect', options: ['bike', 'car'] },
+      { key: 'hours', label: 'Hours (e.g. "8am-8pm" or "24x7")', type: 'text' },
     ],
   },
   {
@@ -48,6 +49,7 @@ export const CATEGORIES: CategoryDef[] = [
     fields: [
       { key: 'fuel_types', label: 'Fuel types', type: 'multiselect', options: ['petrol', 'diesel'] },
       { key: 'source', label: 'Source', type: 'select', options: ['pump', 'informal (jerry can)'] },
+      { key: 'hours', label: 'Hours (e.g. "8am-8pm" or "24x7")', type: 'text' },
     ],
   },
   {
@@ -85,6 +87,7 @@ export const CATEGORIES: CategoryDef[] = [
     fields: [
       { key: 'facility_type', label: 'Type', type: 'select', options: ['clinic', 'pharmacy', 'hospital'] },
       { key: 'emergency_capable', label: 'Emergency-capable', type: 'boolean' },
+      { key: 'hours', label: 'Hours (e.g. "8am-8pm" or "24x7")', type: 'text' },
     ],
   },
   {
@@ -118,4 +121,13 @@ export const CATEGORIES: CategoryDef[] = [
 
 export function categoryDef(value: string): CategoryDef | undefined {
   return CATEGORIES.find((c) => c.value === value)
+}
+
+// Defense in depth: `attributes` is a jsonb column, so Postgres won't stop a
+// stray/renamed/leftover key from getting written. The UI only ever shows
+// fields from the matching CategoryDef, but this makes that the enforced
+// shape rather than just the usual one, no matter what called insert/update.
+export function sanitizeAttributes(category: string, attributes: Record<string, unknown>): Record<string, unknown> {
+  const allowedKeys = new Set(categoryDef(category)?.fields.map((f) => f.key) ?? [])
+  return Object.fromEntries(Object.entries(attributes).filter(([key]) => allowedKeys.has(key)))
 }

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/useAuth'
-import { CATEGORIES, categoryDef } from '../lib/categories'
+import { CATEGORIES, categoryDef, sanitizeAttributes } from '../lib/categories'
 import { compressImage } from '../lib/compressImage'
 import type { Region, Village } from '../lib/types'
 
@@ -139,7 +139,7 @@ export default function AddEditPlace() {
         phone: phone || null,
         whatsapp: whatsapp || null,
         price_range: priceRange || null,
-        attributes,
+        attributes: sanitizeAttributes(category, attributes),
       }
 
       let id = placeId

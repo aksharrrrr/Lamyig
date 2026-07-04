@@ -175,3 +175,4 @@ On first open, the app shows a live map of India with no forced setup; if locati
 - **Governance:** who can merge data changes once contributors arrive?
 - **Verification mechanics:** what exactly counts as "verified," and by whom?
 - **Top bar contents:** exact contents of the top navigation bar (beyond featuring Spiti/Ladakh/treks) still to be decided.
+- **Where does "Treks" fit the Region model?** India → State → Region → Village → Place assumes every popular destination is a place in that hierarchy. Spiti/Ladakh/Zanskar/Sikkim fit as Regions; "Treks" (docs/07-information-architecture.md's fifth popular destination) doesn't — a trek crosses villages and regions. Left unseeded in `supabase/seed.sql` pending a decision: is it a tag/collection over existing Places, its own entity, or something else?

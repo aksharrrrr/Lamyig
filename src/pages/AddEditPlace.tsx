@@ -7,7 +7,6 @@ import { compressImage } from '../lib/compressImage'
 import type { Region, Village } from '../lib/types'
 
 const MAX_PHOTOS = 6
-const NEW_VILLAGE = '__new__'
 
 // Loose on purpose — accepts +country codes, spaces, dashes, parens — but
 // rejects "ajbnfkdsj"-style garbage so at least it's plausibly a phone number.
@@ -36,8 +35,7 @@ export default function AddEditPlace() {
   const [lat, setLat] = useState('')
   const [lng, setLng] = useState('')
   const [regionId, setRegionId] = useState('')
-  const [villageId, setVillageId] = useState('')
-  const [newVillageName, setNewVillageName] = useState('')
+  const [villageName, setVillageName] = useState('')
   const [phone, setPhone] = useState('')
   const [whatsapp, setWhatsapp] = useState('')
   const [priceRange, setPriceRange] = useState('')
@@ -48,6 +46,8 @@ export default function AddEditPlace() {
   const [uploadProgress, setUploadProgress] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
+  const def = categoryDef(category)
+
   useEffect(() => {
     if (!supabase) return
     supabase.from('regions').select('*').order('name').then(({ data }) => {
@@ -55,6 +55,9 @@ export default function AddEditPlace() {
     })
   }, [])
 
+  // Villages in the selected region, purely to power the datalist suggestions
+  // below the Village field — typing a name that isn't in this list creates
+  // a new village on submit instead of blocking you.
   useEffect(() => {
     if (!supabase || !regionId) {
       setVillages([])
@@ -67,7 +70,7 @@ export default function AddEditPlace() {
 
   useEffect(() => {
     if (!supabase || !placeId) return
-    supabase.from('places').select('*').eq('id', placeId).single().then(({ data }) => {
+    supabase.from('places').select('*').eq('id', placeId).single().then(async ({ data }) => {
       if (!data) return
       setName(data.name)
       setCategory(data.category)
@@ -75,11 +78,13 @@ export default function AddEditPlace() {
       setLat(String(data.lat))
       setLng(String(data.lng))
       setRegionId(data.region_id)
-      setVillageId(data.village_id)
       setPhone(data.phone ?? '')
       setWhatsapp(data.whatsapp ?? '')
       setPriceRange(data.price_range ?? '')
       setAttributes(data.attributes ?? {})
+
+      const { data: village } = await supabase!.from('villages').select('name').eq('id', data.village_id).single()
+      if (village) setVillageName(village.name)
     })
   }, [placeId])
 
@@ -98,51 +103,82 @@ export default function AddEditPlace() {
     setPhotos(files)
   }
 
-  const def = categoryDef(category)
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
 
-    if (!supabase || !session) return
-    const minPhotos = def?.minPhotos ?? 0
+    if (!supabase || !session || !def) return
+    const minPhotos = def.minPhotos
     if (!isEdit && photos.length < minPhotos) {
-      setError(`Upload at least ${minPhotos} photo${minPhotos === 1 ? '' : 's'} for a ${def?.label.toLowerCase()}.`)
+      setError(`Upload at least ${minPhotos} photo${minPhotos === 1 ? '' : 's'} for a ${def.label.toLowerCase()}.`)
       return
     }
-    if (!regionId || !villageId) {
-      setError('Select a region and village.')
+    if (!regionId || !villageName.trim()) {
+      setError('Select a region and enter a village.')
       return
     }
-    if (villageId === NEW_VILLAGE && !newVillageName.trim()) {
-      setError('Enter the new village name.')
+    if (def.name === 'required' && !name.trim()) {
+      setError('Enter a name.')
       return
     }
 
     setSubmitting(true)
     try {
-      let resolvedVillageId = villageId
-      if (villageId === NEW_VILLAGE) {
+      // Look up an existing village by slug directly in the DB rather than
+      // trusting the local `villages` state (only there for datalist
+      // suggestions) - that list can still be loading/stale when someone
+      // types fast, which caused a duplicate-slug insert attempt against a
+      // village ("Kaza") that already existed.
+      const trimmedVillage = villageName.trim()
+      const villageSlug = slugify(trimmedVillage)
+      let resolvedVillageId: string
+
+      const { data: existingVillage } = await supabase
+        .from('villages')
+        .select('id')
+        .eq('region_id', regionId)
+        .eq('slug', villageSlug)
+        .maybeSingle()
+
+      if (existingVillage) {
+        resolvedVillageId = existingVillage.id
+      } else {
         const { data: newVillage, error: villageError } = await supabase
           .from('villages')
-          .insert({ name: newVillageName.trim(), slug: slugify(newVillageName), region_id: regionId })
+          .insert({ name: trimmedVillage, slug: villageSlug, region_id: regionId })
           .select('id')
           .single()
-        if (villageError) throw villageError
-        resolvedVillageId = newVillage.id
+        if (villageError) {
+          // Someone else created the same village between our check and
+          // insert - recover by using theirs instead of failing outright.
+          if (villageError.code === '23505') {
+            const { data: raceVillage, error: raceError } = await supabase
+              .from('villages')
+              .select('id')
+              .eq('region_id', regionId)
+              .eq('slug', villageSlug)
+              .single()
+            if (raceError) throw raceError
+            resolvedVillageId = raceVillage.id
+          } else {
+            throw villageError
+          }
+        } else {
+          resolvedVillageId = newVillage.id
+        }
       }
 
       const payload = {
-        name,
+        name: def.name === 'hidden' ? def.label : (name.trim() || def.label),
         category,
         lat: Number(lat),
         lng: Number(lng),
         region_id: regionId,
         village_id: resolvedVillageId,
-        description,
-        phone: phone || null,
-        whatsapp: whatsapp || null,
-        price_range: priceRange || null,
+        description: def.description === 'hidden' ? '' : description,
+        phone: def.showPhone ? (phone || null) : null,
+        whatsapp: def.showWhatsapp ? (whatsapp || null) : null,
+        price_range: def.showPriceRange ? (priceRange || null) : null,
         attributes: sanitizeAttributes(category, attributes),
       }
 
@@ -175,7 +211,13 @@ export default function AddEditPlace() {
 
       navigate(`/place/${id}`)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong.')
+      // Supabase throws plain PostgrestError objects, not real Error
+      // instances, so `instanceof Error` alone was swallowing the real
+      // message and always showing "Something went wrong."
+      const message = err instanceof Error
+        ? err.message
+        : (typeof err === 'object' && err && 'message' in err ? String(err.message) : 'Something went wrong.')
+      setError(message)
     } finally {
       setSubmitting(false)
       setUploadProgress(null)
@@ -216,15 +258,19 @@ export default function AddEditPlace() {
         </select>
       </label>
 
-      <label className="flex flex-col gap-1 text-sm">
-        Name
-        <input required value={name} onChange={(e) => setName(e.target.value)} className="rounded-md border border-neutral-300 px-3 py-2" />
-      </label>
+      {def && def.name !== 'hidden' && (
+        <label className="flex flex-col gap-1 text-sm">
+          Name {def.name === 'optional' && '(optional)'}
+          <input required={def.name === 'required'} value={name} onChange={(e) => setName(e.target.value)} className="rounded-md border border-neutral-300 px-3 py-2" />
+        </label>
+      )}
 
-      <label className="flex flex-col gap-1 text-sm">
-        Description
-        <textarea required value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className="rounded-md border border-neutral-300 px-3 py-2" />
-      </label>
+      {def && def.description !== 'hidden' && (
+        <label className="flex flex-col gap-1 text-sm">
+          Description {def.description === 'optional' && '(optional)'}
+          <textarea required={def.description === 'required'} value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className="rounded-md border border-neutral-300 px-3 py-2" />
+        </label>
+      )}
 
       <div className="flex gap-2">
         <label className="flex flex-1 flex-col gap-1 text-sm">
@@ -242,7 +288,7 @@ export default function AddEditPlace() {
 
       <label className="flex flex-col gap-1 text-sm">
         Region
-        <select required value={regionId} onChange={(e) => { setRegionId(e.target.value); setVillageId(''); setNewVillageName('') }} className="rounded-md border border-neutral-300 px-3 py-2">
+        <select required value={regionId} onChange={(e) => { setRegionId(e.target.value); setVillageName('') }} className="rounded-md border border-neutral-300 px-3 py-2">
           <option value="" disabled>Select a region…</option>
           {regions.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
         </select>
@@ -250,19 +296,19 @@ export default function AddEditPlace() {
 
       <label className="flex flex-col gap-1 text-sm">
         Village
-        <select required value={villageId} onChange={(e) => setVillageId(e.target.value)} disabled={!regionId} className="rounded-md border border-neutral-300 px-3 py-2 disabled:opacity-50">
-          <option value="" disabled>Select a village…</option>
-          {villages.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
-          <option value={NEW_VILLAGE}>+ Add a village not on this list…</option>
-        </select>
+        <input
+          required
+          list="village-suggestions"
+          value={villageName}
+          onChange={(e) => setVillageName(e.target.value)}
+          disabled={!regionId}
+          placeholder="Type a village name…"
+          className="rounded-md border border-neutral-300 px-3 py-2 disabled:opacity-50"
+        />
+        <datalist id="village-suggestions">
+          {villages.map((v) => <option key={v.id} value={v.name} />)}
+        </datalist>
       </label>
-
-      {villageId === NEW_VILLAGE && (
-        <label className="flex flex-col gap-1 text-sm">
-          New village name
-          <input required value={newVillageName} onChange={(e) => setNewVillageName(e.target.value)} className="rounded-md border border-neutral-300 px-3 py-2" />
-        </label>
-      )}
 
       {def && def.fields.length > 0 && (
         <fieldset className="flex flex-col gap-3 rounded-md border border-neutral-200 p-3">
@@ -325,37 +371,43 @@ export default function AddEditPlace() {
         </fieldset>
       )}
 
-      <label className="flex flex-col gap-1 text-sm">
-        Phone (optional)
-        <input
-          type="tel"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          pattern={PHONE_PATTERN}
-          title="Digits only, optionally with +, spaces, dashes, or parentheses"
-          className="rounded-md border border-neutral-300 px-3 py-2"
-        />
-      </label>
-      <label className="flex flex-col gap-1 text-sm">
-        WhatsApp (optional)
-        <input
-          type="tel"
-          value={whatsapp}
-          onChange={(e) => setWhatsapp(e.target.value)}
-          pattern={PHONE_PATTERN}
-          title="Digits only, optionally with +, spaces, dashes, or parentheses"
-          className="rounded-md border border-neutral-300 px-3 py-2"
-        />
-      </label>
-      <label className="flex flex-col gap-1 text-sm">
-        Price range (optional)
-        <input value={priceRange} onChange={(e) => setPriceRange(e.target.value)} placeholder="e.g. ₹800–1200/night" className="rounded-md border border-neutral-300 px-3 py-2" />
-      </label>
+      {def?.showPhone && (
+        <label className="flex flex-col gap-1 text-sm">
+          Phone (optional)
+          <input
+            type="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            pattern={PHONE_PATTERN}
+            title="Digits only, optionally with +, spaces, dashes, or parentheses"
+            className="rounded-md border border-neutral-300 px-3 py-2"
+          />
+        </label>
+      )}
+      {def?.showWhatsapp && (
+        <label className="flex flex-col gap-1 text-sm">
+          WhatsApp (optional)
+          <input
+            type="tel"
+            value={whatsapp}
+            onChange={(e) => setWhatsapp(e.target.value)}
+            pattern={PHONE_PATTERN}
+            title="Digits only, optionally with +, spaces, dashes, or parentheses"
+            className="rounded-md border border-neutral-300 px-3 py-2"
+          />
+        </label>
+      )}
+      {def?.showPriceRange && (
+        <label className="flex flex-col gap-1 text-sm">
+          Price range (optional)
+          <input value={priceRange} onChange={(e) => setPriceRange(e.target.value)} placeholder="e.g. ₹800–1200/night" className="rounded-md border border-neutral-300 px-3 py-2" />
+        </label>
+      )}
 
       {!isEdit && (
         <label className="flex flex-col gap-1 text-sm">
           Photos {def && def.minPhotos > 0 ? `(min ${def.minPhotos}, max ${MAX_PHOTOS})` : `(optional, max ${MAX_PHOTOS})`}
-          <input type="file" accept="image/*" multiple onChange={handlePhotoChange} />
+          <input type="file" accept="image/*" capture="environment" multiple onChange={handlePhotoChange} />
           {photos.length > 0 && <span className="text-neutral-500">{photos.length} selected</span>}
         </label>
       )}

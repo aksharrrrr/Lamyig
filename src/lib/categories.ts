@@ -7,24 +7,34 @@ export interface CategoryField {
   options?: string[]
 }
 
+export type FieldVisibility = 'required' | 'optional' | 'hidden'
+
 export interface CategoryDef {
   value: string
   label: string
   fields: CategoryField[]
   minPhotos: number
+  name: FieldVisibility
+  description: FieldVisibility
+  showPhone: boolean
+  showWhatsapp: boolean
+  showPriceRange: boolean
 }
 
-// Base fields (name, description, coordinates, village/region, phone,
-// whatsapp, price range) are shared by every category — see docs/08-mvp.md.
-// These are the category-specific fields from that doc's field table.
-//
-// minPhotos: a homestay needs to show itself off; a toilet or mechanic pin is
-// a quick "this exists here" note and shouldn't be gated behind 3 photos.
+// Each category defines its own form - not just its own attributes.fields,
+// but which base fields even show up. A toilet doesn't have a phone number;
+// forcing a Name on every fuel stop is friction with no payoff. See
+// docs/14-decision-log.md for the full per-category spec this implements.
 export const CATEGORIES: CategoryDef[] = [
   {
     value: 'homestay',
     label: 'Homestay',
     minPhotos: 3,
+    name: 'required',
+    description: 'optional',
+    showPhone: true,
+    showWhatsapp: true,
+    showPriceRange: true,
     fields: [
       { key: 'host_name', label: 'Host name', type: 'text' },
       { key: 'meals_included', label: 'Meals included', type: 'boolean' },
@@ -36,8 +46,13 @@ export const CATEGORIES: CategoryDef[] = [
     value: 'mechanic',
     label: 'Mechanic',
     minPhotos: 0,
+    name: 'optional',
+    description: 'hidden',
+    showPhone: true,
+    showWhatsapp: true,
+    showPriceRange: false,
     fields: [
-      { key: 'services', label: 'Services', type: 'multiselect', options: ['puncture repair', 'general repair', 'spare parts'] },
+      { key: 'services', label: 'Services', type: 'multiselect', options: ['tubeless puncture', 'tube puncture', 'general repair', 'spare parts'] },
       { key: 'vehicle_types', label: 'Vehicle types serviced', type: 'multiselect', options: ['bike', 'car'] },
       { key: 'hours', label: 'Hours (e.g. "8am-8pm" or "24x7")', type: 'text' },
     ],
@@ -46,6 +61,11 @@ export const CATEGORIES: CategoryDef[] = [
     value: 'fuel',
     label: 'Fuel',
     minPhotos: 0,
+    name: 'hidden',
+    description: 'hidden',
+    showPhone: true,
+    showWhatsapp: true,
+    showPriceRange: false,
     fields: [
       { key: 'fuel_types', label: 'Fuel types', type: 'multiselect', options: ['petrol', 'diesel'] },
       { key: 'source', label: 'Source', type: 'select', options: ['pump', 'informal (jerry can)'] },
@@ -53,27 +73,14 @@ export const CATEGORIES: CategoryDef[] = [
     ],
   },
   {
-    value: 'food',
-    label: 'Food',
-    minPhotos: 0,
-    fields: [
-      { key: 'meal_times', label: 'Meal times', type: 'text' },
-      { key: 'cash_only', label: 'Cash only', type: 'boolean' },
-    ],
-  },
-  {
-    value: 'drinking_water',
-    label: 'Drinking water',
-    minPhotos: 0,
-    fields: [
-      { key: 'potable', label: 'Potable', type: 'boolean' },
-      { key: 'cost', label: 'Cost', type: 'select', options: ['free', 'paid'] },
-    ],
-  },
-  {
     value: 'toilet',
     label: 'Toilet',
     minPhotos: 0,
+    name: 'hidden',
+    description: 'hidden',
+    showPhone: false,
+    showWhatsapp: false,
+    showPriceRange: false,
     fields: [
       { key: 'clean', label: 'Clean', type: 'boolean' },
       { key: 'cost', label: 'Cost', type: 'select', options: ['free', 'paid'] },
@@ -81,40 +88,18 @@ export const CATEGORIES: CategoryDef[] = [
     ],
   },
   {
-    value: 'medical',
-    label: 'Medical',
-    minPhotos: 0,
-    fields: [
-      { key: 'facility_type', label: 'Type', type: 'select', options: ['clinic', 'pharmacy', 'hospital'] },
-      { key: 'emergency_capable', label: 'Emergency-capable', type: 'boolean' },
-      { key: 'hours', label: 'Hours (e.g. "8am-8pm" or "24x7")', type: 'text' },
-    ],
-  },
-  {
     value: 'camping',
-    label: 'Camping',
+    label: 'Camping site',
     minPhotos: 0,
+    name: 'hidden',
+    description: 'optional',
+    showPhone: false,
+    showWhatsapp: false,
+    showPriceRange: false,
     fields: [
       { key: 'tent_allowed', label: 'Tent pitch allowed', type: 'boolean' },
       { key: 'nearby_toilet', label: 'Toilet nearby', type: 'boolean' },
       { key: 'nearby_water', label: 'Water nearby', type: 'boolean' },
-    ],
-  },
-  {
-    value: 'mobile_network',
-    label: 'Mobile network',
-    minPhotos: 0,
-    fields: [
-      { key: 'operators', label: 'Operators with signal', type: 'multiselect', options: ['BSNL', 'Airtel', 'Jio', 'Vi'] },
-      { key: 'signal_note', label: 'Signal note', type: 'text' },
-    ],
-  },
-  {
-    value: 'viewpoint',
-    label: 'Viewpoint',
-    minPhotos: 0,
-    fields: [
-      { key: 'best_time_of_day', label: 'Best time of day', type: 'select', options: ['sunrise', 'morning', 'afternoon', 'sunset', 'night'] },
     ],
   },
 ]

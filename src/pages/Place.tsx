@@ -103,7 +103,7 @@ export default function Place() {
         </div>
       )}
 
-      <p className="mt-4 whitespace-pre-wrap">{place.description}</p>
+      {place.description && <p className="mt-4 whitespace-pre-wrap">{place.description}</p>}
 
       <dl className="mt-4 grid grid-cols-2 gap-2 text-sm">
         {place.price_range && <><dt className="text-neutral-500">Price</dt><dd>{place.price_range}</dd></>}

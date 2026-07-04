@@ -229,11 +229,11 @@ export default function AddEditPlace() {
       <div className="flex gap-2">
         <label className="flex flex-1 flex-col gap-1 text-sm">
           Latitude
-          <input required type="number" step="any" value={lat} onChange={(e) => setLat(e.target.value)} className="rounded-md border border-neutral-300 px-3 py-2" />
+          <input required type="number" step="any" min={-90} max={90} value={lat} onChange={(e) => setLat(e.target.value)} className="rounded-md border border-neutral-300 px-3 py-2" />
         </label>
         <label className="flex flex-1 flex-col gap-1 text-sm">
           Longitude
-          <input required type="number" step="any" value={lng} onChange={(e) => setLng(e.target.value)} className="rounded-md border border-neutral-300 px-3 py-2" />
+          <input required type="number" step="any" min={-180} max={180} value={lng} onChange={(e) => setLng(e.target.value)} className="rounded-md border border-neutral-300 px-3 py-2" />
         </label>
       </div>
       <button type="button" onClick={useMyLocation} className="self-start text-sm text-neutral-500 underline">

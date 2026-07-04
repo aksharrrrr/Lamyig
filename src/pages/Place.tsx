@@ -86,7 +86,8 @@ export default function Place() {
 
   return (
     <div className="mx-auto max-w-2xl p-6">
-      <div className="flex items-start justify-between">
+      <Link to="/" className="text-sm text-neutral-500 underline">&larr; Back to map</Link>
+      <div className="mt-2 flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-medium">{place.name}</h1>
           <p className="text-sm text-neutral-500">{def?.label ?? place.category}</p>

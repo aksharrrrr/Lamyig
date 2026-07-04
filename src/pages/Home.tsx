@@ -1,4 +1,7 @@
-import Map from '../components/Map'
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import Map, { type PlaceMarker } from '../components/Map'
+import { supabase } from '../lib/supabase'
 
 const CATEGORIES = [
   'Homestay', 'Mechanic', 'Fuel', 'Food', 'Drinking water',
@@ -8,6 +11,16 @@ const CATEGORIES = [
 const POPULAR_DESTINATIONS = ['Spiti', 'Ladakh', 'Zanskar', 'Sikkim', 'Treks']
 
 export default function Home() {
+  const navigate = useNavigate()
+  const [places, setPlaces] = useState<PlaceMarker[]>([])
+
+  useEffect(() => {
+    if (!supabase) return
+    supabase.from('places').select('id, name, category, lat, lng').then(({ data }) => {
+      if (data) setPlaces(data as PlaceMarker[])
+    })
+  }, [])
+
   return (
     <div className="flex h-full flex-col">
       <div className="flex flex-wrap items-center gap-3 border-b border-neutral-200 p-3">
@@ -29,7 +42,7 @@ export default function Home() {
       </div>
 
       <div className="relative min-h-0 flex-1">
-        <Map />
+        <Map places={places} onSelectPlace={(id) => navigate(`/place/${id}`)} />
       </div>
 
       <div className="flex gap-2 overflow-x-auto border-t border-neutral-200 p-3">

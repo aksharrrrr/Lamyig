@@ -17,6 +17,7 @@ export default function Place() {
   const [newNote, setNewNote] = useState('')
   const [reportReason, setReportReason] = useState<typeof REPORT_REASONS[number]>('incorrect')
   const [status, setStatus] = useState<string | null>(null)
+  const [hasVerified, setHasVerified] = useState(false)
 
   const load = useCallback(async () => {
     if (!supabase || !placeId) return
@@ -28,12 +29,22 @@ export default function Place() {
     if (placeData) setPlace(placeData as PlaceT)
     if (photoData) setPhotos(photoData as PlacePhoto[])
     if (noteData) setNotes(noteData as CommunityNote[])
-  }, [placeId])
+
+    if (session) {
+      const { data: verification } = await supabase
+        .from('place_verifications')
+        .select('id')
+        .eq('place_id', placeId)
+        .eq('verified_by', session.user.id)
+        .maybeSingle()
+      setHasVerified(Boolean(verification))
+    }
+  }, [placeId, session])
 
   useEffect(() => { load() }, [load])
 
   async function verify() {
-    if (!supabase || !session || !placeId) return
+    if (!supabase || !session || !placeId || hasVerified) return
     const { error } = await supabase.from('place_verifications').insert({ place_id: placeId, verified_by: session.user.id })
     setStatus(error ? error.message : 'Marked as still accurate.')
     load()
@@ -106,13 +117,19 @@ export default function Place() {
 
       <p className="mt-4 text-sm text-neutral-500">
         {place.last_verified_at
-          ? `Last verified ${new Date(place.last_verified_at).toLocaleDateString()} by ${place.verified_count} riders`
+          ? `Last verified ${new Date(place.last_verified_at).toLocaleDateString()} by ${place.verified_count} rider${place.verified_count === 1 ? '' : 's'}`
           : 'Not yet verified'}
       </p>
 
       {session ? (
         <div className="mt-4 flex gap-2">
-          <button onClick={verify} className="rounded-md border border-neutral-300 px-3 py-1.5 text-sm">Still accurate</button>
+          <button
+            onClick={verify}
+            disabled={hasVerified}
+            className="rounded-md border border-neutral-300 px-3 py-1.5 text-sm disabled:opacity-50"
+          >
+            {hasVerified ? 'You verified this' : 'Still accurate'}
+          </button>
           <select value={reportReason} onChange={(e) => setReportReason(e.target.value as typeof reportReason)} className="rounded-md border border-neutral-300 px-2 py-1.5 text-sm">
             {REPORT_REASONS.map((r) => <option key={r} value={r}>{r}</option>)}
           </select>

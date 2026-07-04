@@ -17,6 +17,7 @@ export default function Place() {
   const [newNote, setNewNote] = useState('')
   const [reportReason, setReportReason] = useState<typeof REPORT_REASONS[number]>('incorrect')
   const [status, setStatus] = useState<string | null>(null)
+  const [noteStatus, setNoteStatus] = useState<string | null>(null)
   const [hasVerified, setHasVerified] = useState(false)
 
   const load = useCallback(async () => {
@@ -58,11 +59,15 @@ export default function Place() {
 
   async function submitNote() {
     if (!supabase || !session || !placeId || !newNote.trim()) return
+    setNoteStatus(null)
     const { error } = await supabase.from('community_notes').insert({ place_id: placeId, author_id: session.user.id, body: newNote.trim() })
-    if (!error) {
-      setNewNote('')
-      load()
+    if (error) {
+      setNoteStatus(error.message)
+      return
     }
+    setNoteStatus('Note posted.')
+    setNewNote('')
+    load()
   }
 
   if (!configured) {
@@ -160,6 +165,7 @@ export default function Place() {
           <button onClick={submitNote} className="rounded-md bg-neutral-900 px-3 py-2 text-sm text-white">Post</button>
         </div>
       )}
+      {noteStatus && <p className="mt-2 text-sm text-neutral-500">{noteStatus}</p>}
     </div>
   )
 }

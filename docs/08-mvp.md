@@ -21,33 +21,37 @@ Browsing requires no account. Contributing does.
 1. Tap "+"
 2. Select Place category
 3. Fill in required fields (base fields + category-specific fields, below)
-4. Upload minimum 3 photographs (max 6), compressed client-side before upload
+4. Upload photos — minimum depends on category (see below), max 6, compressed client-side before upload
 5. Submit → **goes live immediately**, no review queue
 
 See D-012 in [`14-decision-log.md`](14-decision-log.md) for why publish is instant rather than queued, and how editing, verification, and reporting work on top of that.
+
+Region and Village are both required, but the Village picker isn't limited to a pre-seeded list — "+ Add a village not on this list…" lets a contributor add one inline (same auto-publish trust model as places). Regions stay founder-curated for now — the top-level geography is a bigger structural call than adding one more village.
 
 ## Data model
 
 ### Base fields (every Place)
 
-Required: Name, Category, GPS coordinates (auto-filled from device location at add-time, draggable pin to correct), Village, Region, 3+ photographs, Description, Last updated, Added by.
+Required: Name, Category, GPS coordinates (auto-filled from device location at add-time, editable), Village, Region, Description, Last updated, Added by.
 
-Optional: Phone number, WhatsApp, Price range, Community notes (free text).
+Optional: Phone number (validated as a plausible phone number, not free text), WhatsApp (same), Price range, Community notes (free text), photographs (minimum count varies by category, see below).
 
 ### Category-specific fields
 
-| Category | Extra fields |
-|---|---|
-| Homestay | Price/night, meals included, bike/car parking, cash-only |
-| Mechanic | Services (puncture / general repair / spare parts), vehicle types serviced |
-| Fuel | Fuel types available, informal (jerry-can) vs pump |
-| Food | Meal times, cash-only |
-| Drinking water | Potable, free/paid |
-| Toilet | Clean (self-reported), free/paid, Indian/Western |
-| Medical | Type (clinic / pharmacy / hospital), emergency-capable |
-| Camping | Tent pitch allowed, nearby toilet/water |
-| Mobile network | Operators with signal, signal strength note |
-| Viewpoint | Best time of day |
+Each category also sets its own **minimum photo count** — a homestay needs to show itself off, but a toilet or mechanic pin is a quick "this exists here" note and shouldn't be gated behind photos nobody wants to take.
+
+| Category | Min photos | Extra fields |
+|---|---|---|
+| Homestay | 3 | Host name, price/night, meals included, bike/car parking, cash-only |
+| Mechanic | 0 | Services (puncture / general repair / spare parts), vehicle types serviced |
+| Fuel | 0 | Fuel types available, informal (jerry-can) vs pump |
+| Food | 0 | Meal times, cash-only |
+| Drinking water | 0 | Potable, free/paid |
+| Toilet | 0 | Clean (self-reported), free/paid, Indian/Western |
+| Medical | 0 | Type (clinic / pharmacy / hospital), emergency-capable |
+| Camping | 0 | Tent pitch allowed, nearby toilet/water |
+| Mobile network | 0 | Operators with signal, signal strength note |
+| Viewpoint | 0 | Best time of day |
 
 This table is the starting point for V1, not final — categories can gain or lose fields without changing the underlying Place model (see [`07-information-architecture.md`](07-information-architecture.md)).
 
@@ -58,9 +62,8 @@ Free-text factual observations, replacing reviews — see D-004 in [`14-decision
 ## Trust mechanics
 
 - **Editing** — any logged-in user can edit any Place. "Last updated"/"added by" reflect the latest editor.
-- **Verification** — one-tap "Still accurate" button updates the last-verified date and increments verifier count (e.g. "verified May 2026 by 14 riders").
-- **Reporting**
- — "Report" on a Place (reason: spam / incorrect / closed / duplicate) logs a record for manual founder review. No automated hide in V1.
+- **Verification** — one-tap "Still accurate" button updates the last-verified date and increments verifier count (e.g. "verified May 2026 by 14 riders"). Adding a Place counts as verifying it — you just personally confirmed it exists — so a new Place starts at "verified today by 1 rider" instead of "not yet verified." One verification per person per Place; the button reads "You verified this" and disables once you've used it.
+- **Reporting** — "Report" on a Place (reason: spam / incorrect / closed / duplicate) logs a record for manual founder review. No automated hide in V1.
 
 See D-012 in [`14-decision-log.md`](14-decision-log.md).
 

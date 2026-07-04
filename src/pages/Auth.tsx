@@ -53,13 +53,6 @@ export default function Auth() {
     navigate('/')
   }
 
-  async function handleGoogle() {
-    await supabase!.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: window.location.origin },
-    })
-  }
-
   return (
     <div className="mx-auto max-w-sm p-6">
       <h1 className="text-2xl font-medium">
@@ -69,20 +62,7 @@ export default function Auth() {
         Browsing Lamyig is always free — sign in to add or edit a place.
       </p>
 
-      <button
-        onClick={handleGoogle}
-        className="mt-6 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700"
-      >
-        Continue with Google
-      </button>
-
-      <div className="my-4 flex items-center gap-3 text-xs text-neutral-400">
-        <div className="h-px flex-1 bg-neutral-200 dark:bg-neutral-800" />
-        or
-        <div className="h-px flex-1 bg-neutral-200 dark:bg-neutral-800" />
-      </div>
-
-      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+      <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-3">
         <input
           type="email"
           required

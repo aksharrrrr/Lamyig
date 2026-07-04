@@ -159,11 +159,13 @@ On first open, the app shows a live map of India with no forced setup; if locati
 
 ## D-013 — Auth: email/password + Google OAuth only
 
-**Date:** 2026-07-03 · **Status:** Final
+**Date:** 2026-07-03 · **Status:** Final (Google OAuth launch deferred, see update below)
 
 **Decision (provisional):** Contributing requires signing in via Supabase Auth, using either email/password or Google OAuth. No phone/OTP login in V1.
 
 **Reasoning:** Both methods are free at Supabase's tier, matching the zero-cost objective in D-010. Google OAuth is near-zero-friction for most travellers. Phone OTP costs money per SMS at scale and is least reliable exactly where Lamyig matters most — poor-signal remote regions — so it would fail its own use case.
+
+**Update 2026-07-04:** Shipping with email/password only for now — Google OAuth needs a Google Cloud Console OAuth client set up first (free, but a setup step not yet done). The "Continue with Google" button is pulled from the UI rather than left in as a dead button. Google OAuth stays on the roadmap and slots back in once that setup happens; this isn't a reversal of the decision, just a sequencing choice.
 
 **Alternatives considered:** Add phone/OTP (rejected for V1: cost + reliability, both discussed above; can revisit once there's usage data to justify the SMS spend).
 

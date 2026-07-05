@@ -1,8 +1,25 @@
 @import "tailwindcss";
 
-/* Light-only for now — no dark theme until the Figma design lands. This also
-   stops browsers' own "force dark mode for web content" from repainting
-   inputs/buttons inconsistently on top of our (light-only) styles. */
+/* Design tokens from the approved Claude Design mockup ("Lamyig Map Home").
+   Keep these as the single source of truth — don't hardcode these colors
+   inline elsewhere. */
+@theme {
+  --color-bg: #e9e7e2;
+  --color-surface: #fdfdfc;
+  --color-ink: #201f23;
+  --color-muted: #6f6c75;
+  --color-muted-light: #8a8791;
+  --color-accent: oklch(0.55 0.15 300);
+  --color-accent-dark: oklch(0.49 0.15 300);
+  --color-accent-light: oklch(0.95 0.03 300);
+  --color-accent-text: oklch(0.42 0.15 300);
+  --color-danger: oklch(0.52 0.16 25);
+  --font-sans: "Instrument Sans", system-ui, sans-serif;
+}
+
+/* Light-only for now — no dark theme yet. This also stops browsers' own
+   "force dark mode for web content" from repainting inputs/buttons
+   inconsistently on top of our (light-only) styles. */
 :root {
   color-scheme: light;
 }
@@ -10,4 +27,7 @@
 html, body, #root {
   height: 100%;
   margin: 0;
+  font-family: var(--font-sans);
+  background: var(--color-bg);
+  color: var(--color-ink);
 }

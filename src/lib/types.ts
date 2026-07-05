@@ -5,6 +5,9 @@ export interface Region {
   state: string
   description: string | null
   featured: boolean
+  center_lat: number | null
+  center_lng: number | null
+  default_zoom: number
 }
 
 export interface Village {

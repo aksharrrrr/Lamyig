@@ -43,6 +43,7 @@ export interface PlaceMarker {
 
 export interface MapHandle {
   locate: () => void
+  flyTo: (lat: number, lng: number, zoom: number) => void
 }
 
 interface MapProps {
@@ -58,6 +59,7 @@ const Map = forwardRef<MapHandle, MapProps>(function Map({ places = [], onSelect
 
   useImperativeHandle(ref, () => ({
     locate: () => geolocateRef.current?.trigger(),
+    flyTo: (lat, lng, zoom) => mapRef.current?.flyTo({ center: [lng, lat], zoom, duration: 1500 }),
   }), [])
 
   useEffect(() => {

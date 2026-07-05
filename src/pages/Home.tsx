@@ -32,6 +32,7 @@ export default function Home() {
 
   const [regions, setRegions] = useState<Region[]>([])
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(loadStoredCategories)
+  const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
     if (!supabase) return
@@ -57,6 +58,26 @@ export default function Home() {
     navigate(path, { state: { background: location } })
   }
 
+  function flyToRegion(region: Region) {
+    if (region.center_lat == null || region.center_lng == null) {
+      showToast(`No map location set for ${region.name} yet`)
+      return
+    }
+    mapRef.current?.flyTo(region.center_lat, region.center_lng, region.default_zoom)
+    setSearchQuery('')
+  }
+
+  // Search currently only matches regions (flies the map there). Matching
+  // villages/places too is real scope for later - the search bar's
+  // placeholder still says all three, but only regions are wired up so far.
+  const matchingRegions = searchQuery.trim()
+    ? regions.filter((r) => r.name.toLowerCase().includes(searchQuery.trim().toLowerCase())).slice(0, 5)
+    : []
+
+  function handleSearchKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Enter' && matchingRegions.length > 0) flyToRegion(matchingRegions[0])
+  }
+
   const initials = session?.user.email ? session.user.email.slice(0, 2).toUpperCase() : null
 
   return (
@@ -80,7 +101,7 @@ export default function Home() {
           {regions.map((r) => (
             <button
               key={r.id}
-              onClick={() => navigate(`/region/${r.slug}`)}
+              onClick={() => flyToRegion(r)}
               className="flex-none rounded-full px-3.5 py-1.5 text-[13px] font-medium text-ink hover:bg-ink/5"
             >
               {r.name}
@@ -110,10 +131,29 @@ export default function Home() {
           </svg>
           <input
             type="search"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={handleSearchKeyDown}
             placeholder="Search a region, village, or place…"
             className="min-w-0 flex-1 bg-transparent text-[14.5px] outline-none placeholder:text-muted-light"
           />
         </div>
+        {matchingRegions.length > 0 && (
+          <div className="mt-2 overflow-hidden rounded-2xl border border-ink/[0.06] bg-surface/95 shadow-lg">
+            {matchingRegions.map((r) => (
+              <button
+                key={r.id}
+                onClick={() => flyToRegion(r)}
+                className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-[14px] hover:bg-ink/5"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8a8791" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 21s-7-6.5-7-11.5A7 7 0 0 1 19 9.5C19 14.5 12 21 12 21z" /><circle cx="12" cy="9.5" r="2.2" />
+                </svg>
+                {r.name}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Category cluster */}

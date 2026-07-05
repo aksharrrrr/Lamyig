@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 
@@ -13,15 +13,24 @@ export interface PlaceMarker {
   lng: number
 }
 
+export interface MapHandle {
+  locate: () => void
+}
+
 interface MapProps {
   places?: PlaceMarker[]
   onSelectPlace?: (id: string) => void
 }
 
-export default function Map({ places = [], onSelectPlace }: MapProps) {
+const Map = forwardRef<MapHandle, MapProps>(function Map({ places = [], onSelectPlace }, ref) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
   const markersRef = useRef<maplibregl.Marker[]>([])
+  const geolocateRef = useRef<maplibregl.GeolocateControl | null>(null)
+
+  useImperativeHandle(ref, () => ({
+    locate: () => geolocateRef.current?.trigger(),
+  }), [])
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return
@@ -32,19 +41,21 @@ export default function Map({ places = [], onSelectPlace }: MapProps) {
       center: INDIA_CENTER,
       zoom: INDIA_ZOOM,
     })
-    map.addControl(new maplibregl.NavigationControl(), 'top-right')
 
     const geolocate = new maplibregl.GeolocateControl({
       positionOptions: { enableHighAccuracy: true },
       trackUserLocation: false,
+      showUserLocation: true,
     })
     map.addControl(geolocate, 'top-right')
+    geolocateRef.current = geolocate
     map.on('load', () => geolocate.trigger())
 
     mapRef.current = map
     return () => {
       map.remove()
       mapRef.current = null
+      geolocateRef.current = null
     }
   }, [])
 
@@ -71,11 +82,11 @@ export default function Map({ places = [], onSelectPlace }: MapProps) {
       popupNode.className = 'text-sm'
       popupNode.innerHTML = `
         <div class="font-medium">${escapeHtml(place.name)}</div>
-        <div class="text-neutral-500 mb-2">${escapeHtml(place.category)}</div>
+        <div class="text-muted mb-2">${escapeHtml(place.category)}</div>
       `
       const detailsButton = document.createElement('button')
       detailsButton.textContent = 'More details'
-      detailsButton.className = 'text-blue-600 underline text-sm'
+      detailsButton.className = 'text-accent underline text-sm'
       detailsButton.onclick = () => onSelectPlace?.(place.id)
       popupNode.appendChild(detailsButton)
 
@@ -93,7 +104,9 @@ export default function Map({ places = [], onSelectPlace }: MapProps) {
   }, [places, onSelectPlace])
 
   return <div ref={containerRef} className="h-full w-full" />
-}
+})
+
+export default Map
 
 function escapeHtml(value: string): string {
   const div = document.createElement('div')

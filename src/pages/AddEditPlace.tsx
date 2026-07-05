@@ -2,11 +2,16 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/useAuth'
+import { usePlacesStore } from '../lib/usePlacesStore'
+import { useToast } from '../lib/useToast'
 import { CATEGORIES, categoryDef, sanitizeAttributes } from '../lib/categories'
+import { CATEGORY_ICONS } from '../lib/categoryIcons'
 import { compressImage } from '../lib/compressImage'
 import type { Region, Village } from '../lib/types'
 
 const MAX_PHOTOS = 6
+const inputClass = 'rounded-[10px] border border-ink/[0.14] bg-surface px-3.5 py-2.5 text-sm outline-none focus:border-accent focus:ring-3 focus:ring-accent-light'
+const labelClass = 'text-[11.5px] font-semibold uppercase tracking-wide text-muted'
 
 // Loose on purpose — accepts +country codes, spaces, dashes, parens — but
 // rejects "ajbnfkdsj"-style garbage so at least it's plausibly a phone number.
@@ -25,6 +30,8 @@ export default function AddEditPlace() {
   const isEdit = Boolean(placeId)
   const navigate = useNavigate()
   const { session, configured, loading: authLoading } = useAuth()
+  const { refetch } = usePlacesStore()
+  const { showToast } = useToast()
 
   const [regions, setRegions] = useState<Region[]>([])
   const [villages, setVillages] = useState<Village[]>([])
@@ -168,8 +175,9 @@ export default function AddEditPlace() {
         }
       }
 
+      const finalName = def.name === 'hidden' ? def.label : (name.trim() || def.label)
       const payload = {
-        name: def.name === 'hidden' ? def.label : (name.trim() || def.label),
+        name: finalName,
         category,
         lat: Number(lat),
         lng: Number(lng),
@@ -209,7 +217,14 @@ export default function AddEditPlace() {
       }
       setUploadProgress(null)
 
-      navigate(`/place/${id}`)
+      if (isEdit) {
+        navigate(`/place/${id}`)
+      } else {
+        refetch()
+        const regionName = regions.find((r) => r.id === regionId)?.name ?? ''
+        showToast(`"${finalName}" added${regionName ? ` to ${regionName}` : ''}`)
+        navigate('/')
+      }
     } catch (err) {
       // Supabase throws plain PostgrestError objects, not real Error
       // instances, so `instanceof Error` alone was swallowing the real
@@ -226,21 +241,17 @@ export default function AddEditPlace() {
 
   if (!configured) {
     return (
-      <div className="p-6">
-        <h1 className="text-2xl font-medium">Add / edit place</h1>
-        <p className="mt-2 text-neutral-500">
-          Backend isn't connected yet — set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.
-        </p>
-      </div>
+      <p className="text-sm text-muted">
+        Backend isn't connected yet — set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.
+      </p>
     )
   }
 
   if (!authLoading && !session) {
     return (
-      <div className="p-6">
-        <h1 className="text-2xl font-medium">Add a place</h1>
-        <p className="mt-2 text-neutral-500">Sign in to contribute.</p>
-        <Link to="/auth" className="mt-4 inline-block rounded-md bg-neutral-900 px-3 py-2 text-sm text-white">
+      <div>
+        <p className="text-sm text-muted">Sign in to contribute.</p>
+        <Link to="/auth" className="mt-4 inline-block rounded-[10px] bg-accent px-4 py-2 text-sm font-semibold text-surface">
           Sign in
         </Link>
       </div>
@@ -248,54 +259,71 @@ export default function AddEditPlace() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mx-auto flex max-w-lg flex-col gap-4 p-6">
-      <h1 className="text-2xl font-medium">{isEdit ? 'Edit place' : 'Add a place'}</h1>
-
-      <label className="flex flex-col gap-1 text-sm">
-        Category
-        <select value={category} onChange={(e) => { setCategory(e.target.value); setAttributes({}) }} className="rounded-md border border-neutral-300 px-3 py-2">
-          {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
-        </select>
-      </label>
+    <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
+      <div className="flex flex-col gap-1.5">
+        <span className={labelClass}>Category</span>
+        <div className="flex flex-wrap gap-2">
+          {CATEGORIES.map((c) => {
+            const selected = c.value === category
+            const CategoryIcon = CATEGORY_ICONS[c.value]
+            return (
+              <button
+                key={c.value}
+                type="button"
+                onClick={() => { setCategory(c.value); setAttributes({}) }}
+                className="flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-[12.5px] font-semibold"
+                style={{
+                  background: selected ? 'var(--color-accent-light)' : 'var(--color-surface)',
+                  color: selected ? 'var(--color-accent-text)' : 'var(--color-muted)',
+                  borderColor: selected ? 'var(--color-accent)' : 'rgba(32,31,35,0.14)',
+                }}
+              >
+                <CategoryIcon color={selected ? 'var(--color-accent-text)' : '#8a8791'} size={15} />
+                {c.label}
+              </button>
+            )
+          })}
+        </div>
+      </div>
 
       {def && def.name !== 'hidden' && (
-        <label className="flex flex-col gap-1 text-sm">
-          Name {def.name === 'optional' && '(optional)'}
-          <input required={def.name === 'required'} value={name} onChange={(e) => setName(e.target.value)} className="rounded-md border border-neutral-300 px-3 py-2" />
+        <label className="flex flex-col gap-1.5">
+          <span className={labelClass}>Name{def.name === 'optional' && ' (optional)'}</span>
+          <input required={def.name === 'required'} value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Tashi's Homestay" className={inputClass} />
         </label>
       )}
 
       {def && def.description !== 'hidden' && (
-        <label className="flex flex-col gap-1 text-sm">
-          Description {def.description === 'optional' && '(optional)'}
-          <textarea required={def.description === 'required'} value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className="rounded-md border border-neutral-300 px-3 py-2" />
+        <label className="flex flex-col gap-1.5">
+          <span className={labelClass}>Description{def.description === 'optional' && ' (optional)'}</span>
+          <textarea required={def.description === 'required'} value={description} onChange={(e) => setDescription(e.target.value)} rows={3} placeholder="What makes this place worth marking?" className={`${inputClass} resize-none`} />
         </label>
       )}
 
       <div className="flex gap-2">
-        <label className="flex flex-1 flex-col gap-1 text-sm">
-          Latitude
-          <input required type="number" step="any" min={-90} max={90} value={lat} onChange={(e) => setLat(e.target.value)} className="rounded-md border border-neutral-300 px-3 py-2" />
+        <label className="flex flex-1 flex-col gap-1.5">
+          <span className={labelClass}>Latitude</span>
+          <input required type="number" step="any" min={-90} max={90} value={lat} onChange={(e) => setLat(e.target.value)} className={inputClass} />
         </label>
-        <label className="flex flex-1 flex-col gap-1 text-sm">
-          Longitude
-          <input required type="number" step="any" min={-180} max={180} value={lng} onChange={(e) => setLng(e.target.value)} className="rounded-md border border-neutral-300 px-3 py-2" />
+        <label className="flex flex-1 flex-col gap-1.5">
+          <span className={labelClass}>Longitude</span>
+          <input required type="number" step="any" min={-180} max={180} value={lng} onChange={(e) => setLng(e.target.value)} className={inputClass} />
         </label>
       </div>
-      <button type="button" onClick={useMyLocation} className="self-start text-sm text-neutral-500 underline">
+      <button type="button" onClick={useMyLocation} className="self-start text-[13px] font-medium text-accent underline">
         Use my current location
       </button>
 
-      <label className="flex flex-col gap-1 text-sm">
-        Region
-        <select required value={regionId} onChange={(e) => { setRegionId(e.target.value); setVillageName('') }} className="rounded-md border border-neutral-300 px-3 py-2">
+      <label className="flex flex-col gap-1.5">
+        <span className={labelClass}>Region</span>
+        <select required value={regionId} onChange={(e) => { setRegionId(e.target.value); setVillageName('') }} className={inputClass}>
           <option value="" disabled>Select a region…</option>
           {regions.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
         </select>
       </label>
 
-      <label className="flex flex-col gap-1 text-sm">
-        Village
+      <label className="flex flex-col gap-1.5">
+        <span className={labelClass}>Village</span>
         <input
           required
           list="village-suggestions"
@@ -303,7 +331,7 @@ export default function AddEditPlace() {
           onChange={(e) => setVillageName(e.target.value)}
           disabled={!regionId}
           placeholder="Type a village name…"
-          className="rounded-md border border-neutral-300 px-3 py-2 disabled:opacity-50"
+          className={`${inputClass} disabled:opacity-50`}
         />
         <datalist id="village-suggestions">
           {villages.map((v) => <option key={v.id} value={v.name} />)}
@@ -311,11 +339,11 @@ export default function AddEditPlace() {
       </label>
 
       {def && def.fields.length > 0 && (
-        <fieldset className="flex flex-col gap-3 rounded-md border border-neutral-200 p-3">
-          <legend className="px-1 text-sm font-medium">{def.label} details</legend>
+        <fieldset className="flex flex-col gap-3 rounded-xl border border-ink/10 p-3.5">
+          <legend className="px-1 text-[13px] font-semibold">{def.label} details</legend>
           {def.fields.map((f) => (
-            <label key={f.key} className="flex flex-col gap-1 text-sm">
-              {f.type !== 'boolean' && f.label}
+            <label key={f.key} className="flex flex-col gap-1.5 text-sm">
+              {f.type !== 'boolean' && <span className={labelClass}>{f.label}</span>}
               {f.type === 'boolean' && (
                 <span className="flex items-center gap-2">
                   <input
@@ -330,14 +358,14 @@ export default function AddEditPlace() {
                 <input
                   value={(attributes[f.key] as string) ?? ''}
                   onChange={(e) => setAttributes({ ...attributes, [f.key]: e.target.value })}
-                  className="rounded-md border border-neutral-300 px-3 py-2"
+                  className={inputClass}
                 />
               )}
               {f.type === 'select' && (
                 <select
                   value={(attributes[f.key] as string) ?? ''}
                   onChange={(e) => setAttributes({ ...attributes, [f.key]: e.target.value })}
-                  className="rounded-md border border-neutral-300 px-3 py-2"
+                  className={inputClass}
                 >
                   <option value="" disabled>Select…</option>
                   {f.options?.map((o) => <option key={o} value={o}>{o}</option>)}
@@ -358,7 +386,12 @@ export default function AddEditPlace() {
                             [f.key]: selected ? current.filter((v) => v !== o) : [...current, o],
                           })
                         }}
-                        className={`rounded-full border px-3 py-1 text-xs ${selected ? 'border-neutral-900 bg-neutral-900 text-white' : 'border-neutral-300'}`}
+                        className="rounded-full border px-3 py-1 text-xs font-medium"
+                        style={{
+                          background: selected ? 'var(--color-ink)' : 'var(--color-surface)',
+                          color: selected ? 'var(--color-surface)' : 'var(--color-ink)',
+                          borderColor: selected ? 'var(--color-ink)' : 'rgba(32,31,35,0.14)',
+                        }}
                       >
                         {o}
                       </button>
@@ -372,54 +405,66 @@ export default function AddEditPlace() {
       )}
 
       {def?.showPhone && (
-        <label className="flex flex-col gap-1 text-sm">
-          Phone (optional)
+        <label className="flex flex-col gap-1.5">
+          <span className={labelClass}>Phone (optional)</span>
           <input
             type="tel"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             pattern={PHONE_PATTERN}
             title="Digits only, optionally with +, spaces, dashes, or parentheses"
-            className="rounded-md border border-neutral-300 px-3 py-2"
+            className={inputClass}
           />
         </label>
       )}
       {def?.showWhatsapp && (
-        <label className="flex flex-col gap-1 text-sm">
-          WhatsApp (optional)
+        <label className="flex flex-col gap-1.5">
+          <span className={labelClass}>WhatsApp (optional)</span>
           <input
             type="tel"
             value={whatsapp}
             onChange={(e) => setWhatsapp(e.target.value)}
             pattern={PHONE_PATTERN}
             title="Digits only, optionally with +, spaces, dashes, or parentheses"
-            className="rounded-md border border-neutral-300 px-3 py-2"
+            className={inputClass}
           />
         </label>
       )}
       {def?.showPriceRange && (
-        <label className="flex flex-col gap-1 text-sm">
-          Price range (optional)
-          <input value={priceRange} onChange={(e) => setPriceRange(e.target.value)} placeholder="e.g. ₹800–1200/night" className="rounded-md border border-neutral-300 px-3 py-2" />
+        <label className="flex flex-col gap-1.5">
+          <span className={labelClass}>Price range (optional)</span>
+          <input value={priceRange} onChange={(e) => setPriceRange(e.target.value)} placeholder="e.g. ₹800–1200/night" className={inputClass} />
         </label>
       )}
 
       {!isEdit && (
-        <label className="flex flex-col gap-1 text-sm">
-          Photos {def && def.minPhotos > 0 ? `(min ${def.minPhotos}, max ${MAX_PHOTOS})` : `(optional, max ${MAX_PHOTOS})`}
-          <input type="file" accept="image/*" capture="environment" multiple onChange={handlePhotoChange} />
-          {photos.length > 0 && <span className="text-neutral-500">{photos.length} selected</span>}
-        </label>
+        <div className="flex flex-col gap-1.5">
+          <span className={labelClass}>
+            Photos {def && def.minPhotos > 0 ? `(min ${def.minPhotos}, max ${MAX_PHOTOS})` : `(optional, max ${MAX_PHOTOS})`}
+          </span>
+          <div className="flex flex-wrap gap-2.5">
+            {photos.map((file, i) => (
+              <img key={i} src={URL.createObjectURL(file)} alt="" className="h-16 w-16 rounded-[10px] border border-ink/10 object-cover" />
+            ))}
+            <label className="flex h-16 w-16 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-[10px] border-[1.5px] border-dashed border-ink/20 bg-surface hover:border-accent">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8a8791" strokeWidth="1.8" strokeLinecap="round">
+                <rect x="3.5" y="6.5" width="17" height="13" rx="2.5" /><circle cx="12" cy="13" r="3.4" /><path d="M8.5 6.5L10 4h4l1.5 2.5" />
+              </svg>
+              <span className="text-[9.5px] font-semibold text-muted-light">Add</span>
+              <input type="file" accept="image/*" capture="environment" multiple onChange={handlePhotoChange} className="hidden" />
+            </label>
+          </div>
+        </div>
       )}
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-danger">{error}</p>}
 
       <button
         type="submit"
         disabled={submitting}
-        className="rounded-md bg-neutral-900 px-3 py-2 text-sm text-white disabled:opacity-50"
+        className="mt-1 rounded-[11px] bg-accent px-4 py-3 text-sm font-semibold text-surface disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {submitting ? (uploadProgress ?? 'Submitting…') : isEdit ? 'Save changes' : 'Submit'}
+        {submitting ? (uploadProgress ?? 'Submitting…') : isEdit ? 'Save changes' : 'Save place'}
       </button>
     </form>
   )

@@ -1,5 +1,5 @@
 import { Fragment, useCallback, useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/useAuth'
 import { categoryDef } from '../lib/categories'
@@ -10,6 +10,8 @@ const REPORT_REASONS = ['spam', 'incorrect', 'closed', 'duplicate'] as const
 export default function Place() {
   const { placeId } = useParams()
   const { session, configured } = useAuth()
+  const location = useLocation()
+  const navigate = useNavigate()
 
   const [place, setPlace] = useState<PlaceT | null>(null)
   const [photos, setPhotos] = useState<PlacePhoto[]>([])
@@ -92,7 +94,12 @@ export default function Place() {
           <h1 className="text-2xl font-medium">{place.name}</h1>
           <p className="text-sm text-neutral-500">{def?.label ?? place.category}</p>
         </div>
-        <Link to={`/place/${place.id}/edit`} className="text-sm text-neutral-500 underline">Edit</Link>
+        <button
+          onClick={() => navigate(`/place/${place.id}/edit`, { state: { background: location } })}
+          className="text-sm text-neutral-500 underline"
+        >
+          Edit
+        </button>
       </div>
 
       {photos.length > 0 && (

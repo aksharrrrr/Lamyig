@@ -9,6 +9,19 @@ import { CATEGORIES } from '../lib/categories'
 import { CATEGORY_ICONS } from '../lib/categoryIcons'
 import type { Region } from '../lib/types'
 
+const CATEGORY_FILTER_KEY = 'lamyig:selectedCategories'
+
+function loadStoredCategories(): Set<string> {
+  try {
+    const raw = localStorage.getItem(CATEGORY_FILTER_KEY)
+    if (raw) return new Set(JSON.parse(raw))
+  } catch {
+    // ignore malformed/unavailable storage, fall through to the default
+  }
+  // First-time visitors see homestays only, not everything at once.
+  return new Set(['homestay'])
+}
+
 export default function Home() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -18,7 +31,7 @@ export default function Home() {
   const mapRef = useRef<MapHandle>(null)
 
   const [regions, setRegions] = useState<Region[]>([])
-  const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set())
+  const [selectedCategories, setSelectedCategories] = useState<Set<string>>(loadStoredCategories)
 
   useEffect(() => {
     if (!supabase) return
@@ -32,14 +45,13 @@ export default function Home() {
       const next = new Set(current)
       if (next.has(value)) next.delete(value)
       else next.add(value)
+      localStorage.setItem(CATEGORY_FILTER_KEY, JSON.stringify([...next]))
       return next
     })
   }
 
-  // No categories selected = show everything; otherwise show only the selected ones.
-  const visiblePlaces = selectedCategories.size === 0
-    ? places
-    : places.filter((p) => selectedCategories.has(p.category))
+  // No categories selected = no pins - selection is opt-in, not opt-out.
+  const visiblePlaces = places.filter((p) => selectedCategories.has(p.category))
 
   function openOverlay(path: string) {
     navigate(path, { state: { background: location } })
@@ -49,7 +61,7 @@ export default function Home() {
 
   return (
     <div className="relative h-full w-full overflow-hidden">
-      <Map ref={mapRef} places={visiblePlaces} onSelectPlace={(id) => navigate(`/place/${id}`)} />
+      <Map ref={mapRef} places={visiblePlaces} onSelectPlace={(id) => openOverlay(`/place/${id}`)} />
 
       {/* Subtle vignette so floating light UI stays legible over any map color underneath */}
       <div

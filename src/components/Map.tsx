@@ -5,6 +5,34 @@ import 'maplibre-gl/dist/maplibre-gl.css'
 const INDIA_CENTER: [number, number] = [78.6569, 22.9734]
 const INDIA_ZOOM = 4.2
 
+// Same path data as lib/categoryIcons.tsx, as raw SVG markup — markers are
+// built as plain DOM nodes for MapLibre, outside the React tree, so the
+// React icon components can't be rendered directly here.
+const CATEGORY_ICON_SVG: Record<string, string> = {
+  homestay: '<path d="M4 11.5 12 5l8 6.5"/><path d="M6.5 10.2V19h11v-8.8"/>',
+  mechanic: '<path d="M12 4l6.9 4v8L12 20l-6.9-4V8z"/><circle cx="12" cy="12" r="2.6"/>',
+  fuel: '<rect x="5.5" y="4.5" width="8.5" height="15" rx="1.5"/><path d="M8 8h3.5"/><path d="M14 10.5h1.6a1.6 1.6 0 0 1 1.6 1.6v3.4a1.3 1.3 0 0 0 2.6 0V9l-1.7-2"/><path d="M4 19.5h11.5"/>',
+  toilet: '<rect x="4" y="4.5" width="16" height="15" rx="3.5"/><text x="12" y="15.3" text-anchor="middle" font-size="8.5" font-weight="700" fill="#ffffff" font-family="inherit">WC</text>',
+  camping: '<path d="M12 5 4.5 19h15z"/><path d="M9.5 19 12 14l2.5 5"/>',
+}
+
+function createMarkerElement(category: string): HTMLDivElement {
+  const el = document.createElement('div')
+  el.style.width = '32px'
+  el.style.height = '32px'
+  el.style.borderRadius = '50%'
+  el.style.background = 'var(--color-accent)'
+  el.style.border = '2.5px solid #ffffff'
+  el.style.boxShadow = '0 4px 12px rgba(30,20,45,0.30)'
+  el.style.display = 'flex'
+  el.style.alignItems = 'center'
+  el.style.justifyContent = 'center'
+  el.style.cursor = 'pointer'
+  const inner = CATEGORY_ICON_SVG[category] ?? ''
+  el.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`
+  return el
+}
+
 export interface PlaceMarker {
   id: string
   name: string
@@ -90,7 +118,7 @@ const Map = forwardRef<MapHandle, MapProps>(function Map({ places = [], onSelect
       detailsButton.onclick = () => onSelectPlace?.(place.id)
       popupNode.appendChild(detailsButton)
 
-      const marker = new maplibregl.Marker()
+      const marker = new maplibregl.Marker({ element: createMarkerElement(place.category) })
         .setLngLat([place.lng, place.lat])
         .setPopup(new maplibregl.Popup({ offset: 24 }).setDOMContent(popupNode))
         .addTo(map)

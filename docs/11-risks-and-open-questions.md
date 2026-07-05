@@ -4,18 +4,21 @@
 
 Raw ideas from live testing (2026-07-04), explicitly not locked in yet. Captured here so they aren't lost before being finalized; do not treat any of this as decided the way `14-decision-log.md` entries are.
 
-- **Verified-count display** — "Last verified [date]" no longer shows "by N riders" in the UI (done). The underlying count (`places.verified_count`) is still tracked in the database either way; only the display changed.
-- **Pin interaction** — clicking a map pin should open an overlay *on top of the map* with only the essential details (exact field set still to be decided), not the current small MapLibre popup-plus-link-to-a-separate-page pattern.
-- **Add Place as an overlay, not a page** — clicking "+ Add place" (while signed in) should open a form centered on top of the homepage, not navigate away. Vertical layout, sized to avoid scrolling, back button top-left, closing by clicking outside. Conceptually a stack of layers over the homepage (add form, profile, pin details) rather than separate routes.
-- **Profile as an overlay too** — same pattern as Add Place: a smaller popup over the homepage, not a full page.
-- **Post-submit flow** — after submitting a new place, land back on the map with a toast ("Place added" / error message) instead of the current behavior (navigating to the new Place's detail page).
-- **Toasts generally** — success/error feedback across the app should move toward toast notifications rather than inline status text, where that reads better.
-- **Per-category map icons** — each category should get a distinct pin icon instead of every place using the same default MapLibre marker.
-- **Responsive layout** — needs to work across phone sizes, not just desktop. Nothing has been explicitly tested on mobile viewports yet.
+- ~~Verified-count display~~ — done: "Last verified [date]" no longer shows "by N riders."
+- ~~Pin interaction~~ — done: clicking a map pin opens an overlay (Place detail) on top of the map, styled consistently with the rest of the app.
+- ~~Add Place as an overlay~~ — done, via React Router's background-location pattern. Centered modal on desktop, bottom sheet on mobile.
+- ~~Profile as an overlay~~ — done, same pattern.
+- ~~Post-submit flow~~ — done: successful add shows a toast and returns to the map instead of navigating to the new Place's page.
+- ~~Toasts generally~~ — a real toast system exists (`lib/useToast.tsx`) and is used for add-success, locate, and the "no map location yet" fallback. Verify/report/community-note feedback still use inline status text, not toasts — could move over later, not urgent.
+- ~~Per-category map icons~~ — done: pins and the category filter cluster both use real per-category icons.
+- **Responsive layout** — still not explicitly tested on real mobile viewports (only desktop-width automated checks so far). The bottom-sheet vs. modal split in `Overlay.tsx` is breakpoint-based (`useIsMobile`, <700px) but hasn't been verified on an actual phone-sized screen yet.
 - **Community guideline** — "no self-promotion, this is travel-community utility" should become an explicit, visible rule somewhere (contribution guidelines / community notes policy), not just an implicit norm.
 - **Light gamification** — deliberately deferred until after core MVP ships, and even then framed as "light" — this doesn't reopen D-011 (no points/badges/leaderboards for V1), it's a note for a possible post-MVP phase.
 - **Roles (e.g. admin/approver)** — not needed yet at zero/low volume. Once there are active users, introduce a role that can approve places; today nothing is gated behind approval (matches D-012 — auto-publish, no review queue).
 - **Spam handling** — will need real handling as volume grows, beyond today's manual "Report" review (D-012). No mechanism designed yet.
+- **Itinerary + best-time-to-visit per region** — idea floated 2026-07-05, explicitly "in future," not this sprint. Would live on the (still-unbuilt) Region page rather than the map itself. No design yet.
+- **Search beyond regions** — only region names are wired to the search bar right now (typing "Spiti" flies the map there). Matching villages and individual places too is real, larger scope, deliberately not attempted in the same pass as the region fly-to work.
+- **Region dropdown on hover** — floated 2026-07-05 alongside the region fly-to work, explicitly deferred: for now clicking a region chip just flies the map there, no hover dropdown with sub-content (villages, stats, etc.). Revisit once there's a concrete idea of what belongs in it.
 
 ## Confirmed (not just noted) from the same session
 

@@ -167,6 +167,18 @@ On first open, the app shows a live map of India with no forced setup; if locati
 
 **Update 2026-07-04:** Shipping with email/password only for now — Google OAuth needs a Google Cloud Console OAuth client set up first (free, but a setup step not yet done). The "Continue with Google" button is pulled from the UI rather than left in as a dead button. Google OAuth stays on the roadmap and slots back in once that setup happens; this isn't a reversal of the decision, just a sequencing choice.
 
+---
+
+## D-014 — Region "fly to" is a separate feature from offline download, and ships first
+
+**Date:** 2026-07-05 · **Status:** Final
+
+**Decision:** Clicking a region chip, or matching one via search, flies the map camera to that region (MapLibre `flyTo`, using new `center_lat`/`center_lng`/`default_zoom` columns on `regions`). This ships now, independently of the offline-download work described in D-005.
+
+**Reasoning:** The two got floated together ("downloading seems a very big task, is it possible to just show the area selected instead") but they solve different problems. D-005's offline requirement is about the app working with *zero connectivity* — that's a multi-week build (service worker, tile caching, photo caching, sync-on-reconnect) that doesn't get smaller by scoping it down; a region without cached tiles/data still doesn't work offline no matter how the UI presents it. "Fly to region" is a navigation convenience that requires network the whole time — it doesn't satisfy the offline requirement and was never going to. Decoupling them means the fast, real value (better map navigation) ships now instead of waiting on or being confused with the much larger offline effort.
+
+**Alternatives considered:** Building a lightweight "highlighted area" as a stand-in for real offline support (rejected: would look like offline support was implemented when it wasn't — misleading, and doesn't reduce the actual remaining offline work by a single line of code). Reversing/downgrading D-005 to drop the offline requirement entirely (rejected: not proposed by the user, who asked how to reduce near-term scope, not whether the requirement itself should go away; D-005's founding reasoning — Baatal, zero network — hasn't changed).
+
 **Alternatives considered:** Add phone/OTP (rejected for V1: cost + reliability, both discussed above; can revisit once there's usage data to justify the SMS spend).
 
 ---

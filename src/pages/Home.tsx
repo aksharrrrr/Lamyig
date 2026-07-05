@@ -105,7 +105,7 @@ export default function Home() {
       </div>
 
       {/* Category cluster */}
-      <div className="absolute bottom-[22px] left-1/2 z-10 flex max-w-[min(560px,calc(100vw-150px))] flex-wrap justify-center gap-1 rounded-3xl border border-ink/[0.06] bg-surface/95 px-3 py-2.5 shadow-xl backdrop-blur-sm">
+      <div className="absolute bottom-[22px] left-1/2 z-10 flex max-w-[min(560px,calc(100vw-150px))] -translate-x-1/2 flex-wrap justify-center gap-1 rounded-3xl border border-ink/[0.06] bg-surface/95 px-3 py-2.5 shadow-xl backdrop-blur-sm">
         {CATEGORIES.map((c) => {
           const selected = selectedCategories.has(c.value)
           const CategoryIcon = CATEGORY_ICONS[c.value]

@@ -1,17 +1,22 @@
 import { Fragment, useCallback, useEffect, useState } from 'react'
-import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams, type Location } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/useAuth'
 import { categoryDef } from '../lib/categories'
 import type { CommunityNote, Place as PlaceT, PlacePhoto } from '../lib/types'
 
 const REPORT_REASONS = ['spam', 'incorrect', 'closed', 'duplicate'] as const
+const pillButtonClass = 'rounded-full border border-ink/10 bg-surface px-3.5 py-1.5 text-[13px] font-medium text-ink disabled:opacity-50'
 
 export default function Place() {
   const { placeId } = useParams()
   const { session, configured } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
+  // If we're already rendered as an overlay (opened from Home), our own
+  // background is Home's location - reuse that for Edit instead of nesting
+  // an overlay on top of this one, which would unmount Home underneath it.
+  const background = (location.state as { background?: Location } | null)?.background ?? location
 
   const [place, setPlace] = useState<PlaceT | null>(null)
   const [photos, setPhotos] = useState<PlacePhoto[]>([])
@@ -73,30 +78,24 @@ export default function Place() {
   }
 
   if (!configured) {
-    return (
-      <div className="p-6">
-        <h1 className="text-2xl font-medium">Place</h1>
-        <p className="mt-2 text-neutral-500">Backend isn't connected yet.</p>
-      </div>
-    )
+    return <p className="text-sm text-muted">Backend isn't connected yet.</p>
   }
 
-  if (!place) return <div className="p-6 text-neutral-500">Loading…</div>
+  if (!place) return <p className="text-sm text-muted">Loading…</p>
 
   const def = categoryDef(place.category)
   const publicUrl = (path: string) => supabase!.storage.from('place-photos').getPublicUrl(path).data.publicUrl
 
   return (
-    <div className="mx-auto max-w-2xl p-6">
-      <Link to="/" className="text-sm text-neutral-500 underline">&larr; Back to map</Link>
-      <div className="mt-2 flex items-start justify-between">
+    <div>
+      <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-medium">{place.name}</h1>
-          <p className="text-sm text-neutral-500">{def?.label ?? place.category}</p>
+          <h1 className="text-2xl font-bold tracking-tight">{place.name}</h1>
+          <p className="text-sm text-muted">{def?.label ?? place.category}</p>
         </div>
         <button
-          onClick={() => navigate(`/place/${place.id}/edit`, { state: { background: location } })}
-          className="text-sm text-neutral-500 underline"
+          onClick={() => navigate(`/place/${place.id}/edit`, { state: { background } })}
+          className="text-sm font-medium text-accent underline"
         >
           Edit
         </button>
@@ -105,62 +104,58 @@ export default function Place() {
       {photos.length > 0 && (
         <div className="mt-4 flex gap-2 overflow-x-auto">
           {photos.map((p) => (
-            <img key={p.id} src={publicUrl(p.storage_path)} alt={place.name} className="h-40 w-56 shrink-0 rounded-md object-cover" />
+            <img key={p.id} src={publicUrl(p.storage_path)} alt={place.name} className="h-40 w-56 shrink-0 rounded-xl object-cover" />
           ))}
         </div>
       )}
 
-      {place.description && <p className="mt-4 whitespace-pre-wrap">{place.description}</p>}
+      {place.description && <p className="mt-4 whitespace-pre-wrap text-sm">{place.description}</p>}
 
       <dl className="mt-4 grid grid-cols-2 gap-2 text-sm">
-        {place.price_range && <><dt className="text-neutral-500">Price</dt><dd>{place.price_range}</dd></>}
-        {place.phone && <><dt className="text-neutral-500">Phone</dt><dd>{place.phone}</dd></>}
-        {place.whatsapp && <><dt className="text-neutral-500">WhatsApp</dt><dd>{place.whatsapp}</dd></>}
+        {place.price_range && <><dt className="text-muted">Price</dt><dd>{place.price_range}</dd></>}
+        {place.phone && <><dt className="text-muted">Phone</dt><dd>{place.phone}</dd></>}
+        {place.whatsapp && <><dt className="text-muted">WhatsApp</dt><dd>{place.whatsapp}</dd></>}
         {def?.fields.map((f) => {
           const value = place.attributes[f.key]
           if (value === undefined || value === '' || value === false) return null
           return (
             <Fragment key={f.key}>
-              <dt className="text-neutral-500">{f.label}</dt>
+              <dt className="text-muted">{f.label}</dt>
               <dd>{Array.isArray(value) ? value.join(', ') : String(value)}</dd>
             </Fragment>
           )
         })}
       </dl>
 
-      <p className="mt-4 text-sm text-neutral-500">
+      <p className="mt-4 text-sm text-muted">
         {place.last_verified_at
           ? `Last verified ${new Date(place.last_verified_at).toLocaleDateString()}`
           : 'Not yet verified'}
       </p>
 
       {session ? (
-        <div className="mt-4 flex gap-2">
-          <button
-            onClick={verify}
-            disabled={hasVerified}
-            className="rounded-md border border-neutral-300 px-3 py-1.5 text-sm disabled:opacity-50"
-          >
+        <div className="mt-4 flex flex-wrap gap-2">
+          <button onClick={verify} disabled={hasVerified} className={pillButtonClass}>
             {hasVerified ? 'You verified this' : 'Still accurate'}
           </button>
-          <select value={reportReason} onChange={(e) => setReportReason(e.target.value as typeof reportReason)} className="rounded-md border border-neutral-300 px-2 py-1.5 text-sm">
+          <select value={reportReason} onChange={(e) => setReportReason(e.target.value as typeof reportReason)} className={pillButtonClass}>
             {REPORT_REASONS.map((r) => <option key={r} value={r}>{r}</option>)}
           </select>
-          <button onClick={report} className="rounded-md border border-neutral-300 px-3 py-1.5 text-sm">Report</button>
+          <button onClick={report} className={pillButtonClass}>Report</button>
         </div>
       ) : (
-        <p className="mt-4 text-sm">
-          <Link to="/auth" className="underline">Sign in</Link> to verify, report, or edit.
+        <p className="mt-4 text-sm text-muted">
+          <Link to="/auth" className="font-medium text-accent underline">Sign in</Link> to verify, report, or edit.
         </p>
       )}
-      {status && <p className="mt-2 text-sm text-neutral-500">{status}</p>}
+      {status && <p className="mt-2 text-sm text-muted">{status}</p>}
 
-      <h2 className="mt-8 text-lg font-medium">Community notes</h2>
+      <h2 className="mt-8 text-[15px] font-bold">Community notes</h2>
       <div className="mt-2 flex flex-col gap-3">
         {notes.map((n) => (
-          <p key={n.id} className="rounded-md bg-neutral-100 p-3 text-sm">{n.body}</p>
+          <p key={n.id} className="rounded-xl bg-accent-light p-3 text-sm">{n.body}</p>
         ))}
-        {notes.length === 0 && <p className="text-sm text-neutral-500">No notes yet.</p>}
+        {notes.length === 0 && <p className="text-sm text-muted">No notes yet.</p>}
       </div>
       {session && (
         <div className="mt-3 flex gap-2">
@@ -168,12 +163,12 @@ export default function Place() {
             value={newNote}
             onChange={(e) => setNewNote(e.target.value)}
             placeholder="Stayed June 2026. Meals included. Cash only…"
-            className="flex-1 rounded-md border border-neutral-300 px-3 py-2 text-sm"
+            className="flex-1 rounded-full border border-ink/10 bg-surface px-4 py-2 text-sm outline-none focus:border-accent"
           />
-          <button onClick={submitNote} className="rounded-md bg-neutral-900 px-3 py-2 text-sm text-white">Post</button>
+          <button onClick={submitNote} className="rounded-full bg-accent px-4 py-2 text-sm font-semibold text-surface">Post</button>
         </div>
       )}
-      {noteStatus && <p className="mt-2 text-sm text-neutral-500">{noteStatus}</p>}
+      {noteStatus && <p className="mt-2 text-sm text-muted">{noteStatus}</p>}
     </div>
   )
 }

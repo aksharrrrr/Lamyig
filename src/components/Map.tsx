@@ -107,14 +107,14 @@ const Map = forwardRef<MapHandle, MapProps>(function Map({ places = [], onSelect
 
     markersRef.current = validPlaces.map((place) => {
       const popupNode = document.createElement('div')
-      popupNode.className = 'text-sm'
+      popupNode.style.minWidth = '160px'
       popupNode.innerHTML = `
-        <div class="font-medium">${escapeHtml(place.name)}</div>
-        <div class="text-muted mb-2">${escapeHtml(place.category)}</div>
+        <div style="font-weight:600;font-size:14px;color:var(--color-ink)">${escapeHtml(place.name)}</div>
+        <div style="font-size:12.5px;color:var(--color-muted);margin-bottom:8px">${escapeHtml(place.category)}</div>
       `
       const detailsButton = document.createElement('button')
       detailsButton.textContent = 'More details'
-      detailsButton.className = 'text-accent underline text-sm'
+      detailsButton.style.cssText = 'background:var(--color-accent-light);color:var(--color-accent-text);font-size:12.5px;font-weight:600;border:none;border-radius:999px;padding:6px 12px;cursor:pointer'
       detailsButton.onclick = () => onSelectPlace?.(place.id)
       popupNode.appendChild(detailsButton)
 

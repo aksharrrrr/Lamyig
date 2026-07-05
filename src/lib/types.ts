@@ -15,6 +15,8 @@ export interface Village {
   slug: string
   name: string
   region_id: string
+  center_lat: number | null
+  center_lng: number | null
 }
 
 export interface Place {

@@ -7,7 +7,9 @@ import { usePlacesStore } from '../lib/usePlacesStore'
 import { useToast } from '../lib/useToast'
 import { CATEGORIES } from '../lib/categories'
 import { CATEGORY_ICONS } from '../lib/categoryIcons'
-import type { Region } from '../lib/types'
+import type { Region, Village } from '../lib/types'
+
+const VILLAGE_ZOOM = 12
 
 const CATEGORY_FILTER_KEY = 'lamyig:selectedCategories'
 
@@ -31,6 +33,7 @@ export default function Home() {
   const mapRef = useRef<MapHandle>(null)
 
   const [regions, setRegions] = useState<Region[]>([])
+  const [villages, setVillages] = useState<Village[]>([])
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(loadStoredCategories)
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -38,6 +41,13 @@ export default function Home() {
     if (!supabase) return
     supabase.from('regions').select('*').order('name').then(({ data }) => {
       if (data) setRegions(data as Region[])
+    })
+    // Fetched once, unfiltered - just used to power search suggestions
+    // (village count is small enough that this is cheaper than a query per
+    // keystroke, and it's the same free ilike-on-Postgres approach as
+    // regions, not a separate search service).
+    supabase.from('villages').select('*').then(({ data }) => {
+      if (data) setVillages(data as Village[])
     })
   }, [])
 
@@ -67,15 +77,34 @@ export default function Home() {
     setSearchQuery('')
   }
 
-  // Search currently only matches regions (flies the map there). Matching
-  // villages/places too is real scope for later - the search bar's
-  // placeholder still says all three, but only regions are wired up so far.
-  const matchingRegions = searchQuery.trim()
-    ? regions.filter((r) => r.name.toLowerCase().includes(searchQuery.trim().toLowerCase())).slice(0, 5)
-    : []
+  function flyToVillage(village: Village) {
+    if (village.center_lat == null || village.center_lng == null) {
+      showToast(`No map location set for ${village.name} yet`)
+      return
+    }
+    mapRef.current?.flyTo(village.center_lat, village.center_lng, VILLAGE_ZOOM)
+    setSearchQuery('')
+  }
+
+  // Search matches regions and villages (flies the map to whichever is
+  // picked). Matching individual places too is real, separate scope for
+  // later - the search bar's placeholder mentions all three, but only
+  // regions/villages are wired up so far.
+  const query = searchQuery.trim().toLowerCase()
+  const matchingRegions = query ? regions.filter((r) => r.name.toLowerCase().includes(query)) : []
+  const matchingVillages = query ? villages.filter((v) => v.name.toLowerCase().includes(query)) : []
+  const searchResults = [
+    ...matchingRegions.map((r) => ({ kind: 'region' as const, item: r })),
+    ...matchingVillages.map((v) => ({ kind: 'village' as const, item: v })),
+  ].slice(0, 6)
+
+  function selectSearchResult(result: (typeof searchResults)[number]) {
+    if (result.kind === 'region') flyToRegion(result.item)
+    else flyToVillage(result.item)
+  }
 
   function handleSearchKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'Enter' && matchingRegions.length > 0) flyToRegion(matchingRegions[0])
+    if (e.key === 'Enter' && searchResults.length > 0) selectSearchResult(searchResults[0])
   }
 
   const initials = session?.user.email ? session.user.email.slice(0, 2).toUpperCase() : null
@@ -138,18 +167,19 @@ export default function Home() {
             className="min-w-0 flex-1 bg-transparent text-[14.5px] outline-none placeholder:text-muted-light"
           />
         </div>
-        {matchingRegions.length > 0 && (
+        {searchResults.length > 0 && (
           <div className="mt-2 overflow-hidden rounded-2xl border border-ink/[0.06] bg-surface/95 shadow-lg">
-            {matchingRegions.map((r) => (
+            {searchResults.map((result) => (
               <button
-                key={r.id}
-                onClick={() => flyToRegion(r)}
+                key={`${result.kind}-${result.item.id}`}
+                onClick={() => selectSearchResult(result)}
                 className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-[14px] hover:bg-ink/5"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8a8791" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 21s-7-6.5-7-11.5A7 7 0 0 1 19 9.5C19 14.5 12 21 12 21z" /><circle cx="12" cy="9.5" r="2.2" />
                 </svg>
-                {r.name}
+                {result.item.name}
+                <span className="text-[12px] text-muted-light">{result.kind === 'region' ? 'Region' : 'Village'}</span>
               </button>
             ))}
           </div>

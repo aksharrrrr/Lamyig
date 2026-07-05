@@ -73,7 +73,7 @@ async function ensureVillage(regionId, village, cache) {
   if (cache[key]) return cache[key]
   const { data: existing } = await supabase.from('villages').select('id').eq('region_id', regionId).eq('slug', village.slug).maybeSingle()
   if (existing) { cache[key] = existing.id; return existing.id }
-  const { data: created, error } = await supabase.from('villages').insert({ name: village.name, slug: village.slug, region_id: regionId }).select('id').single()
+  const { data: created, error } = await supabase.from('villages').insert({ name: village.name, slug: village.slug, region_id: regionId, center_lat: village.lat, center_lng: village.lng }).select('id').single()
   if (error) throw error
   cache[key] = created.id
   return created.id

@@ -7,6 +7,7 @@ import { usePlacesStore } from '../lib/usePlacesStore'
 import { useToast } from '../lib/useToast'
 import { CATEGORIES } from '../lib/categories'
 import { CATEGORY_ICONS } from '../lib/categoryIcons'
+import { geocodeSearch, type GeocodeResult } from '../lib/geocode'
 import type { Region, Village } from '../lib/types'
 
 const VILLAGE_ZOOM = 12
@@ -36,6 +37,8 @@ export default function Home() {
   const [villages, setVillages] = useState<Village[]>([])
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(loadStoredCategories)
   const [searchQuery, setSearchQuery] = useState('')
+  const [osmResults, setOsmResults] = useState<GeocodeResult[]>([])
+  const [geocoding, setGeocoding] = useState(false)
 
   useEffect(() => {
     if (!supabase) return
@@ -86,21 +89,53 @@ export default function Home() {
     setSearchQuery('')
   }
 
-  // Search matches regions and villages (flies the map to whichever is
-  // picked). Matching individual places too is real, separate scope for
-  // later - the search bar's placeholder mentions all three, but only
-  // regions/villages are wired up so far.
+  // Search matches regions and villages first (real Lamyig content). If
+  // nothing local matches, it falls back to free OSM geocoding (Photon then
+  // Nominatim, see lib/geocode.ts) so you can still fly to any place name -
+  // clearly labeled "via OpenStreetMap" since Lamyig has no curated content
+  // there. Matching individual Places is still separate, later scope.
   const query = searchQuery.trim().toLowerCase()
   const matchingRegions = query ? regions.filter((r) => r.name.toLowerCase().includes(query)) : []
   const matchingVillages = query ? villages.filter((v) => v.name.toLowerCase().includes(query)) : []
-  const searchResults = [
-    ...matchingRegions.map((r) => ({ kind: 'region' as const, item: r })),
-    ...matchingVillages.map((v) => ({ kind: 'village' as const, item: v })),
-  ].slice(0, 6)
+  const localResultCount = matchingRegions.length + matchingVillages.length
 
-  function selectSearchResult(result: (typeof searchResults)[number]) {
+  useEffect(() => {
+    const q = searchQuery.trim()
+    if (q.length < 3 || localResultCount > 0) {
+      setOsmResults([])
+      return
+    }
+    setGeocoding(true)
+    // Debounced - both Photon and Nominatim are free public services with a
+    // "don't hammer us" fair-use expectation (see docs/15-free-tier-limits.md),
+    // so this only fires 450ms after typing pauses, not on every keystroke.
+    const timer = setTimeout(() => {
+      geocodeSearch(q).then(setOsmResults).finally(() => setGeocoding(false))
+    }, 450)
+    return () => { clearTimeout(timer); setGeocoding(false) }
+  }, [searchQuery, localResultCount])
+
+  type SearchResult =
+    | { kind: 'region'; key: string; item: Region }
+    | { kind: 'village'; key: string; item: Village }
+    | { kind: 'osm'; key: string; item: GeocodeResult }
+
+  const searchResults: SearchResult[] = query
+    ? [
+        ...matchingRegions.map((r): SearchResult => ({ kind: 'region', key: `region-${r.id}`, item: r })),
+        ...matchingVillages.map((v): SearchResult => ({ kind: 'village', key: `village-${v.id}`, item: v })),
+        ...osmResults.map((o, i): SearchResult => ({ kind: 'osm', key: `osm-${i}`, item: o })),
+      ].slice(0, 6)
+    : []
+
+  function selectSearchResult(result: SearchResult) {
     if (result.kind === 'region') flyToRegion(result.item)
-    else flyToVillage(result.item)
+    else if (result.kind === 'village') flyToVillage(result.item)
+    else {
+      mapRef.current?.flyTo(result.item.lat, result.item.lng, 11)
+      setSearchQuery('')
+      showToast('No Lamyig places here yet — be the first to add one')
+    }
   }
 
   function handleSearchKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
@@ -167,21 +202,26 @@ export default function Home() {
             className="min-w-0 flex-1 bg-transparent text-[14.5px] outline-none placeholder:text-muted-light"
           />
         </div>
-        {searchResults.length > 0 && (
+        {(searchResults.length > 0 || (geocoding && localResultCount === 0 && query.length >= 3)) && (
           <div className="mt-2 overflow-hidden rounded-2xl border border-ink/[0.06] bg-surface/95 shadow-lg">
             {searchResults.map((result) => (
               <button
-                key={`${result.kind}-${result.item.id}`}
+                key={result.key}
                 onClick={() => selectSearchResult(result)}
                 className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-[14px] hover:bg-ink/5"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8a8791" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 21s-7-6.5-7-11.5A7 7 0 0 1 19 9.5C19 14.5 12 21 12 21z" /><circle cx="12" cy="9.5" r="2.2" />
                 </svg>
-                {result.item.name}
-                <span className="text-[12px] text-muted-light">{result.kind === 'region' ? 'Region' : 'Village'}</span>
+                <span className="min-w-0 flex-1 truncate">{result.item.name}</span>
+                <span className="shrink-0 text-[12px] text-muted-light">
+                  {result.kind === 'region' ? 'Region' : result.kind === 'village' ? 'Village' : 'via OpenStreetMap'}
+                </span>
               </button>
             ))}
+            {searchResults.length === 0 && geocoding && (
+              <div className="px-4 py-2.5 text-[13px] text-muted-light">Searching…</div>
+            )}
           </div>
         )}
       </div>

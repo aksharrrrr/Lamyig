@@ -8,9 +8,9 @@ It is not a booking platform. It is a shared record of what travellers and local
 
 ## The name
 
-In Tibetan tradition, a *lamyig* (ལམ་ཡིག — "road writing") was a handwritten route guidebook. It described paths, stops, water sources, and dangers for pilgrims and travellers crossing the Himalaya. Guides to hidden valleys (*beyul*) were written as lamyigs.
+In Tibetan tradition, a *lamyig* (ལམ་ཡིག — "road writing") was a handwritten route guidebook. It described paths, stops, water sources, and dangers for pilgrims and travellers crossing the Himalaya — geography, history, and spiritual significance together, not just directions. Guides to hidden valleys (*beyul*) were written as lamyigs.
 
-This project is the community's lamyig, rebuilt for the offline-first internet.
+This project is the community's lamyig, rebuilt for the offline-first internet. The name is also the ambition, not just the etymology — see [issue #7](https://github.com/aksharrrrr/Lamyig/issues/7) for where this is meant to go.
 
 ## Status
 

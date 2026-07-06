@@ -9,10 +9,10 @@
   --color-ink: #201f23;
   --color-muted: #6f6c75;
   --color-muted-light: #8a8791;
-  --color-accent: oklch(0.55 0.15 300);
-  --color-accent-dark: oklch(0.49 0.15 300);
-  --color-accent-light: oklch(0.95 0.03 300);
-  --color-accent-text: oklch(0.42 0.15 300);
+  --color-accent: #B39F85;
+  --color-accent-dark: #96805f;
+  --color-accent-light: #e8dcc4;
+  --color-accent-text: #5f4f3a;
   --color-danger: oklch(0.52 0.16 25);
   --font-sans: "Instrument Sans", system-ui, sans-serif;
 }

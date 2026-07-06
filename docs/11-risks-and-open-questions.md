@@ -32,6 +32,7 @@ Repo is going public as the user's first open-source project — treat "don't ex
 - No API keys, tokens, or credentials get hardcoded anywhere — env vars only.
 - Anon key is meant to be public (it's RLS-gated, not a secret) — the real risk is a *missing or wrong* RLS policy exposing more than intended, not the key itself being visible.
 - Before any future commit, double-check nothing sensitive (real user data dumps, personal credentials, service-role keys) is staged.
+- ~~Security posture~~ — done: RLS boundaries verified live against prod (D-016, `SECURITY.md`), no holes found. Accepted open tradeoff: email confirmation off → spam/vandalism risk, not data-theft risk.
 
 ## Other open questions (pre-existing)
 

@@ -33,6 +33,18 @@ npm run dev
 
 By contributing code, you agree it's licensed under this repo's [MIT License](LICENSE).
 
+### Branching & review
+
+`main` is protected and auto-deploys straight to production (lamyig.vercel.app) on every push, so it isn't a free-for-all:
+
+1. Branch off `main`: `git checkout -b fix/short-description` (or `feat/...`).
+2. Open a pull request against `main` instead of pushing directly. GitHub branch protection enforces this for anyone without admin rights on the repo.
+3. Describe what changed and why in the PR body — link the relevant `docs/14-decision-log.md` entry if the change touches something already decided.
+4. Get it reviewed before merging. Right now that's the maintainer signing off; as more regular contributors join, this moves to requiring at least one approval from someone other than the author.
+5. Squash-merge once approved. Delete the branch after.
+
+Force-pushes and branch deletion are disabled on `main` at the repo level — that's not a suggestion, GitHub blocks it outright.
+
 ## Have a question or an idea that isn't a PR yet?
 
 Open a GitHub issue. Use the `limitation` label for free-tier constraints of a service we depend on, `vision` for long-term direction, or no label if neither fits.

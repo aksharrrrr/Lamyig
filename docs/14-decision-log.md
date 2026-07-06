@@ -193,6 +193,30 @@ On first open, the app shows a live map of India with no forced setup; if locati
 
 ---
 
+## D-016 — Security posture reviewed live against prod; email confirmation stays off despite the tradeoff
+
+**Date:** 2026-07-06 · **Status:** Final
+
+**Decision:** After a live probe of the deployed app's RLS policies (see `SECURITY.md` for the full table), no real security hole was found — every anon/authenticated write-boundary and cross-user access attempt tried was correctly blocked, and no raw-SQL injection surface exists in the client. Email confirmation stays off (per the earlier standing instruction not to re-enable it), accepted explicitly as trading data-theft risk (near zero, RLS handles that) for content-spam/vandalism risk (real — trivial mass account creation combined with D-012's auto-publish wiki-editing).
+
+**Reasoning:** RLS is the *only* access-control layer here (no app server in front of Supabase), so it needed verifying against the real deployed DB with the real anon key, not just read off the migration files. It held. The one thing testing can't fix is the auth-friction tradeoff itself — that's a product call, not a bug, and was already made deliberately. Writing it into `SECURITY.md` (rather than leaving it as tribal knowledge) means the tradeoff is visible and revisitable rather than silently forgotten.
+
+**Alternatives considered:** Re-enabling email confirmation now (rejected: directly contradicts the explicit standing instruction; also premature at near-zero traffic — the friction cost is real today and the abuse cost isn't yet). Adding app-level rate limiting immediately (rejected: no server to put it on without adding real infra cost/complexity, which fails D-010's zero-cost constraint; noted in `SECURITY.md` as a "before real growth" item instead of blocking on it now).
+
+---
+
+## D-017 — PWA basics via vite-plugin-pwa; offline map data is still a separate, unbuilt feature
+
+**Date:** 2026-07-06 · **Status:** Final
+
+**Decision:** Lamyig is installable as a PWA (manifest + auto-updating service worker via `vite-plugin-pwa`, `vite.config.ts`) — "Add to Home Screen" on mobile, standalone window on desktop. The service worker precaches the app shell (JS/CSS/HTML/icons) for fast repeat loads and offline-tolerant boot. It does **not** cache map tiles, place data, or photos — those still require a live connection, same as before. App icon is a placeholder: the same purple-square "L" mark already used in the header, not a final logo.
+
+**Reasoning:** Installability and fast reloads are cheap to add (one dev dependency, zero ongoing cost — fits D-010) and give a real "feels like an app" improvement immediately. Conflating this with true offline support would misrepresent what shipped — D-005's offline-map requirement (Baatal, zero network, real data available with no signal) needs a much larger build (tile caching strategy, place/photo sync, cache invalidation) that this doesn't replace or shrink, exactly as D-014 already drew this line for "fly to region" vs. offline download.
+
+**Alternatives considered:** Hand-rolled service worker (rejected: `vite-plugin-pwa` wraps Workbox, which is the standard, well-tested approach — no reason to hand-roll cache logic for an app-shell-only PWA). Waiting for the real logo before adding icons (rejected: blocks a cheap, independent win on an unrelated, harder task; icon file is trivially swappable later, matching how the header's own "L" mark is already an acknowledged placeholder).
+
+---
+
 ## Open questions
 
 - **Data license:** should Lamyig's place/region/village data be ODbL-compatible so it can flow back into OpenStreetMap? Separate from D-015's code license.

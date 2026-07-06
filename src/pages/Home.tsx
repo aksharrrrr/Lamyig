@@ -9,6 +9,7 @@ import { CATEGORIES } from '../lib/categories'
 import { CATEGORY_ICONS } from '../lib/categoryIcons'
 import { geocodeSearch, type GeocodeResult } from '../lib/geocode'
 import type { Region, Village } from '../lib/types'
+import headerMark from '../assets/header-mark.png'
 
 const VILLAGE_ZOOM = 12
 
@@ -158,20 +159,24 @@ export default function Home() {
       {/* Top bar: logo + region chips */}
       <div className="absolute left-1/2 top-[18px] z-10 flex max-w-[min(920px,calc(100vw-148px))] -translate-x-1/2 items-center gap-2.5 rounded-full border border-ink/[0.06] bg-surface/95 px-2.5 py-2 shadow-lg backdrop-blur-sm">
         <div className="flex flex-none items-center gap-2 px-1">
-          <div className="flex h-7 w-7 items-center justify-center rounded-[9px] bg-accent text-[15px] font-bold text-surface">L</div>
+          <img src={headerMark} alt="" className="h-7 w-7 rounded-[9px]" />
           <span className="text-[15px] font-bold tracking-tight">Lamyig</span>
         </div>
         <div className="h-[22px] w-px flex-none bg-ink/10" />
-        <div className="flex gap-1.5 overflow-x-auto p-0.5" style={{ scrollbarWidth: 'none' }}>
-          {regions.map((r) => (
-            <button
-              key={r.id}
-              onClick={() => flyToRegion(r)}
-              className="flex-none rounded-full px-3.5 py-1.5 text-[13px] font-medium text-ink hover:bg-ink/5"
-            >
-              {r.name}
-            </button>
-          ))}
+        <div className="relative min-w-0">
+          <div className="flex gap-1.5 overflow-x-auto p-0.5" style={{ scrollbarWidth: 'none' }}>
+            {regions.map((r) => (
+              <button
+                key={r.id}
+                onClick={() => flyToRegion(r)}
+                className="flex-none rounded-full px-3.5 py-1.5 text-[13px] font-medium text-ink hover:bg-ink/5"
+              >
+                {r.name}
+              </button>
+            ))}
+          </div>
+          {/* Hints that the pill row scrolls when it overflows the header on narrow/mobile widths */}
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-surface/95 to-transparent" />
         </div>
       </div>
 
@@ -227,8 +232,10 @@ export default function Home() {
         )}
       </div>
 
-      {/* Category cluster */}
-      <div className="absolute bottom-[22px] left-1/2 z-10 flex max-w-[min(560px,calc(100vw-150px))] -translate-x-1/2 flex-wrap justify-center gap-1 rounded-3xl border border-ink/[0.06] bg-surface/95 px-3 py-2.5 shadow-xl backdrop-blur-sm">
+      {/* Category cluster. Extra bottom clearance below the sm breakpoint so
+          it doesn't sit on top of MapLibre's required attribution bar, which
+          spans the full viewport width on narrow (phone) screens. */}
+      <div className="absolute bottom-[56px] left-1/2 z-10 flex max-w-[min(560px,calc(100vw-150px))] -translate-x-1/2 flex-wrap justify-center gap-1 rounded-3xl border border-ink/[0.06] bg-surface/95 px-3 py-2.5 shadow-xl backdrop-blur-sm sm:bottom-[22px]">
         {CATEGORIES.map((c) => {
           const selected = selectedCategories.has(c.value)
           const CategoryIcon = CATEGORY_ICONS[c.value]

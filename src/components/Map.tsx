@@ -82,7 +82,13 @@ const Map = forwardRef<MapHandle, MapProps>(function Map({ places = [], onSelect
       style: 'https://tiles.openfreemap.org/styles/liberty',
       center: INDIA_CENTER,
       zoom: INDIA_ZOOM,
+      attributionControl: false,
     })
+
+    // Compact (collapsed to an "i" icon, expands on tap) so the required
+    // attribution doesn't collide with our floating category-filter panel,
+    // which sits low enough on narrow phone screens to overlap it otherwise.
+    map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right')
 
     const geolocate = new maplibregl.GeolocateControl({
       positionOptions: { enableHighAccuracy: true },

@@ -179,13 +179,23 @@ On first open, the app shows a live map of India with no forced setup; if locati
 
 **Alternatives considered:** Building a lightweight "highlighted area" as a stand-in for real offline support (rejected: would look like offline support was implemented when it wasn't — misleading, and doesn't reduce the actual remaining offline work by a single line of code). Reversing/downgrading D-005 to drop the offline requirement entirely (rejected: not proposed by the user, who asked how to reduce near-term scope, not whether the requirement itself should go away; D-005's founding reasoning — Baatal, zero network — hasn't changed).
 
-**Alternatives considered:** Add phone/OTP (rejected for V1: cost + reliability, both discussed above; can revisit once there's usage data to justify the SMS spend).
+---
+
+## D-015 — Code license: MIT
+
+**Date:** 2026-07-06 · **Status:** Final
+
+**Decision:** The code is MIT licensed (see `LICENSE`). The *data* license (whether Place/Region/Village content should be ODbL-compatible so it can flow back into OpenStreetMap) is a separate question and stays open — MIT covers the software only.
+
+**Reasoning:** MIT is the simplest permissive license and the most common default for a project actively trying to attract outside contributors with as little friction as possible — no patent-grant language to read (unlike Apache 2.0), no copyleft obligations (unlike GPL) that could scare off casual contributors or make the tech stack's other dependencies awkward to reason about. Nothing about this project's shape (no patent-sensitive IP, no desire to force downstream contributions back) calls for anything more complex.
+
+**Alternatives considered:** Apache 2.0 (rejected: the extra patent-grant/termination clauses solve a problem — patent disputes — this project has no exposure to; adds reading burden for contributors with no corresponding benefit here). No license / all-rights-reserved (rejected: directly contradicts D-007's and the README's "open source" framing — without a license, nobody has explicit legal permission to use or contribute to the code at all, regardless of the repo being public).
 
 ---
 
 ## Open questions
 
-- **Licensing:** code license (MIT? Apache 2.0?) and — more importantly — data license. OpenStreetMap uses ODbL for data; we should study whether Lamyig data should be ODbL-compatible so it can flow back into OSM.
+- **Data license:** should Lamyig's place/region/village data be ODbL-compatible so it can flow back into OpenStreetMap? Separate from D-015's code license.
 - **Governance:** who can merge data changes once contributors arrive?
 - **Verification mechanics:** what exactly counts as "verified," and by whom?
 - **Top bar contents:** exact contents of the top navigation bar (beyond featuring Spiti/Ladakh/treks) still to be decided.

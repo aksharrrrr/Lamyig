@@ -12,12 +12,13 @@ Raw ideas from live testing (2026-07-04), explicitly not locked in yet. Captured
 - ~~Toasts generally~~ — a real toast system exists (`lib/useToast.tsx`) and is used for add-success, locate, and the "no map location yet" fallback. Verify/report/community-note feedback still use inline status text, not toasts — could move over later, not urgent.
 - ~~Per-category map icons~~ — done: pins and the category filter cluster both use real per-category icons.
 - **Responsive layout** — still not explicitly tested on real mobile viewports (only desktop-width automated checks so far). The bottom-sheet vs. modal split in `Overlay.tsx` is breakpoint-based (`useIsMobile`, <700px) but hasn't been verified on an actual phone-sized screen yet.
-- **Community guideline** — "no self-promotion, this is travel-community utility" should become an explicit, visible rule somewhere (contribution guidelines / community notes policy), not just an implicit norm.
+- ~~Community guideline~~ — done: the no-self-promotion rule is now written down explicitly in `CONTRIBUTING.md`, not just an implicit norm.
 - **Light gamification** — deliberately deferred until after core MVP ships, and even then framed as "light" — this doesn't reopen D-011 (no points/badges/leaderboards for V1), it's a note for a possible post-MVP phase.
 - **Roles (e.g. admin/approver)** — not needed yet at zero/low volume. Once there are active users, introduce a role that can approve places; today nothing is gated behind approval (matches D-012 — auto-publish, no review queue).
 - **Spam handling** — will need real handling as volume grows, beyond today's manual "Report" review (D-012). No mechanism designed yet.
 - **Itinerary + best-time-to-visit per region** — idea floated 2026-07-05, explicitly "in future," not this sprint. Would live on the (still-unbuilt) Region page rather than the map itself. No design yet.
-- **Search beyond regions** — only region names are wired to the search bar right now (typing "Spiti" flies the map there). Matching villages and individual places too is real, larger scope, deliberately not attempted in the same pass as the region fly-to work.
+- ~~Search beyond regions~~ — regions and villages are both wired now (D-014's later work), plus a free OpenStreetMap geocoding fallback for anything not in our own data. Matching individual Places by name is still unbuilt.
+- ~~Map style toggle~~ — done: Liberty/Positron/Dark cycle via the utility-stack "layers" button, matching the original design reference's voyager/light/dark toggle.
 - **Region dropdown on hover** — floated 2026-07-05 alongside the region fly-to work, explicitly deferred: for now clicking a region chip just flies the map there, no hover dropdown with sub-content (villages, stats, etc.). Revisit once there's a concrete idea of what belongs in it.
 
 ## Confirmed (not just noted) from the same session
@@ -34,7 +35,7 @@ Repo is going public as the user's first open-source project — treat "don't ex
 
 ## Other open questions (pre-existing)
 
-- **Licensing:** code license (MIT? Apache 2.0?) and — more importantly — data license. OpenStreetMap uses ODbL for data; we should study whether Lamyig data should be ODbL-compatible so it can flow back into OSM.
+- ~~Code licensing~~ — resolved, MIT (see D-015 in `14-decision-log.md`). Data license (ODbL-compatibility with OpenStreetMap) is still open — separate question.
 - **Governance:** who can merge data changes once contributors arrive?
 - **Verification mechanics:** what exactly counts as "verified," and by whom?
 - **Top bar contents:** exact contents of the top navigation bar (beyond featuring Spiti/Ladakh/treks) still to be decided.

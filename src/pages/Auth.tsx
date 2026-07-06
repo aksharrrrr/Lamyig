@@ -86,7 +86,7 @@ export default function Auth() {
 
       <button
         className="text-sm font-medium text-muted underline underline-offset-2 hover:text-ink"
-        onClick={() => setSearchParams(mode === 'sign-in' ? { mode: 'sign-up' } : {}, { state: location.state })}
+        onClick={() => setSearchParams(mode === 'sign-in' ? { mode: 'sign-up' } : {}, { state: location.state, replace: true })}
       >
         {mode === 'sign-in' ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
       </button>

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import Map, { type MapHandle } from '../components/Map'
+import Map, { MAP_STYLES, type MapHandle, type MapStyleName } from '../components/Map'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/useAuth'
 import { usePlacesStore } from '../lib/usePlacesStore'
@@ -37,6 +37,7 @@ export default function Home() {
   const [villages, setVillages] = useState<Village[]>([])
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(loadStoredCategories)
   const [searchQuery, setSearchQuery] = useState('')
+  const [mapStyle, setMapStyleState] = useState<MapStyleName>('liberty')
   const [osmResults, setOsmResults] = useState<GeocodeResult[]>([])
   const [geocoding, setGeocoding] = useState(false)
 
@@ -274,6 +275,20 @@ export default function Home() {
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#55525c" strokeWidth="1.8" strokeLinecap="round">
             <circle cx="12" cy="12" r="6.2" /><circle cx="12" cy="12" r="1.6" />
             <path d="M12 2.5v3" /><path d="M12 18.5v3" /><path d="M2.5 12h3" /><path d="M18.5 12h3" />
+          </svg>
+        </button>
+        <button
+          onClick={() => {
+            const next = MAP_STYLES[(MAP_STYLES.indexOf(mapStyle) + 1) % MAP_STYLES.length]
+            setMapStyleState(next)
+            mapRef.current?.setMapStyle(next)
+            showToast(`Map style: ${next}`)
+          }}
+          title="Map style"
+          className="flex h-11 w-11 items-center justify-center rounded-full border border-ink/[0.08] bg-surface/95 shadow-lg hover:scale-105"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#55525c" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 4l8 4.7-8 4.7-8-4.7z" /><path d="M4 13.6l8 4.7 8-4.7" />
           </svg>
         </button>
       </div>

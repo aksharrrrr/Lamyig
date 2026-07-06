@@ -5,6 +5,14 @@ import 'maplibre-gl/dist/maplibre-gl.css'
 const INDIA_CENTER: [number, number] = [78.6569, 22.9734]
 const INDIA_ZOOM = 4.2
 
+// OpenFreeMap serves several real styles beyond our default (liberty) -
+// confirmed live: liberty/bright/positron/dark/fiord all return valid style
+// JSON at tiles.openfreemap.org/styles/{name}. Cycling a curated 3 rather
+// than all 5, matching the original design reference's voyager/light/dark
+// 3-way toggle.
+export const MAP_STYLES = ['liberty', 'positron', 'dark'] as const
+export type MapStyleName = (typeof MAP_STYLES)[number]
+
 // Same path data as lib/categoryIcons.tsx, as raw SVG markup — markers are
 // built as plain DOM nodes for MapLibre, outside the React tree, so the
 // React icon components can't be rendered directly here.
@@ -44,6 +52,7 @@ export interface PlaceMarker {
 export interface MapHandle {
   locate: () => void
   flyTo: (lat: number, lng: number, zoom: number) => void
+  setMapStyle: (style: MapStyleName) => void
 }
 
 interface MapProps {
@@ -60,6 +69,9 @@ const Map = forwardRef<MapHandle, MapProps>(function Map({ places = [], onSelect
   useImperativeHandle(ref, () => ({
     locate: () => geolocateRef.current?.trigger(),
     flyTo: (lat, lng, zoom) => mapRef.current?.flyTo({ center: [lng, lat], zoom, duration: 1500 }),
+    // Markers/controls aren't part of the style, so they survive a
+    // setStyle() call - MapLibre re-attaches them once the new style loads.
+    setMapStyle: (style) => mapRef.current?.setStyle(`https://tiles.openfreemap.org/styles/${style}`),
   }), [])
 
   useEffect(() => {

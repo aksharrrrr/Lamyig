@@ -19,6 +19,7 @@ import { PlacesProvider } from './lib/usePlacesStore'
 export default function App() {
   const location = useLocation()
   const background = (location.state as { background?: Location } | null)?.background
+  const authTitle = location.search.includes('mode=sign-up') ? 'Sign up' : 'Sign in'
 
   return (
     <ToastProvider>
@@ -28,7 +29,7 @@ export default function App() {
           <Route path="/region/:regionSlug" element={<Region />} />
           <Route path="/village/:villageSlug" element={<Village />} />
           {/* Fallback full-page versions when there's no background to overlay onto */}
-          <Route path="/auth" element={<div className="mx-auto max-w-lg p-6"><h1 className="mb-4 text-2xl font-bold">Sign in</h1><Auth /></div>} />
+          <Route path="/auth" element={<div className="mx-auto max-w-lg p-6"><h1 className="mb-4 text-2xl font-bold">{authTitle}</h1><Auth /></div>} />
           <Route path="/place/:placeId" element={<div className="mx-auto max-w-lg p-6"><Place /></div>} />
           <Route path="/add" element={<div className="mx-auto max-w-lg p-6"><h1 className="mb-4 text-2xl font-bold">Add a place</h1><AddEditPlace /></div>} />
           <Route path="/place/:placeId/edit" element={<div className="mx-auto max-w-lg p-6"><h1 className="mb-4 text-2xl font-bold">Edit place</h1><AddEditPlace /></div>} />
@@ -37,7 +38,7 @@ export default function App() {
 
         {background && (
           <Routes>
-            <Route path="/auth" element={<Overlay title="Sign in"><Auth /></Overlay>} />
+            <Route path="/auth" element={<Overlay title={authTitle}><Auth /></Overlay>} />
             <Route path="/place/:placeId" element={<Overlay title="Place details"><Place /></Overlay>} />
             <Route path="/add" element={<Overlay title="Add a place"><AddEditPlace /></Overlay>} />
             <Route path="/place/:placeId/edit" element={<Overlay title="Edit place"><AddEditPlace /></Overlay>} />

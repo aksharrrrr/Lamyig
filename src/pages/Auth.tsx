@@ -1,14 +1,19 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/useAuth'
 
 const inputClass = 'rounded-[10px] border border-ink/[0.14] bg-surface px-3.5 py-2.5 text-sm outline-none focus:border-accent focus:ring-3 focus:ring-accent-light'
 
+// Mode lives in the URL (?mode=sign-up), not local state, so App.tsx can
+// read it to show the right title ("Sign in" vs "Sign up") on the shared
+// Overlay wrapper, which only takes a plain string title prop.
 export default function Auth() {
   const { session, configured } = useAuth()
   const navigate = useNavigate()
-  const [mode, setMode] = useState<'sign-in' | 'sign-up'>('sign-in')
+  const location = useLocation()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const mode = searchParams.get('mode') === 'sign-up' ? 'sign-up' : 'sign-in'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -81,7 +86,7 @@ export default function Auth() {
 
       <button
         className="text-sm font-medium text-muted underline underline-offset-2 hover:text-ink"
-        onClick={() => setMode(mode === 'sign-in' ? 'sign-up' : 'sign-in')}
+        onClick={() => setSearchParams(mode === 'sign-in' ? { mode: 'sign-up' } : {}, { state: location.state })}
       >
         {mode === 'sign-in' ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
       </button>

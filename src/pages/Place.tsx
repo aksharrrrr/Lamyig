@@ -1,5 +1,5 @@
 import { Fragment, useCallback, useEffect, useState } from 'react'
-import { Link, useLocation, useNavigate, useParams, type Location } from 'react-router-dom'
+import { useLocation, useNavigate, useParams, type Location } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/useAuth'
 import { categoryDef } from '../lib/categories'
@@ -145,7 +145,7 @@ export default function Place() {
         </div>
       ) : (
         <p className="mt-4 text-sm text-muted">
-          <Link to="/auth" className="font-medium text-accent underline">Sign in</Link> to verify, report, or edit.
+          <button onClick={() => navigate('/auth', { state: { background } })} className="font-medium text-accent underline">Sign in</button> to verify, report, or edit.
         </p>
       )}
       {status && <p className="mt-2 text-sm text-muted">{status}</p>}

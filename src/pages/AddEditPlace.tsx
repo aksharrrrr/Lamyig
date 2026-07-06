@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams, Link } from 'react-router-dom'
+import { useNavigate, useParams, useLocation, type Location } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/useAuth'
 import { usePlacesStore } from '../lib/usePlacesStore'
@@ -27,6 +27,8 @@ function slugify(text: string) {
 
 export default function AddEditPlace() {
   const { placeId } = useParams()
+  const location = useLocation()
+  const background = (location.state as { background?: Location } | null)?.background ?? location
   const isEdit = Boolean(placeId)
   const navigate = useNavigate()
   const { session, configured, loading: authLoading } = useAuth()
@@ -251,9 +253,12 @@ export default function AddEditPlace() {
     return (
       <div>
         <p className="text-sm text-muted">Sign in to contribute.</p>
-        <Link to="/auth" className="mt-4 inline-block rounded-[10px] bg-accent px-4 py-2 text-sm font-semibold text-surface">
+        <button
+          onClick={() => navigate('/auth', { state: { background } })}
+          className="mt-4 inline-block rounded-[10px] bg-accent px-4 py-2 text-sm font-semibold text-surface"
+        >
           Sign in
-        </Link>
+        </button>
       </div>
     )
   }

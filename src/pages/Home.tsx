@@ -182,7 +182,7 @@ export default function Home() {
 
       {/* Profile avatar */}
       <button
-        onClick={() => (session ? openOverlay('/profile') : navigate('/auth'))}
+        onClick={() => (session ? openOverlay('/profile') : openOverlay('/auth'))}
         title="Profile"
         className="absolute right-[18px] top-[18px] z-10 flex h-11 w-11 items-center justify-center rounded-full border border-ink/[0.08] bg-accent-light text-[14px] font-bold text-accent-text shadow-lg"
       >

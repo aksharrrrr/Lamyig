@@ -229,6 +229,18 @@ On first open, the app shows a live map of India with no forced setup; if locati
 
 ---
 
+## D-019 — Second security pass after Auth/Feedback changes; fixed a broken (not exploitable) feedback insert policy
+
+**Date:** 2026-07-07 · **Status:** Final
+
+**Decision:** Re-ran the live RLS checks from D-016 after the Auth overlay rework and the new `feedback` table — all core boundaries (anon can't write places/regions, can't read reports, can't touch other profiles) still held, no regression. Found and fixed one real bug: the `feedback` insert policy from migration 0010 wasn't actually letting anonymous inserts through in production (verified live — RLS violation on every anon insert attempt), the opposite of the intended "anyone can submit" behavior. Migration 0011 re-creates the policy explicit about `to anon, authenticated` instead of relying on the implicit `PUBLIC` default, and adds a 5000-character cap on `message` since feedback is the only fully zero-friction (no-account-required) write path in the schema.
+
+**Reasoning:** "Check security" should mean re-verifying live, not re-reading old findings — RLS is the only access-control layer here (SECURITY.md), so any schema change is worth a fresh check rather than assuming last time's result still holds. The broken policy was a functional bug, not a security hole (it was too restrictive, not too permissive), but it meant the feature shipped silently non-functional — worth catching before real users hit it.
+
+**Alternatives considered:** Requiring auth for feedback too, closing the gap instead of capping it (rejected: loses feedback from people who haven't signed up, which was the whole point of not reusing `place_reports`' auth-gated model — see D-018).
+
+---
+
 ## Open questions
 
 - **Data license:** should Lamyig's place/region/village data be ODbL-compatible so it can flow back into OpenStreetMap? Separate from D-015's code license.

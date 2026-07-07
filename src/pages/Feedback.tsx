@@ -44,6 +44,7 @@ export default function Feedback() {
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         <textarea
           required
+          maxLength={5000}
           placeholder="What's on your mind?"
           value={message}
           onChange={(e) => setMessage(e.target.value)}

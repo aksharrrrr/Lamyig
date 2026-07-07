@@ -1,6 +1,6 @@
 # architecture
 
-**Status:** Provisional direction, not yet implemented — see D-010 in [`14-decision-log.md`](14-decision-log.md).
+**Status:** Implemented — see D-010 in [`14-decision-log.md`](14-decision-log.md).
 
 ## Frontend
 React, TypeScript, Vite, Tailwind.

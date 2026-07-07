@@ -217,6 +217,18 @@ On first open, the app shows a live map of India with no forced setup; if locati
 
 ---
 
+## D-018 — General feedback button, separate from place reports
+
+**Date:** 2026-07-07 · **Status:** Final
+
+**Decision:** Added a "Send feedback" button next to Add Place, opening the same overlay pattern used everywhere else. Backed by a new `feedback` table (migration 0010), open to anonymous and signed-in submitters alike, with manual founder review only — no public read policy, same shape as `place_reports` (D-012).
+
+**Reasoning:** `place_reports` exists for problems with a specific place, and requires auth. General product feedback (bugs, ideas, "this is confusing") doesn't fit that model and has real value from people who haven't signed up yet — restricting it to authenticated users would lose most of it. Mirrors an existing, already-reviewed RLS pattern instead of inventing a new one, keeps the founder as the single reviewer (matches D-012's manual-review-only stance), and needs no new infrastructure (D-010).
+
+**Alternatives considered:** Routing feedback to a GitHub issue form (rejected: most travellers using Lamyig won't have GitHub accounts — this is a general-audience product, not a dev tool). A `mailto:` link (rejected: unreliable on mobile web/PWA where no email client may be configured, and gives up structured storage for zero benefit).
+
+---
+
 ## Open questions
 
 - **Data license:** should Lamyig's place/region/village data be ODbL-compatible so it can flow back into OpenStreetMap? Separate from D-015's code license.

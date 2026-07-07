@@ -6,6 +6,7 @@ import Place from './pages/Place'
 import AddEditPlace from './pages/AddEditPlace'
 import Auth from './pages/Auth'
 import Profile from './pages/Profile'
+import Feedback from './pages/Feedback'
 import Overlay from './components/Overlay'
 import { ToastProvider } from './lib/useToast'
 import { PlacesProvider } from './lib/usePlacesStore'
@@ -34,6 +35,7 @@ export default function App() {
           <Route path="/add" element={<div className="mx-auto max-w-lg p-6"><h1 className="mb-4 text-2xl font-bold">Add a place</h1><AddEditPlace /></div>} />
           <Route path="/place/:placeId/edit" element={<div className="mx-auto max-w-lg p-6"><h1 className="mb-4 text-2xl font-bold">Edit place</h1><AddEditPlace /></div>} />
           <Route path="/profile" element={<div className="mx-auto max-w-lg p-6"><h1 className="mb-4 text-2xl font-bold">Profile</h1><Profile /></div>} />
+          <Route path="/feedback" element={<div className="mx-auto max-w-lg p-6"><h1 className="mb-4 text-2xl font-bold">Feedback</h1><Feedback /></div>} />
         </Routes>
 
         {background && (
@@ -43,6 +45,7 @@ export default function App() {
             <Route path="/add" element={<Overlay title="Add a place"><AddEditPlace /></Overlay>} />
             <Route path="/place/:placeId/edit" element={<Overlay title="Edit place"><AddEditPlace /></Overlay>} />
             <Route path="/profile" element={<Overlay title="Profile"><Profile /></Overlay>} />
+            <Route path="/feedback" element={<Overlay title="Feedback"><Feedback /></Overlay>} />
           </Routes>
         )}
       </PlacesProvider>

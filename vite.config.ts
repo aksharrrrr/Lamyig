@@ -18,7 +18,7 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
       },
       manifest: {
-        name: 'Lamyig — the open road-book of the Himalaya',
+        name: 'Lamyig: the open road-book for remote India',
         short_name: 'Lamyig',
         description: 'A community-maintained travel knowledge base for remote India, starting with the Himalaya.',
         start_url: '/',

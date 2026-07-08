@@ -1,6 +1,6 @@
 # Lamyig (ལམ་ཡིག)
 
-**The open road-book of the Himalaya.**
+**The open road-book for remote India.**
 
 Lamyig is an open-source, offline-first, community-maintained travel knowledge map for remote India, starting with Spiti Valley.
 

@@ -122,8 +122,8 @@ export default function AddEditPlace() {
       setError(`Upload at least ${minPhotos} photo${minPhotos === 1 ? '' : 's'} for a ${def.label.toLowerCase()}.`)
       return
     }
-    if (!regionId || !villageName.trim()) {
-      setError('Select a region and enter a village.')
+    if (!regionId) {
+      setError('Select a region.')
       return
     }
     if (def.name === 'required' && !name.trim()) {
@@ -149,41 +149,43 @@ export default function AddEditPlace() {
       // types fast, which caused a duplicate-slug insert attempt against a
       // village ("Kaza") that already existed.
       const trimmedVillage = villageName.trim()
-      const villageSlug = slugify(trimmedVillage)
-      let resolvedVillageId: string
+      let resolvedVillageId: string | null = null
 
-      const { data: existingVillage } = await supabase
-        .from('villages')
-        .select('id')
-        .eq('region_id', regionId)
-        .eq('slug', villageSlug)
-        .maybeSingle()
-
-      if (existingVillage) {
-        resolvedVillageId = existingVillage.id
-      } else {
-        const { data: newVillage, error: villageError } = await supabase
+      if (trimmedVillage) {
+        const villageSlug = slugify(trimmedVillage)
+        const { data: existingVillage } = await supabase
           .from('villages')
-          .insert({ name: trimmedVillage, slug: villageSlug, region_id: regionId })
           .select('id')
-          .single()
-        if (villageError) {
-          // Someone else created the same village between our check and
-          // insert - recover by using theirs instead of failing outright.
-          if (villageError.code === '23505') {
-            const { data: raceVillage, error: raceError } = await supabase
-              .from('villages')
-              .select('id')
-              .eq('region_id', regionId)
-              .eq('slug', villageSlug)
-              .single()
-            if (raceError) throw raceError
-            resolvedVillageId = raceVillage.id
-          } else {
-            throw villageError
-          }
+          .eq('region_id', regionId)
+          .eq('slug', villageSlug)
+          .maybeSingle()
+
+        if (existingVillage) {
+          resolvedVillageId = existingVillage.id
         } else {
-          resolvedVillageId = newVillage.id
+          const { data: newVillage, error: villageError } = await supabase
+            .from('villages')
+            .insert({ name: trimmedVillage, slug: villageSlug, region_id: regionId })
+            .select('id')
+            .single()
+          if (villageError) {
+            // Someone else created the same village between our check and
+            // insert - recover by using theirs instead of failing outright.
+            if (villageError.code === '23505') {
+              const { data: raceVillage, error: raceError } = await supabase
+                .from('villages')
+                .select('id')
+                .eq('region_id', regionId)
+                .eq('slug', villageSlug)
+                .single()
+              if (raceError) throw raceError
+              resolvedVillageId = raceVillage.id
+            } else {
+              throw villageError
+            }
+          } else {
+            resolvedVillageId = newVillage.id
+          }
         }
       }
 
@@ -338,9 +340,8 @@ export default function AddEditPlace() {
       </label>
 
       <label className="flex flex-col gap-1.5">
-        <span className={labelClass}>Village</span>
+        <span className={labelClass}>Village (optional)</span>
         <input
-          required
           list="village-suggestions"
           value={villageName}
           onChange={(e) => setVillageName(e.target.value)}
@@ -454,7 +455,7 @@ export default function AddEditPlace() {
         </label>
       )}
 
-      {!isEdit && (
+      {!isEdit && def?.showPhotos && (
         <div className="flex flex-col gap-1.5">
           <span className={labelClass}>
             Photos {def && def.minPhotos > 0 ? `(min ${def.minPhotos}, max ${MAX_PHOTOS})` : `(optional, max ${MAX_PHOTOS})`}

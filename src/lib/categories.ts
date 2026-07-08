@@ -20,6 +20,10 @@ export interface CategoryDef {
   showPhone: boolean
   showWhatsapp: boolean
   showPriceRange: boolean
+  showPhotos: boolean
+  // Distinct per category so a map pin and its category-filter pill are
+  // instantly matchable by color alone, not just icon.
+  color: string
 }
 
 // Each category defines its own form - not just its own attributes.fields,
@@ -36,6 +40,8 @@ export const CATEGORIES: CategoryDef[] = [
     showPhone: true,
     showWhatsapp: true,
     showPriceRange: true,
+    showPhotos: true,
+    color: '#C1694F',
     fields: [
       { key: 'host_name', label: 'Host name', type: 'text', required: true },
       { key: 'meals_included', label: 'Meals included', type: 'boolean' },
@@ -52,6 +58,8 @@ export const CATEGORIES: CategoryDef[] = [
     showPhone: true,
     showWhatsapp: true,
     showPriceRange: false,
+    showPhotos: false,
+    color: '#5B7A8C',
     fields: [
       { key: 'services', label: 'Services', type: 'multiselect', options: ['tubeless puncture', 'tube puncture', 'general repair', 'spare parts'], required: true },
       { key: 'vehicle_types', label: 'Vehicle types serviced', type: 'multiselect', options: ['bike', 'car'], required: true },
@@ -67,9 +75,11 @@ export const CATEGORIES: CategoryDef[] = [
     showPhone: true,
     showWhatsapp: true,
     showPriceRange: false,
+    showPhotos: false,
+    color: '#C9962C',
     fields: [
-      { key: 'fuel_types', label: 'Fuel types', type: 'multiselect', options: ['petrol', 'diesel'] },
-      { key: 'source', label: 'Source', type: 'select', options: ['pump', 'informal (jerry can)'] },
+      { key: 'fuel_types', label: 'Fuel types', type: 'multiselect', options: ['petrol', 'diesel'], required: true },
+      { key: 'source', label: 'Source', type: 'select', options: ['pump', 'informal (jerry can)'], required: true },
       { key: 'hours', label: 'Hours (e.g. "8am-8pm" or "24x7")', type: 'text' },
     ],
   },
@@ -82,6 +92,8 @@ export const CATEGORIES: CategoryDef[] = [
     showPhone: false,
     showWhatsapp: false,
     showPriceRange: false,
+    showPhotos: false,
+    color: '#5E8C6A',
     fields: [
       { key: 'clean', label: 'Clean', type: 'boolean' },
       { key: 'cost', label: 'Cost', type: 'select', options: ['free', 'paid'] },
@@ -97,6 +109,8 @@ export const CATEGORIES: CategoryDef[] = [
     showPhone: false,
     showWhatsapp: false,
     showPriceRange: false,
+    showPhotos: true,
+    color: '#7C5C6B',
     fields: [
       { key: 'tent_allowed', label: 'Tent pitch allowed', type: 'boolean' },
       { key: 'nearby_toilet', label: 'Toilet nearby', type: 'boolean' },

@@ -253,9 +253,9 @@ export default function Home() {
                   <span
                     className="flex h-[46px] w-[46px] items-center justify-center rounded-full border transition-all"
                     style={{
-                      background: selected ? 'var(--color-accent)' : 'var(--color-surface)',
+                      background: selected ? c.color : 'var(--color-surface)',
                       borderColor: selected ? 'transparent' : 'rgba(32,31,35,0.14)',
-                      boxShadow: selected ? 'inset 0 2px 6px rgba(0,0,0,0.18), 0 4px 12px rgba(90,45,150,0.28)' : 'none',
+                      boxShadow: selected ? 'inset 0 2px 6px rgba(0,0,0,0.18), 0 4px 12px rgba(30,20,45,0.28)' : 'none',
                     }}
                   >
                     <CategoryIcon color={selected ? '#ffffff' : '#55525c'} size={20} />

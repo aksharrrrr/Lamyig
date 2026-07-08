@@ -1,6 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
+import { categoryDef } from '../lib/categories'
 
 const INDIA_CENTER: [number, number] = [78.6569, 22.9734]
 const INDIA_ZOOM = 4.2
@@ -26,18 +27,18 @@ const CATEGORY_ICON_SVG: Record<string, string> = {
 
 function createMarkerElement(category: string): HTMLDivElement {
   const el = document.createElement('div')
-  el.style.width = '32px'
-  el.style.height = '32px'
+  el.style.width = '24px'
+  el.style.height = '24px'
   el.style.borderRadius = '50%'
-  el.style.background = 'var(--color-accent)'
-  el.style.border = '2.5px solid #ffffff'
-  el.style.boxShadow = '0 4px 12px rgba(30,20,45,0.30)'
+  el.style.background = categoryDef(category)?.color ?? 'var(--color-accent)'
+  el.style.border = '2px solid #ffffff'
+  el.style.boxShadow = '0 3px 9px rgba(30,20,45,0.30)'
   el.style.display = 'flex'
   el.style.alignItems = 'center'
   el.style.justifyContent = 'center'
   el.style.cursor = 'pointer'
   const inner = CATEGORY_ICON_SVG[category] ?? ''
-  el.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`
+  el.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`
   return el
 }
 

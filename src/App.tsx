@@ -20,7 +20,11 @@ import { PlacesProvider } from './lib/usePlacesStore'
 export default function App() {
   const location = useLocation()
   const background = (location.state as { background?: Location } | null)?.background
-  const authTitle = location.search.includes('mode=sign-up') ? 'Sign up' : 'Sign in'
+  const authTitle = location.search.includes('mode=sign-up')
+    ? 'Sign up'
+    : location.search.includes('mode=forgot')
+      ? 'Reset password'
+      : 'Sign in'
 
   return (
     <ToastProvider>

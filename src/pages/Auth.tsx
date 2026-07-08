@@ -1,26 +1,84 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/useAuth'
+import { useToast } from '../lib/useToast'
 
 const inputClass = 'rounded-[10px] border border-ink/[0.14] bg-surface px-3.5 py-2.5 text-sm outline-none focus:border-accent focus:ring-3 focus:ring-accent-light'
 
-// Mode lives in the URL (?mode=sign-up), not local state, so App.tsx can
-// read it to show the right title ("Sign in" vs "Sign up") on the shared
-// Overlay wrapper, which only takes a plain string title prop.
+// Mode lives in the URL (?mode=sign-up / ?mode=forgot), not local state, so
+// App.tsx can read it to show the right title on the shared Overlay
+// wrapper, which only takes a plain string title prop.
 export default function Auth() {
   const { session, configured } = useAuth()
+  const { showToast } = useToast()
   const navigate = useNavigate()
   const location = useLocation()
   const [searchParams, setSearchParams] = useSearchParams()
-  const mode = searchParams.get('mode') === 'sign-up' ? 'sign-up' : 'sign-in'
+  const modeParam = searchParams.get('mode')
+  const mode = modeParam === 'sign-up' || modeParam === 'forgot' ? modeParam : 'sign-in'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [resetSent, setResetSent] = useState(false)
+  // Clicking the emailed reset link lands back here already "signed in" (a
+  // temporary recovery session) and fires this specific auth event - that's
+  // the only way to distinguish "here to set a new password" from an
+  // ordinary signed-in visit, since both have a non-null session.
+  const [recovering, setRecovering] = useState(false)
+
+  useEffect(() => {
+    if (!supabase) return
+    const { data: listener } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') setRecovering(true)
+    })
+    return () => listener.subscription.unsubscribe()
+  }, [])
 
   if (!configured) {
     return <p className="text-sm text-muted">Backend isn't connected yet — set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.</p>
+  }
+
+  if (recovering) {
+    async function handleSetNewPassword(e: React.FormEvent) {
+      e.preventDefault()
+      setError(null)
+      setSubmitting(true)
+      const { error } = await supabase!.auth.updateUser({ password: newPassword })
+      setSubmitting(false)
+      if (error) {
+        setError(error.message)
+        return
+      }
+      setRecovering(false)
+      showToast('Password updated.')
+      navigate('/')
+    }
+
+    return (
+      <form onSubmit={handleSetNewPassword} className="flex flex-col gap-3">
+        <p className="text-sm text-muted">Choose a new password.</p>
+        <input
+          type="password"
+          required
+          minLength={6}
+          placeholder="New password"
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
+          className={inputClass}
+        />
+        {error && <p className="text-sm text-danger">{error}</p>}
+        <button
+          type="submit"
+          disabled={submitting}
+          className="rounded-[11px] bg-accent px-4 py-2.5 text-sm font-semibold text-surface disabled:opacity-50"
+        >
+          Update password
+        </button>
+      </form>
+    )
   }
 
   if (session) {
@@ -32,6 +90,57 @@ export default function Auth() {
           className="rounded-[11px] border border-ink/10 bg-surface px-4 py-2.5 text-sm font-semibold text-ink hover:bg-ink/5"
         >
           Sign out
+        </button>
+      </div>
+    )
+  }
+
+  if (mode === 'forgot') {
+    async function handleForgotSubmit(e: React.FormEvent) {
+      e.preventDefault()
+      setError(null)
+      setSubmitting(true)
+      const { error } = await supabase!.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth`,
+      })
+      setSubmitting(false)
+      if (error) {
+        setError(error.message)
+        return
+      }
+      setResetSent(true)
+    }
+
+    if (resetSent) {
+      return <p className="text-sm text-muted">If an account exists for {email}, a reset link is on its way. Check your email.</p>
+    }
+
+    return (
+      <div className="flex flex-col gap-4">
+        <p className="text-sm text-muted">Enter your email and we'll send a link to reset your password.</p>
+        <form onSubmit={handleForgotSubmit} className="flex flex-col gap-3">
+          <input
+            type="email"
+            required
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className={inputClass}
+          />
+          {error && <p className="text-sm text-danger">{error}</p>}
+          <button
+            type="submit"
+            disabled={submitting}
+            className="rounded-[11px] bg-accent px-4 py-2.5 text-sm font-semibold text-surface disabled:opacity-50"
+          >
+            Send reset link
+          </button>
+        </form>
+        <button
+          className="text-sm font-medium text-muted underline underline-offset-2 hover:text-ink"
+          onClick={() => setSearchParams({}, { state: location.state, replace: true })}
+        >
+          Back to sign in
         </button>
       </div>
     )
@@ -74,6 +183,15 @@ export default function Auth() {
           onChange={(e) => setPassword(e.target.value)}
           className={inputClass}
         />
+        {mode === 'sign-in' && (
+          <button
+            type="button"
+            className="self-start text-[13px] font-medium text-muted underline underline-offset-2 hover:text-ink"
+            onClick={() => setSearchParams({ mode: 'forgot' }, { state: location.state, replace: true })}
+          >
+            Forgot password?
+          </button>
+        )}
         {error && <p className="text-sm text-danger">{error}</p>}
         <button
           type="submit"

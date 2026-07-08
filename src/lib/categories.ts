@@ -5,6 +5,7 @@ export interface CategoryField {
   label: string
   type: FieldType
   options?: string[]
+  required?: boolean
 }
 
 export type FieldVisibility = 'required' | 'optional' | 'hidden'
@@ -36,9 +37,9 @@ export const CATEGORIES: CategoryDef[] = [
     showWhatsapp: true,
     showPriceRange: true,
     fields: [
-      { key: 'host_name', label: 'Host name', type: 'text' },
+      { key: 'host_name', label: 'Host name', type: 'text', required: true },
       { key: 'meals_included', label: 'Meals included', type: 'boolean' },
-      { key: 'parking', label: 'Parking', type: 'select', options: ['none', 'bike', 'car', 'bike and car'] },
+      { key: 'parking', label: 'Parking', type: 'select', options: ['none', 'bike', 'car', 'bike and car'], required: true },
       { key: 'cash_only', label: 'Cash only', type: 'boolean' },
     ],
   },
@@ -52,9 +53,9 @@ export const CATEGORIES: CategoryDef[] = [
     showWhatsapp: true,
     showPriceRange: false,
     fields: [
-      { key: 'services', label: 'Services', type: 'multiselect', options: ['tubeless puncture', 'tube puncture', 'general repair', 'spare parts'] },
-      { key: 'vehicle_types', label: 'Vehicle types serviced', type: 'multiselect', options: ['bike', 'car'] },
-      { key: 'hours', label: 'Hours (e.g. "8am-8pm" or "24x7")', type: 'text' },
+      { key: 'services', label: 'Services', type: 'multiselect', options: ['tubeless puncture', 'tube puncture', 'general repair', 'spare parts'], required: true },
+      { key: 'vehicle_types', label: 'Vehicle types serviced', type: 'multiselect', options: ['bike', 'car'], required: true },
+      { key: 'hours', label: 'Hours (e.g. "8am-8pm" or "24x7")', type: 'text', required: true },
     ],
   },
   {

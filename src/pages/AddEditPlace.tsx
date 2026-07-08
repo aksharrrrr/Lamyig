@@ -130,6 +130,16 @@ export default function AddEditPlace() {
       setError('Enter a name.')
       return
     }
+    // Multiselect fields are custom button toggles, not a native form
+    // control, so HTML5 `required` (already applied to text/select fields
+    // via their `required` attribute) doesn't reach them - check by hand.
+    const missingMultiselect = def.fields.find(
+      (f) => f.required && f.type === 'multiselect' && ((attributes[f.key] as string[] | undefined) ?? []).length === 0,
+    )
+    if (missingMultiselect) {
+      setError(`Select at least one option for "${missingMultiselect.label}".`)
+      return
+    }
 
     setSubmitting(true)
     try {
@@ -348,7 +358,7 @@ export default function AddEditPlace() {
           <legend className="px-1 text-[13px] font-semibold">{def.label} details</legend>
           {def.fields.map((f) => (
             <label key={f.key} className="flex flex-col gap-1.5 text-sm">
-              {f.type !== 'boolean' && <span className={labelClass}>{f.label}</span>}
+              {f.type !== 'boolean' && <span className={labelClass}>{f.label}{!f.required && ' (optional)'}</span>}
               {f.type === 'boolean' && (
                 <span className="flex items-center gap-2">
                   <input
@@ -361,6 +371,7 @@ export default function AddEditPlace() {
               )}
               {f.type === 'text' && (
                 <input
+                  required={f.required}
                   value={(attributes[f.key] as string) ?? ''}
                   onChange={(e) => setAttributes({ ...attributes, [f.key]: e.target.value })}
                   className={inputClass}
@@ -368,6 +379,7 @@ export default function AddEditPlace() {
               )}
               {f.type === 'select' && (
                 <select
+                  required={f.required}
                   value={(attributes[f.key] as string) ?? ''}
                   onChange={(e) => setAttributes({ ...attributes, [f.key]: e.target.value })}
                   className={inputClass}

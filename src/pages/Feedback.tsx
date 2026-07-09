@@ -39,7 +39,7 @@ export default function Feedback() {
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-sm text-muted">Bug, idea, or anything about Lamyig that's bugging you. This goes straight to the founder, not a queue.</p>
+      <p className="text-sm text-muted">Bug, idea, or anything about Lamyig that's bugging you. This is read directly, not filed into a queue.</p>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         <textarea

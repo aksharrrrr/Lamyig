@@ -208,7 +208,7 @@ export default function Home() {
             className="min-w-0 flex-1 bg-transparent text-[14.5px] outline-none placeholder:text-muted-light"
           />
         </div>
-        {(searchResults.length > 0 || (geocoding && localResultCount === 0 && query.length >= 3)) && (
+        {(searchResults.length > 0 || (query.length >= 3 && localResultCount === 0)) && (
           <div className="mt-2 overflow-hidden rounded-2xl border border-ink/[0.06] bg-surface shadow-lg">
             {searchResults.map((result) => (
               <button
@@ -227,6 +227,15 @@ export default function Home() {
             ))}
             {searchResults.length === 0 && geocoding && (
               <div className="px-4 py-2.5 text-[13px] text-muted-light">Searching…</div>
+            )}
+            {searchResults.length === 0 && !geocoding && query.length >= 3 && (
+              <div className="px-4 py-2.5 text-[13px] text-muted-light">
+                No place found for "{searchQuery.trim()}". Think this is a mistake?{' '}
+                <button type="button" onClick={() => openOverlay('/feedback')} className="font-semibold text-accent underline">
+                  Tell us
+                </button>
+                .
+              </div>
             )}
           </div>
         )}

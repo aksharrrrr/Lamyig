@@ -278,10 +278,6 @@ export default function Home() {
               )
             })}
           </div>
-          {/* Hints that the row scrolls if it ever overflows (e.g. more
-              categories added later, or the sm+ labeled layout on a narrow
-              tablet width) */}
-          <div className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-surface to-transparent" />
         </div>
       </div>
 

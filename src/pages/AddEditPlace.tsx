@@ -288,14 +288,14 @@ export default function AddEditPlace() {
                 key={c.value}
                 type="button"
                 onClick={() => { setCategory(c.value); setAttributes({}) }}
-                className="flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-[12.5px] font-semibold"
+                className="flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-[12.5px] font-semibold transition-all"
                 style={{
-                  background: selected ? 'var(--color-accent-light)' : 'var(--color-surface)',
-                  color: selected ? 'var(--color-accent-text)' : 'var(--color-muted)',
-                  borderColor: selected ? 'var(--color-accent)' : 'rgba(32,31,35,0.14)',
+                  background: selected ? c.color : 'var(--color-surface)',
+                  color: selected ? '#ffffff' : 'var(--color-muted)',
+                  borderColor: selected ? 'transparent' : 'rgba(32,31,35,0.14)',
                 }}
               >
-                <CategoryIcon color={selected ? 'var(--color-accent-text)' : '#8a8791'} size={15} />
+                <CategoryIcon color={selected ? '#ffffff' : '#8a8791'} size={15} />
                 {c.label}
               </button>
             )

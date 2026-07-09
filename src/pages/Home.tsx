@@ -232,15 +232,17 @@ export default function Home() {
         )}
       </div>
 
-      {/* Category cluster: a single row that scrolls horizontally rather than
-          wrapping, so it stays a fixed, short height on narrow phone screens
-          instead of stacking into 2-3 rows and eating half the viewport
-          (matches the region-pill row's pattern above). Extra bottom
+      {/* Category cluster. Labels hide below the sm breakpoint so all 5
+          icon-only pills fit in one row on a phone with no scrolling and no
+          stacking into multiple rows (a horizontal-scroll version shipped
+          first, but people didn't realize it was swipeable - dropping
+          labels on mobile only, so everything's visible at once, is more
+          discoverable than any scroll-affordance tweak). Extra bottom
           clearance below the sm breakpoint so it doesn't sit on top of
           MapLibre's required attribution bar. */}
       <div className="absolute bottom-[56px] left-1/2 z-10 max-w-[min(560px,calc(100vw-150px))] -translate-x-1/2 sm:bottom-[22px]">
         <div className="relative overflow-hidden rounded-3xl border border-ink/[0.06] bg-surface shadow-xl">
-          <div className="flex gap-1 overflow-x-auto px-3 py-2.5" style={{ scrollbarWidth: 'none' }}>
+          <div className="flex gap-0.5 overflow-x-auto px-1.5 py-2.5 sm:gap-1 sm:px-3" style={{ scrollbarWidth: 'none' }}>
             {CATEGORIES.map((c) => {
               const selected = selectedCategories.has(c.value)
               const CategoryIcon = CATEGORY_ICONS[c.value]
@@ -248,26 +250,28 @@ export default function Home() {
                 <button
                   key={c.value}
                   onClick={() => toggleCategory(c.value)}
-                  className="flex flex-none flex-col items-center gap-1 px-1.5 py-0.5"
+                  className="flex flex-none flex-col items-center gap-1 px-0.5 py-0.5 sm:px-1.5"
                 >
                   <span
-                    className="flex h-[46px] w-[46px] items-center justify-center rounded-full border transition-all"
+                    className="flex h-9 w-9 items-center justify-center rounded-full border transition-all sm:h-[46px] sm:w-[46px]"
                     style={{
                       background: selected ? c.color : 'var(--color-surface)',
                       borderColor: selected ? 'transparent' : 'rgba(32,31,35,0.14)',
                       boxShadow: selected ? 'inset 0 2px 6px rgba(0,0,0,0.18), 0 4px 12px rgba(30,20,45,0.28)' : 'none',
                     }}
                   >
-                    <CategoryIcon color={selected ? '#ffffff' : '#55525c'} size={20} />
+                    <CategoryIcon color={selected ? '#ffffff' : '#55525c'} size={18} />
                   </span>
-                  <span className="whitespace-nowrap text-[11px] font-semibold" style={{ color: selected ? 'var(--color-ink)' : 'var(--color-muted-light)' }}>
+                  <span className="hidden whitespace-nowrap text-[11px] font-semibold sm:block" style={{ color: selected ? 'var(--color-ink)' : 'var(--color-muted-light)' }}>
                     {c.label}
                   </span>
                 </button>
               )
             })}
           </div>
-          {/* Hints that the row scrolls when it overflows a narrow screen */}
+          {/* Hints that the row scrolls if it ever overflows (e.g. more
+              categories added later, or the sm+ labeled layout on a narrow
+              tablet width) */}
           <div className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-surface to-transparent" />
         </div>
       </div>

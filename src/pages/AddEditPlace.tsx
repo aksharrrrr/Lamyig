@@ -103,7 +103,7 @@ export default function AddEditPlace() {
         setLat(String(pos.coords.latitude))
         setLng(String(pos.coords.longitude))
       },
-      () => setError('Could not get your location — enter coordinates manually.'),
+      () => setError('Could not get your location. Enter coordinates manually.'),
     )
   }
 
@@ -256,7 +256,7 @@ export default function AddEditPlace() {
   if (!configured) {
     return (
       <p className="text-sm text-muted">
-        Backend isn't connected yet — set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.
+        Backend isn't connected yet. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.
       </p>
     )
   }

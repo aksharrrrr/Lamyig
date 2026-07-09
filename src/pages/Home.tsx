@@ -136,7 +136,7 @@ export default function Home() {
     else {
       mapRef.current?.flyTo(result.item.lat, result.item.lng, 11)
       setSearchQuery('')
-      showToast('No Lamyig places here yet — be the first to add one')
+      showToast('No Lamyig places here yet. Be the first to add one')
     }
   }
 

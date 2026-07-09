@@ -38,7 +38,7 @@ export default function Auth() {
   }, [])
 
   if (!configured) {
-    return <p className="text-sm text-muted">Backend isn't connected yet — set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.</p>
+    return <p className="text-sm text-muted">Backend isn't connected yet. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.</p>
   }
 
   if (recovering) {
@@ -163,7 +163,7 @@ export default function Auth() {
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-sm text-muted">Browsing Lamyig is always free — sign in to add or edit a place.</p>
+      <p className="text-sm text-muted">Browsing Lamyig is always free. Sign in to add or edit a place.</p>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         <input

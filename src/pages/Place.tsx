@@ -61,7 +61,7 @@ export default function Place() {
   async function report() {
     if (!supabase || !session || !placeId) return
     const { error } = await supabase.from('place_reports').insert({ place_id: placeId, reporter_id: session.user.id, reason: reportReason })
-    setStatus(error ? error.message : 'Reported — thanks, this goes to manual review.')
+    setStatus(error ? error.message : 'Reported. Thanks, this goes to manual review.')
   }
 
   async function submitNote() {

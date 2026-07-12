@@ -41,6 +41,7 @@ export default function Home() {
   const [osmResults, setOsmResults] = useState<GeocodeResult[]>([])
   const [geocoding, setGeocoding] = useState(false)
   const [listening, setListening] = useState(false)
+  const [regionMenuOpen, setRegionMenuOpen] = useState(false)
 
   useEffect(() => {
     if (!supabase) return
@@ -176,28 +177,9 @@ export default function Home() {
         style={{ background: 'radial-gradient(120% 90% at 50% 40%, rgba(255,255,255,0) 60%, rgba(35,30,45,0.10) 100%)' }}
       />
 
-      {/* Top bar: title (left corner) + region chips. Region chip placement
-          is still TBD - kept adjacent to the title for now. */}
-      <div className="absolute left-[18px] top-[18px] z-10 flex max-w-[min(700px,calc(100vw-90px))] items-center gap-2.5 rounded-full border border-ink/[0.06] bg-surface px-2.5 py-2 shadow-lg">
-        <div className="flex flex-none items-center px-1">
-          <span className="text-[15px] font-bold tracking-tight">Lamyig</span>
-        </div>
-        <div className="h-[22px] w-px flex-none bg-ink/10" />
-        <div className="relative min-w-0">
-          <div className="flex gap-1.5 overflow-x-auto p-0.5" style={{ scrollbarWidth: 'none' }}>
-            {regions.map((r) => (
-              <button
-                key={r.id}
-                onClick={() => flyToRegion(r)}
-                className="flex-none rounded-full px-3.5 py-1.5 text-[13px] font-medium text-ink hover:bg-ink/5"
-              >
-                {r.name}
-              </button>
-            ))}
-          </div>
-          {/* Hints that the pill row scrolls when it overflows the header on narrow/mobile widths */}
-          <div className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-surface/95 to-transparent" />
-        </div>
+      {/* Title, top-left corner */}
+      <div className="absolute left-[18px] top-[18px] z-10 flex items-center rounded-full border border-ink/[0.06] bg-surface px-4 py-2 shadow-lg">
+        <span className="text-[15px] font-bold tracking-tight">Lamyig</span>
       </div>
 
       {/* Profile avatar */}
@@ -300,6 +282,55 @@ export default function Home() {
               )
             })}
           </div>
+        </div>
+      </div>
+
+      {/* Region quick-zoom. Tablet/desktop: always-visible scroll row.
+          Phone: collapses to a single "Popular destinations" toggle whose
+          list opens upward (bottom-full) so it's never clipped by the
+          browser's bottom chrome. */}
+      <div className="absolute bottom-[56px] left-1/2 z-10 max-w-[min(680px,calc(100vw-32px))] -translate-x-1/2 sm:bottom-[22px]">
+        <div className="hidden overflow-x-auto rounded-full border border-ink/[0.06] bg-surface px-2 py-1.5 shadow-lg sm:flex sm:gap-1" style={{ scrollbarWidth: 'none' }}>
+          {regions.map((r) => (
+            <button
+              key={r.id}
+              onClick={() => flyToRegion(r)}
+              className="flex-none whitespace-nowrap rounded-full px-3.5 py-1.5 text-[13px] font-medium text-ink hover:bg-ink/5"
+            >
+              {r.name}
+            </button>
+          ))}
+        </div>
+
+        <div className="relative sm:hidden">
+          {regionMenuOpen && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setRegionMenuOpen(false)} />
+              <div className="absolute bottom-full left-1/2 z-20 mb-2 w-[min(280px,calc(100vw-32px))] -translate-x-1/2 overflow-hidden rounded-2xl border border-ink/[0.06] bg-surface shadow-xl">
+                {regions.map((r) => (
+                  <button
+                    key={r.id}
+                    onClick={() => { flyToRegion(r); setRegionMenuOpen(false) }}
+                    className="flex w-full items-center px-4 py-2.5 text-left text-[14px] hover:bg-ink/5"
+                  >
+                    {r.name}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+          <button
+            onClick={() => setRegionMenuOpen((v) => !v)}
+            className="relative z-20 flex items-center gap-1.5 rounded-full border border-ink/[0.06] bg-surface px-4 py-2.5 text-[13px] font-semibold text-ink shadow-lg"
+          >
+            Popular destinations
+            <svg
+              width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
+              style={{ transform: regionMenuOpen ? 'rotate(180deg)' : 'none' }}
+            >
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </button>
         </div>
       </div>
 

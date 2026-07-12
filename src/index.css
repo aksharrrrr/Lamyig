@@ -62,3 +62,11 @@ html, body, #root {
 .maplibregl-popup-anchor-right .maplibregl-popup-tip {
   border-left-color: var(--color-surface) !important;
 }
+
+/* MapLibre's own geolocate control renders a duplicate button top-right,
+   sitting behind the profile avatar. We only use it programmatically
+   (Map.tsx's locate() triggers it) - our "My location" button in the
+   bottom-right utility stack is the one people actually see and click. */
+.maplibregl-ctrl-top-right {
+  display: none !important;
+}

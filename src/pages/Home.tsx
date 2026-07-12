@@ -9,7 +9,6 @@ import { CATEGORIES } from '../lib/categories'
 import { CATEGORY_ICONS } from '../lib/categoryIcons'
 import { geocodeSearch, type GeocodeResult } from '../lib/geocode'
 import type { Region, Village } from '../lib/types'
-import headerMark from '../assets/header-mark.png'
 
 const VILLAGE_ZOOM = 12
 
@@ -41,6 +40,7 @@ export default function Home() {
   const [mapStyle, setMapStyleState] = useState<MapStyleName>('liberty')
   const [osmResults, setOsmResults] = useState<GeocodeResult[]>([])
   const [geocoding, setGeocoding] = useState(false)
+  const [listening, setListening] = useState(false)
 
   useEffect(() => {
     if (!supabase) return
@@ -144,6 +144,26 @@ export default function Home() {
     if (e.key === 'Enter' && searchResults.length > 0) selectSearchResult(searchResults[0])
   }
 
+  // Same searchQuery state the typed input uses - voice is just an alt way
+  // to fill it in, the rest of the search pipeline (local match + OSM
+  // geocode fallback) stays untouched.
+  function startVoiceSearch() {
+    const SpeechRecognition = (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition
+    if (!SpeechRecognition) {
+      showToast('Voice search isn’t supported on this browser')
+      return
+    }
+    const recognition = new SpeechRecognition()
+    recognition.lang = 'en-IN'
+    recognition.interimResults = false
+    recognition.maxAlternatives = 1
+    recognition.onresult = (e: any) => setSearchQuery(e.results[0][0].transcript)
+    recognition.onerror = () => setListening(false)
+    recognition.onend = () => setListening(false)
+    setListening(true)
+    recognition.start()
+  }
+
   const initials = session?.user.email ? session.user.email.slice(0, 2).toUpperCase() : null
 
   return (
@@ -156,10 +176,10 @@ export default function Home() {
         style={{ background: 'radial-gradient(120% 90% at 50% 40%, rgba(255,255,255,0) 60%, rgba(35,30,45,0.10) 100%)' }}
       />
 
-      {/* Top bar: logo + region chips */}
-      <div className="absolute left-1/2 top-[18px] z-10 flex max-w-[min(920px,calc(100vw-148px))] -translate-x-1/2 items-center gap-2.5 rounded-full border border-ink/[0.06] bg-surface px-2.5 py-2 shadow-lg">
-        <div className="flex flex-none items-center gap-2 px-1">
-          <img src={headerMark} alt="" className="h-7 w-7 rounded-[9px]" />
+      {/* Top bar: title (left corner) + region chips. Region chip placement
+          is still TBD - kept adjacent to the title for now. */}
+      <div className="absolute left-[18px] top-[18px] z-10 flex max-w-[min(700px,calc(100vw-90px))] items-center gap-2.5 rounded-full border border-ink/[0.06] bg-surface px-2.5 py-2 shadow-lg">
+        <div className="flex flex-none items-center px-1">
           <span className="text-[15px] font-bold tracking-tight">Lamyig</span>
         </div>
         <div className="h-[22px] w-px flex-none bg-ink/10" />
@@ -207,9 +227,20 @@ export default function Home() {
             placeholder="Search a region, village, or place…"
             className="min-w-0 flex-1 bg-transparent text-[14.5px] outline-none placeholder:text-muted-light"
           />
+          <button
+            type="button"
+            onClick={startVoiceSearch}
+            title="Search by voice"
+            className="flex h-7 w-7 flex-none items-center justify-center rounded-full"
+            style={{ color: listening ? 'var(--color-accent)' : '#8a8791' }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="9" y="2" width="6" height="12" rx="3" /><path d="M5 10.5a7 7 0 0 0 14 0" /><path d="M12 17.5v4" /><path d="M8.5 21.5h7" />
+            </svg>
+          </button>
         </div>
         {(searchResults.length > 0 || (query.length >= 3 && localResultCount === 0)) && (
-          <div className="mt-2 overflow-hidden rounded-2xl border border-ink/[0.06] bg-surface shadow-lg">
+          <div className="absolute z-20 mt-2 w-full overflow-hidden rounded-2xl border border-ink/[0.06] bg-surface shadow-lg">
             {searchResults.map((result) => (
               <button
                 key={result.key}
@@ -241,17 +272,12 @@ export default function Home() {
         )}
       </div>
 
-      {/* Category cluster. Labels hide below the sm breakpoint so all 5
-          icon-only pills fit in one row on a phone with no scrolling and no
-          stacking into multiple rows (a horizontal-scroll version shipped
-          first, but people didn't realize it was swipeable - dropping
-          labels on mobile only, so everything's visible at once, is more
-          discoverable than any scroll-affordance tweak). Extra bottom
-          clearance below the sm breakpoint so it doesn't sit on top of
-          MapLibre's required attribution bar. */}
-      <div className="absolute bottom-[56px] left-1/2 z-10 max-w-[min(560px,calc(100vw-150px))] -translate-x-1/2 sm:bottom-[22px]">
-        <div className="relative overflow-hidden rounded-3xl border border-ink/[0.06] bg-surface shadow-xl">
-          <div className="flex gap-0.5 overflow-x-auto px-1.5 py-2.5 sm:gap-1 sm:px-3" style={{ scrollbarWidth: 'none' }}>
+      {/* Category cluster - sits right under the search bar (Google Maps
+          style), icon+label always visible on every breakpoint, multi-select
+          toggle logic unchanged. */}
+      <div className="absolute left-1/2 top-[134px] z-10 w-[clamp(300px,60vw,720px)] max-w-[calc(100vw-16px)] -translate-x-1/2">
+        <div className="relative">
+          <div className="flex gap-2 overflow-x-auto px-2 py-1" style={{ scrollbarWidth: 'none' }}>
             {CATEGORIES.map((c) => {
               const selected = selectedCategories.has(c.value)
               const CategoryIcon = CATEGORY_ICONS[c.value]
@@ -259,19 +285,15 @@ export default function Home() {
                 <button
                   key={c.value}
                   onClick={() => toggleCategory(c.value)}
-                  className="flex flex-none flex-col items-center gap-1 px-0.5 py-0.5 sm:px-1.5"
+                  className="flex flex-none items-center gap-1.5 rounded-full border px-3.5 py-2 shadow-lg transition-all"
+                  style={{
+                    background: selected ? c.color : 'var(--color-surface)',
+                    borderColor: selected ? 'transparent' : 'rgba(32,31,35,0.10)',
+                    boxShadow: selected ? 'inset 0 2px 6px rgba(0,0,0,0.18), 0 4px 12px rgba(30,20,45,0.28)' : undefined,
+                  }}
                 >
-                  <span
-                    className="flex h-9 w-9 items-center justify-center rounded-full border transition-all sm:h-[46px] sm:w-[46px]"
-                    style={{
-                      background: selected ? c.color : 'var(--color-surface)',
-                      borderColor: selected ? 'transparent' : 'rgba(32,31,35,0.14)',
-                      boxShadow: selected ? 'inset 0 2px 6px rgba(0,0,0,0.18), 0 4px 12px rgba(30,20,45,0.28)' : 'none',
-                    }}
-                  >
-                    <CategoryIcon color={selected ? '#ffffff' : '#55525c'} size={18} />
-                  </span>
-                  <span className="hidden whitespace-nowrap text-[11px] font-semibold sm:block" style={{ color: selected ? 'var(--color-ink)' : 'var(--color-muted-light)' }}>
+                  <CategoryIcon color={selected ? '#ffffff' : '#55525c'} size={16} />
+                  <span className="whitespace-nowrap text-[13px] font-semibold" style={{ color: selected ? '#ffffff' : 'var(--color-ink)' }}>
                     {c.label}
                   </span>
                 </button>

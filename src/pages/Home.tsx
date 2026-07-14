@@ -12,6 +12,17 @@ import type { Region, Village } from '../lib/types'
 
 const VILLAGE_ZOOM = 12
 
+// Stopgap until treks get real modeling (a trek spans villages/regions, so it
+// doesn't fit the Region table - see docs/14-decision-log.md's open question
+// on this). Flat list with an approximate fly-to center per trek.
+const TREKS: { name: string; lat: number; lng: number }[] = [
+  { name: 'Hampta Pass', lat: 32.2408, lng: 77.2668 },
+  { name: 'Pin Parvati Pass', lat: 31.9522, lng: 77.6539 },
+  { name: 'Bhrigu Lake', lat: 32.2957, lng: 77.3324 },
+  { name: 'Kanamo Peak', lat: 32.2965, lng: 78.2189 },
+  { name: 'Markha Valley', lat: 34.045, lng: 77.628 },
+]
+
 const CATEGORY_FILTER_KEY = 'lamyig:selectedCategories'
 
 function loadStoredCategories(): Set<string> {
@@ -42,6 +53,8 @@ export default function Home() {
   const [geocoding, setGeocoding] = useState(false)
   const [listening, setListening] = useState(false)
   const [regionMenuOpen, setRegionMenuOpen] = useState(false)
+  const [trekSubmenuOpen, setTrekSubmenuOpen] = useState(false)
+  const [trekDropdownOpen, setTrekDropdownOpen] = useState(false)
 
   useEffect(() => {
     if (!supabase) return
@@ -90,6 +103,10 @@ export default function Home() {
     }
     mapRef.current?.flyTo(village.center_lat, village.center_lng, VILLAGE_ZOOM)
     setSearchQuery('')
+  }
+
+  function flyToTrek(trek: (typeof TREKS)[number]) {
+    mapRef.current?.flyTo(trek.lat, trek.lng, VILLAGE_ZOOM)
   }
 
   // Search matches regions and villages first (real Lamyig content). If
@@ -178,8 +195,9 @@ export default function Home() {
       />
 
       {/* Title, top-left corner */}
-      <div className="absolute left-[18px] top-[18px] z-10 flex items-center rounded-full border border-ink/[0.06] bg-surface px-4 py-2 shadow-lg">
+      <div className="absolute left-[18px] top-[18px] z-10 flex flex-col items-start justify-center rounded-2xl border border-ink/[0.06] bg-surface px-4 py-1.5 leading-tight shadow-lg">
         <span className="text-[15px] font-bold tracking-tight">Lamyig</span>
+        <span className="text-[11px] font-medium text-muted-light">ལམ་ཡིག</span>
       </div>
 
       {/* Profile avatar */}
@@ -196,7 +214,7 @@ export default function Home() {
       </button>
 
       {/* Search */}
-      <div className="absolute left-1/2 top-[78px] z-10 w-[clamp(300px,60vw,720px)] max-w-[calc(100vw-32px)] -translate-x-1/2">
+      <div className="absolute left-[18px] right-[18px] top-[78px] z-10 mx-auto max-w-[720px]">
         <div className="flex h-12 items-center gap-2.5 rounded-full border border-ink/[0.06] bg-surface px-[18px] shadow-lg">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8a8791" strokeWidth="2" strokeLinecap="round">
             <circle cx="11" cy="11" r="6.5" /><path d="M16 16l4.5 4.5" />
@@ -257,9 +275,9 @@ export default function Home() {
       {/* Category cluster - sits right under the search bar (Google Maps
           style), icon+label always visible on every breakpoint, multi-select
           toggle logic unchanged. */}
-      <div className="absolute left-1/2 top-[134px] z-10 w-[clamp(300px,60vw,720px)] max-w-[calc(100vw-16px)] -translate-x-1/2">
+      <div className="absolute left-0 right-0 top-[134px] z-10 sm:left-1/2 sm:right-auto sm:w-[min(720px,calc(100vw-36px))] sm:-translate-x-1/2">
         <div className="relative">
-          <div className="flex gap-2 overflow-x-auto px-2 py-1" style={{ scrollbarWidth: 'none' }}>
+          <div className="flex gap-2 overflow-x-auto py-1" style={{ scrollbarWidth: 'none' }}>
             {CATEGORIES.map((c) => {
               const selected = selectedCategories.has(c.value)
               const CategoryIcon = CATEGORY_ICONS[c.value]
@@ -290,7 +308,7 @@ export default function Home() {
           list opens upward (bottom-full) so it's never clipped by the
           browser's bottom chrome. */}
       <div className="absolute bottom-[56px] left-1/2 z-10 max-w-[min(680px,calc(100vw-32px))] -translate-x-1/2 sm:bottom-[22px]">
-        <div className="hidden overflow-x-auto rounded-full border border-ink/[0.06] bg-surface px-2 py-1.5 shadow-lg sm:flex sm:gap-1" style={{ scrollbarWidth: 'none' }}>
+        <div className="hidden items-center overflow-x-auto rounded-full border border-ink/[0.06] bg-surface px-2 py-1.5 shadow-lg sm:flex sm:gap-1" style={{ scrollbarWidth: 'none' }}>
           {regions.map((r) => (
             <button
               key={r.id}
@@ -300,12 +318,45 @@ export default function Home() {
               {r.name}
             </button>
           ))}
+
+          {/* Treks: not a Region (spans villages/regions), so it's a separate
+              flyout pill rather than another item in the regions row. */}
+          <div className="relative flex-none">
+            {trekDropdownOpen && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setTrekDropdownOpen(false)} />
+                <div className="absolute bottom-full left-1/2 z-20 mb-2 w-[220px] -translate-x-1/2 overflow-hidden rounded-2xl border border-ink/[0.06] bg-surface shadow-xl">
+                  {TREKS.map((t) => (
+                    <button
+                      key={t.name}
+                      onClick={() => { flyToTrek(t); setTrekDropdownOpen(false) }}
+                      className="flex w-full items-center px-4 py-2.5 text-left text-[14px] hover:bg-ink/5"
+                    >
+                      {t.name}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+            <button
+              onClick={() => setTrekDropdownOpen((v) => !v)}
+              className="relative z-20 flex flex-none items-center gap-1 whitespace-nowrap rounded-full px-3.5 py-1.5 text-[13px] font-medium text-ink hover:bg-ink/5"
+            >
+              Treks
+              <svg
+                width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
+                style={{ transform: trekDropdownOpen ? 'rotate(180deg)' : 'none' }}
+              >
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         <div className="relative sm:hidden">
           {regionMenuOpen && (
             <>
-              <div className="fixed inset-0 z-10" onClick={() => setRegionMenuOpen(false)} />
+              <div className="fixed inset-0 z-10" onClick={() => { setRegionMenuOpen(false); setTrekSubmenuOpen(false) }} />
               <div className="absolute bottom-full left-1/2 z-20 mb-2 w-[min(280px,calc(100vw-32px))] -translate-x-1/2 overflow-hidden rounded-2xl border border-ink/[0.06] bg-surface shadow-xl">
                 {regions.map((r) => (
                   <button
@@ -314,6 +365,31 @@ export default function Home() {
                     className="flex w-full items-center px-4 py-2.5 text-left text-[14px] hover:bg-ink/5"
                   >
                     {r.name}
+                  </button>
+                ))}
+
+                {/* Treks: nested accordion row inside the same dropdown,
+                    click expands the trek list inline rather than opening
+                    a second popup (avoids off-screen flyout clipping on phone). */}
+                <button
+                  onClick={() => setTrekSubmenuOpen((v) => !v)}
+                  className="flex w-full items-center justify-between px-4 py-2.5 text-left text-[14px] font-semibold hover:bg-ink/5"
+                >
+                  Treks
+                  <svg
+                    width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
+                    style={{ transform: trekSubmenuOpen ? 'rotate(180deg)' : 'none' }}
+                  >
+                    <path d="M6 9l6 6 6-6" />
+                  </svg>
+                </button>
+                {trekSubmenuOpen && TREKS.map((t) => (
+                  <button
+                    key={t.name}
+                    onClick={() => { flyToTrek(t); setRegionMenuOpen(false); setTrekSubmenuOpen(false) }}
+                    className="flex w-full items-center py-2.5 pl-8 pr-4 text-left text-[13.5px] text-muted-light hover:bg-ink/5"
+                  >
+                    {t.name}
                   </button>
                 ))}
               </div>
@@ -339,9 +415,9 @@ export default function Home() {
         <button
           onClick={() => openOverlay('/add')}
           title="Add a place"
-          className="flex h-[52px] w-[52px] items-center justify-center rounded-full bg-accent shadow-xl hover:bg-accent-dark"
+          className="flex h-[52px] w-[52px] items-center justify-center rounded-full border border-ink/[0.08] bg-accent-light shadow-xl hover:scale-105"
         >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.2" strokeLinecap="round">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-text)" strokeWidth="2.2" strokeLinecap="round">
             <path d="M12 5v14" /><path d="M5 12h14" />
           </svg>
         </button>

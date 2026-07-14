@@ -320,38 +320,41 @@ export default function Home() {
           ))}
 
           {/* Treks: not a Region (spans villages/regions), so it's a separate
-              flyout pill rather than another item in the regions row. */}
-          <div className="relative flex-none">
-            {trekDropdownOpen && (
-              <>
-                <div className="fixed inset-0 z-10" onClick={() => setTrekDropdownOpen(false)} />
-                <div className="absolute bottom-full left-1/2 z-20 mb-2 w-[220px] -translate-x-1/2 overflow-hidden rounded-2xl border border-ink/[0.06] bg-surface shadow-xl">
-                  {TREKS.map((t) => (
-                    <button
-                      key={t.name}
-                      onClick={() => { flyToTrek(t); setTrekDropdownOpen(false) }}
-                      className="flex w-full items-center px-4 py-2.5 text-left text-[14px] hover:bg-ink/5"
-                    >
-                      {t.name}
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
-            <button
-              onClick={() => setTrekDropdownOpen((v) => !v)}
-              className="relative z-20 flex flex-none items-center gap-1 whitespace-nowrap rounded-full px-3.5 py-1.5 text-[13px] font-medium text-ink hover:bg-ink/5"
+              flyout pill rather than another item in the regions row. The
+              popup itself renders outside this row (see below) because this
+              row is overflow-x-auto - browsers coerce a lone overflow-x onto
+              overflow-y too, so a bottom-full popup nested in here gets
+              silently clipped instead of floating above it. */}
+          <button
+            onClick={() => setTrekDropdownOpen((v) => !v)}
+            className="relative z-20 flex flex-none items-center gap-1 whitespace-nowrap rounded-full px-3.5 py-1.5 text-[13px] font-medium text-ink hover:bg-ink/5"
+          >
+            Treks
+            <svg
+              width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
+              style={{ transform: trekDropdownOpen ? 'rotate(180deg)' : 'none' }}
             >
-              Treks
-              <svg
-                width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
-                style={{ transform: trekDropdownOpen ? 'rotate(180deg)' : 'none' }}
-              >
-                <path d="M6 9l6 6 6-6" />
-              </svg>
-            </button>
-          </div>
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </button>
         </div>
+
+        {trekDropdownOpen && (
+          <>
+            <div className="fixed inset-0 z-10" onClick={() => setTrekDropdownOpen(false)} />
+            <div className="absolute bottom-full right-0 z-20 mb-2 hidden w-[220px] overflow-hidden rounded-2xl border border-ink/[0.06] bg-surface shadow-xl sm:block">
+              {TREKS.map((t) => (
+                <button
+                  key={t.name}
+                  onClick={() => { flyToTrek(t); setTrekDropdownOpen(false) }}
+                  className="flex w-full items-center px-4 py-2.5 text-left text-[14px] hover:bg-ink/5"
+                >
+                  {t.name}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
 
         <div className="relative sm:hidden">
           {regionMenuOpen && (

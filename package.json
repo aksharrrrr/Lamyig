@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "prepare": "husky"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",
@@ -18,12 +19,18 @@
     "react-router-dom": "^7.18.1",
     "tailwindcss": "^4.3.2"
   },
+  "lint-staged": {
+    "*.{ts,tsx}": "oxlint"
+  },
   "devDependencies": {
     "@types/node": "^24.13.2",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.3",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.8",
     "oxlint": "^1.71.0",
+    "playwright": "^1.61.1",
     "typescript": "~6.0.2",
     "vite": "^8.1.1",
     "vite-plugin-pwa": "^1.3.0"

@@ -30,6 +30,7 @@ npm run dev
 - **Database changes go in `supabase/migrations/`** as a new numbered file. Never edit an already-committed migration — if something needs fixing, that's a new migration.
 - **Small, focused PRs** against `main` beat one large one.
 - **Match what's already there** before introducing a new pattern — this codebase is still small enough that consistency matters more than any one file being "more correct."
+- **A pre-commit hook lints staged files automatically** (`npm install` sets it up via husky) — commits with an `oxlint` error are rejected. Fix the error rather than reaching for `--no-verify`.
 
 By contributing code, you agree it's licensed under this repo's [MIT License](LICENSE).
 
@@ -37,7 +38,14 @@ By contributing code, you agree it's licensed under this repo's [MIT License](LI
 
 `main` is protected and auto-deploys straight to production (lamyig.vercel.app) on every push, so it isn't a free-for-all:
 
-1. Branch off `main`: `git checkout -b fix/short-description` (or `feat/...`).
+1. Branch off `main`, named `<type>/short-description` (kebab-case description):
+   - `feat/` — new functionality
+   - `fix/` — bug fix
+   - `docs/` — documentation only
+   - `chore/` — tooling, deps, cleanup, no user-facing change
+   - `daily/YYYY-MM-DD` — reserved for the maintainer's own end-of-day batches, not for external contributions
+
+   e.g. `git checkout -b fix/geolocate-button-overlap`
 2. Open a pull request against `main` instead of pushing directly. GitHub branch protection enforces this for anyone without admin rights on the repo.
 3. Describe what changed and why in the PR body — link the relevant `docs/14-decision-log.md` entry if the change touches something already decided.
 4. Get it reviewed before merging. Right now that's the maintainer signing off; as more regular contributors join, this moves to requiring at least one approval from someone other than the author.

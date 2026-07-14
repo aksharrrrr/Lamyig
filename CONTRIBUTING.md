@@ -30,6 +30,7 @@ npm run dev
 - **Database changes go in `supabase/migrations/`** as a new numbered file. Never edit an already-committed migration — if something needs fixing, that's a new migration.
 - **Small, focused PRs** against `main` beat one large one.
 - **Match what's already there** before introducing a new pattern — this codebase is still small enough that consistency matters more than any one file being "more correct."
+- **A pre-commit hook lints staged files automatically** (`npm install` sets it up via husky) — commits with an `oxlint` error are rejected. Fix the error rather than reaching for `--no-verify`.
 
 By contributing code, you agree it's licensed under this repo's [MIT License](LICENSE).
 

@@ -285,7 +285,7 @@ export default function Home() {
                 <button
                   key={c.value}
                   onClick={() => toggleCategory(c.value)}
-                  className="flex flex-none items-center gap-1.5 rounded-full border px-3.5 py-2 shadow-lg transition-all"
+                  className="flex h-11 flex-none items-center gap-1.5 rounded-full border px-3.5 shadow-lg transition-all"
                   style={{
                     background: selected ? c.color : 'var(--color-surface)',
                     borderColor: selected ? 'transparent' : 'rgba(32,31,35,0.10)',

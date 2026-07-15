@@ -57,6 +57,11 @@ export default function App() {
         <Routes>
           <Route path="/auth" element={<Overlay title={authTitle} onClose={closeToHome}><Auth /></Overlay>} />
           <Route path="/feedback" element={<Overlay title="Feedback" onClose={closeToHome}><Feedback /></Overlay>} />
+          {/* Every other path lands here otherwise - without it react-router
+              logs a "No routes matched" console warning on every load/nav
+              (this Routes block uses the real location, not the background
+              one, so most paths legitimately don't match it). */}
+          <Route path="*" element={null} />
         </Routes>
 
         {background && (
@@ -65,6 +70,7 @@ export default function App() {
             <Route path="/add" element={<Overlay title="Add a place"><AddEditPlace /></Overlay>} />
             <Route path="/place/:placeId/edit" element={<Overlay title="Edit place"><AddEditPlace /></Overlay>} />
             <Route path="/profile" element={<Overlay title="Profile"><Profile /></Overlay>} />
+            <Route path="*" element={null} />
           </Routes>
         )}
       </PlacesProvider>

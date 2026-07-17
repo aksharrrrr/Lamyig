@@ -1,3 +1,6 @@
 {
-  "installCommand": "npm ci"
+  "installCommand": "npm ci",
+  "rewrites": [
+    { "source": "/((?!assets/|manifest.webmanifest|registerSW.js|favicon.png|apple-touch-icon.png).*)", "destination": "/index.html" }
+  ]
 }

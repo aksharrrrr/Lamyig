@@ -5,6 +5,30 @@ import { useAuth } from '../lib/useAuth'
 import { useToast } from '../lib/useToast'
 
 const inputClass = 'rounded-[10px] border border-ink/[0.14] bg-surface px-3.5 py-2.5 text-sm outline-none focus:border-accent focus:ring-3 focus:ring-accent-light'
+const passwordInputClass = `${inputClass} w-full pr-10`
+
+function PasswordVisibilityToggle({ visible, onToggle }: { visible: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-label={visible ? 'Hide password' : 'Show password'}
+      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted hover:text-ink"
+    >
+      {visible ? (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+          <line x1="1" y1="1" x2="23" y2="23" />
+        </svg>
+      ) : (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+          <circle cx="12" cy="12" r="3" />
+        </svg>
+      )}
+    </button>
+  )
+}
 
 // Mode lives in the URL (?mode=sign-up / ?mode=forgot), not local state, so
 // App.tsx can read it to show the right title on the shared Overlay
@@ -28,6 +52,8 @@ export default function Auth() {
   // the only way to distinguish "here to set a new password" from an
   // ordinary signed-in visit, since both have a non-null session.
   const [recovering, setRecovering] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showNewPassword, setShowNewPassword] = useState(false)
 
   useEffect(() => {
     if (!supabase) return
@@ -60,15 +86,18 @@ export default function Auth() {
     return (
       <form onSubmit={handleSetNewPassword} className="flex flex-col gap-3">
         <p className="text-sm text-muted">Choose a new password.</p>
-        <input
-          type="password"
-          required
-          minLength={6}
-          placeholder="New password"
-          value={newPassword}
-          onChange={(e) => setNewPassword(e.target.value)}
-          className={inputClass}
-        />
+        <div className="relative">
+          <input
+            type={showNewPassword ? 'text' : 'password'}
+            required
+            minLength={6}
+            placeholder="New password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            className={passwordInputClass}
+          />
+          <PasswordVisibilityToggle visible={showNewPassword} onToggle={() => setShowNewPassword((v) => !v)} />
+        </div>
         {error && <p className="text-sm text-danger">{error}</p>}
         <button
           type="submit"
@@ -174,15 +203,18 @@ export default function Auth() {
           onChange={(e) => setEmail(e.target.value)}
           className={inputClass}
         />
-        <input
-          type="password"
-          required
-          minLength={6}
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className={inputClass}
-        />
+        <div className="relative">
+          <input
+            type={showPassword ? 'text' : 'password'}
+            required
+            minLength={6}
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className={passwordInputClass}
+          />
+          <PasswordVisibilityToggle visible={showPassword} onToggle={() => setShowPassword((v) => !v)} />
+        </div>
         {mode === 'sign-in' && (
           <button
             type="button"

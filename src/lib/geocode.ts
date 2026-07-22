@@ -1,15 +1,29 @@
-// Free, zero-infra geocoding fallback for places outside our own curated
-// regions/villages — Photon first (faster, autocomplete-friendly), falls
-// back to Nominatim if Photon errors or returns nothing. Both are free
-// public OSM-based services (D-006 territory: use the OSM ecosystem,
-// never build/host this ourselves) — see docs/15-free-tier-limits.md for
-// the usage-policy constraints on both before changing how often this
-// gets called.
+// Geocoding for both the home search bar and the Add Place location picker.
+// LocationIQ is the primary source when a token is configured (free tier:
+// 5k req/day, 2 req/sec) - it serves the same OSM data as Nominatim, but its
+// ToS explicitly permits autocomplete/live-search use, unlike Nominatim's
+// public instance, whose usage policy explicitly forbids exactly that ("will
+// get you banned"). Falls back to Photon then Nominatim if no token is set
+// (e.g. a contributor running locally without one) or if LocationIQ errors.
 
 export interface GeocodeResult {
   name: string
   lat: number
   lng: number
+  /** Best-effort settlement name from address components - only LocationIQ populates this today. */
+  village?: string
+  town?: string
+  city?: string
+  county?: string
+}
+
+const LOCATIONIQ_TOKEN = import.meta.env.VITE_LOCATIONIQ_TOKEN as string | undefined
+
+interface LocationIQResult {
+  display_name: string
+  lat: string
+  lon: string
+  address?: { village?: string; town?: string; city?: string; county?: string }
 }
 
 interface PhotonFeature {
@@ -21,6 +35,27 @@ interface NominatimResult {
   display_name: string
   lat: string
   lon: string
+}
+
+async function queryLocationIQ(query: string): Promise<GeocodeResult[]> {
+  const url = new URL('https://api.locationiq.com/v1/autocomplete')
+  url.searchParams.set('key', LOCATIONIQ_TOKEN!)
+  url.searchParams.set('q', query)
+  url.searchParams.set('countrycodes', 'in')
+  url.searchParams.set('addressdetails', '1')
+  url.searchParams.set('limit', '5')
+  const res = await fetch(url)
+  if (!res.ok) throw new Error(`LocationIQ returned ${res.status}`)
+  const data: LocationIQResult[] = await res.json()
+  return data.map((r) => ({
+    name: r.display_name,
+    lat: Number(r.lat),
+    lng: Number(r.lon),
+    village: r.address?.village,
+    town: r.address?.town,
+    city: r.address?.city,
+    county: r.address?.county,
+  }))
 }
 
 async function queryPhoton(query: string): Promise<GeocodeResult[]> {
@@ -41,6 +76,9 @@ async function queryNominatim(query: string): Promise<GeocodeResult[]> {
   // policy asks for one) - the HTTP Referer, which browsers send
   // automatically, is their documented fallback identification method for
   // client-side web apps, so this is within policy without extra work.
+  // This fallback path is only single, occasional requests (not
+  // autocomplete-on-every-keystroke, since LocationIQ handles that when a
+  // token is present), which is within Nominatim's usage policy.
   const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&countrycodes=in`
   const res = await fetch(url)
   if (!res.ok) throw new Error(`Nominatim returned ${res.status}`)
@@ -49,6 +87,14 @@ async function queryNominatim(query: string): Promise<GeocodeResult[]> {
 }
 
 export async function geocodeSearch(query: string): Promise<GeocodeResult[]> {
+  if (LOCATIONIQ_TOKEN) {
+    try {
+      const results = await queryLocationIQ(query)
+      if (results.length > 0) return results
+    } catch {
+      // fall through to the free OSM chain below
+    }
+  }
   try {
     const results = await queryPhoton(query)
     if (results.length > 0) return results

@@ -7,6 +7,7 @@ import { useToast } from '../lib/useToast'
 import { CATEGORIES, categoryDef, sanitizeAttributes } from '../lib/categories'
 import { CATEGORY_ICONS } from '../lib/categoryIcons'
 import { compressImage } from '../lib/compressImage'
+import LocationPicker from '../components/LocationPicker'
 import type { Region, Village } from '../lib/types'
 
 const MAX_PHOTOS = 6
@@ -56,6 +57,14 @@ export default function AddEditPlace() {
   const [error, setError] = useState<string | null>(null)
 
   const def = categoryDef(category)
+
+  const selectedVillage = villages.find((v) => v.name.trim().toLowerCase() === villageName.trim().toLowerCase())
+  const selectedRegion = regions.find((r) => r.id === regionId)
+  const pickerInitialCenter = selectedVillage?.center_lat != null && selectedVillage?.center_lng != null
+    ? { lat: selectedVillage.center_lat, lng: selectedVillage.center_lng }
+    : selectedRegion?.center_lat != null && selectedRegion?.center_lng != null
+      ? { lat: selectedRegion.center_lat, lng: selectedRegion.center_lng }
+      : undefined
 
   useEffect(() => {
     if (!supabase) return
@@ -317,6 +326,21 @@ export default function AddEditPlace() {
         </label>
       )}
 
+      <div className="flex flex-col gap-1.5">
+        <span className={labelClass}>Location</span>
+        <LocationPicker
+          lat={lat ? Number(lat) : null}
+          lng={lng ? Number(lng) : null}
+          category={category}
+          initialCenter={pickerInitialCenter}
+          onChange={(newLat, newLng) => { setLat(String(newLat)); setLng(String(newLng)) }}
+          onSelectVillageName={(name) => { if (!villageName.trim()) setVillageName(name) }}
+        />
+      </div>
+      <button type="button" onClick={useMyLocation} className="self-start text-[13px] font-medium text-accent underline">
+        Use my current location
+      </button>
+
       <div className="flex gap-2">
         <label className="flex flex-1 flex-col gap-1.5">
           <span className={labelClass}>Latitude</span>
@@ -327,9 +351,6 @@ export default function AddEditPlace() {
           <input required type="number" step="any" min={-180} max={180} value={lng} onChange={(e) => setLng(e.target.value)} className={inputClass} />
         </label>
       </div>
-      <button type="button" onClick={useMyLocation} className="self-start text-[13px] font-medium text-accent underline">
-        Use my current location
-      </button>
 
       <label className="flex flex-col gap-1.5">
         <span className={labelClass}>Region</span>

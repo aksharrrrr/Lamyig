@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
+import { createMarkerElement } from './Map'
 
 // LocationIQ, not raw Nominatim: Nominatim's usage policy explicitly forbids
 // autocomplete/live-search use ("will get you banned") - LocationIQ serves
 // the same OSM data but with a free tier whose ToS actually permits this.
+// (Note: `lib/geocode.ts` uses Photon/Nominatim for the home search bar -
+// a different, pre-existing tradeoff. Not unified here - see PR discussion.)
 const LOCATIONIQ_TOKEN = import.meta.env.VITE_LOCATIONIQ_TOKEN as string | undefined
 const SEARCH_DEBOUNCE_MS = 450
 const MIN_QUERY_LENGTH = 3
@@ -26,6 +29,8 @@ interface SearchResult {
 interface LocationPickerProps {
   lat: number | null
   lng: number | null
+  /** Marker uses the same category-colored icon as the real map pin (Map.tsx) - the picker's pin looks exactly like the place will once it's live. */
+  category: string
   /** Falls back to India-wide view when neither this nor lat/lng is set. */
   initialCenter?: { lat: number; lng: number }
   onChange: (lat: number, lng: number) => void
@@ -33,7 +38,7 @@ interface LocationPickerProps {
   onSelectVillageName?: (name: string) => void
 }
 
-export default function LocationPicker({ lat, lng, initialCenter, onChange, onSelectVillageName }: LocationPickerProps) {
+export default function LocationPicker({ lat, lng, category, initialCenter, onChange, onSelectVillageName }: LocationPickerProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
   const markerRef = useRef<maplibregl.Marker | null>(null)
@@ -63,7 +68,7 @@ export default function LocationPicker({ lat, lng, initialCenter, onChange, onSe
     map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right')
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right')
 
-    const marker = new maplibregl.Marker({ draggable: true, color: '#c2542f' })
+    const marker = new maplibregl.Marker({ element: createMarkerElement(category), draggable: true, anchor: 'center' })
       .setLngLat([start.lng, start.lat])
       .addTo(map)
 
@@ -87,12 +92,33 @@ export default function LocationPicker({ lat, lng, initialCenter, onChange, onSe
       mapRef.current = null
       markerRef.current = null
     }
-    // Intentionally empty deps - map/marker are created once; external
-    // lat/lng changes are synced via the effect below instead of recreating
-    // the map (which would lose zoom/pan state on every keystroke elsewhere
-    // in the form).
+    // Intentionally excludes category/lat/lng/initialCenter - map/marker are
+    // created once; category swaps are handled by the effect below (destroy
+    // + recreate the marker element in place) and lat/lng changes by the
+    // effect after that, rather than recreating the whole map (which would
+    // lose zoom/pan state on every keystroke elsewhere in the form).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Category changed (e.g. switched from homestay to camping) - swap the
+  // marker's icon in place so it still matches what the real map pin will
+  // look like, without losing the current position.
+  useEffect(() => {
+    const map = mapRef.current
+    const oldMarker = markerRef.current
+    if (!map || !oldMarker) return
+    const pos = oldMarker.getLngLat()
+    oldMarker.remove()
+    const marker = new maplibregl.Marker({ element: createMarkerElement(category), draggable: true, anchor: 'center' })
+      .setLngLat(pos)
+      .addTo(map)
+    marker.on('dragend', () => {
+      const { lat: newLat, lng: newLng } = marker.getLngLat()
+      onChangeRef.current(newLat, newLng)
+    })
+    markerRef.current = marker
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [category])
 
   // Keep the pin in sync if lat/lng change from outside (e.g. the manual
   // number-input fallback fields, or "Use my current location").
@@ -161,25 +187,33 @@ export default function LocationPicker({ lat, lng, initialCenter, onChange, onSe
   return (
     <div className="flex flex-col gap-2">
       <div className="relative">
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search a village or place name…"
-          className="w-full rounded-[10px] border border-ink/[0.14] bg-surface px-3.5 py-2.5 text-sm outline-none focus:border-accent focus:ring-3 focus:ring-accent-light"
-        />
+        <div className="flex h-11 items-center gap-2.5 rounded-full border border-ink/[0.06] bg-surface px-4 shadow-sm">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8a8791" strokeWidth="2" strokeLinecap="round">
+            <circle cx="11" cy="11" r="6.5" /><path d="M16 16l4.5 4.5" />
+          </svg>
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search a village or place name…"
+            className="min-w-0 flex-1 bg-transparent text-[14px] outline-none placeholder:text-muted-light"
+          />
+        </div>
         {(results.length > 0 || searching || searchError) && (
-          <div className="absolute z-10 mt-1 w-full rounded-[10px] border border-ink/10 bg-surface shadow-lg">
-            {searching && <p className="px-3.5 py-2 text-xs text-muted">Searching…</p>}
-            {searchError && <p className="px-3.5 py-2 text-xs text-danger">{searchError}</p>}
+          <div className="absolute z-20 mt-2 w-full overflow-hidden rounded-2xl border border-ink/[0.06] bg-surface shadow-lg">
+            {searching && <div className="px-4 py-2.5 text-[13px] text-muted-light">Searching…</div>}
+            {searchError && <div className="px-4 py-2.5 text-[13px] text-danger">{searchError}</div>}
             {results.map((r, i) => (
               <button
                 key={i}
                 type="button"
                 onClick={() => pickResult(r)}
-                className="block w-full truncate px-3.5 py-2 text-left text-sm hover:bg-ink/5"
+                className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-[14px] hover:bg-ink/5"
               >
-                {r.display_name}
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8a8791" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                  <path d="M12 21s-7-6.5-7-11.5A7 7 0 0 1 19 9.5C19 14.5 12 21 12 21z" /><circle cx="12" cy="9.5" r="2.2" />
+                </svg>
+                <span className="min-w-0 flex-1 truncate">{r.display_name}</span>
               </button>
             ))}
           </div>

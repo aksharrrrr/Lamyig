@@ -25,7 +25,7 @@ const CATEGORY_ICON_SVG: Record<string, string> = {
   camping: '<path d="M12 5 4.5 19h15z"/><path d="M9.5 19 12 14l2.5 5"/>',
 }
 
-function createMarkerElement(category: string): HTMLDivElement {
+export function createMarkerElement(category: string): HTMLDivElement {
   const el = document.createElement('div')
   el.style.width = '24px'
   el.style.height = '24px'

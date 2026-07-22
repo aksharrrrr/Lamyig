@@ -331,6 +331,7 @@ export default function AddEditPlace() {
         <LocationPicker
           lat={lat ? Number(lat) : null}
           lng={lng ? Number(lng) : null}
+          category={category}
           initialCenter={pickerInitialCenter}
           onChange={(newLat, newLng) => { setLat(String(newLat)); setLng(String(newLng)) }}
           onSelectVillageName={(name) => { if (!villageName.trim()) setVillageName(name) }}

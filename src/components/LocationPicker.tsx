@@ -2,29 +2,12 @@ import { useEffect, useRef, useState } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { createMarkerElement } from './Map'
+import { geocodeSearch, type GeocodeResult } from '../lib/geocode'
 
-// LocationIQ, not raw Nominatim: Nominatim's usage policy explicitly forbids
-// autocomplete/live-search use ("will get you banned") - LocationIQ serves
-// the same OSM data but with a free tier whose ToS actually permits this.
-// (Note: `lib/geocode.ts` uses Photon/Nominatim for the home search bar -
-// a different, pre-existing tradeoff. Not unified here - see PR discussion.)
-const LOCATIONIQ_TOKEN = import.meta.env.VITE_LOCATIONIQ_TOKEN as string | undefined
 const SEARCH_DEBOUNCE_MS = 450
 const MIN_QUERY_LENGTH = 3
 const DEFAULT_ZOOM = 13
 const PICKED_ZOOM = 15
-
-interface SearchResult {
-  display_name: string
-  lat: string
-  lon: string
-  address?: {
-    village?: string
-    town?: string
-    city?: string
-    county?: string
-  }
-}
 
 interface LocationPickerProps {
   lat: number | null
@@ -46,7 +29,7 @@ export default function LocationPicker({ lat, lng, category, initialCenter, onCh
   onChangeRef.current = onChange
 
   const [query, setQuery] = useState('')
-  const [results, setResults] = useState<SearchResult[]>([])
+  const [results, setResults] = useState<GeocodeResult[]>([])
   const [searching, setSearching] = useState(false)
   const [searchError, setSearchError] = useState<string | null>(null)
 
@@ -135,49 +118,36 @@ export default function LocationPicker({ lat, lng, category, initialCenter, onCh
       setSearchError(null)
       return
     }
-    if (!LOCATIONIQ_TOKEN) {
-      setSearchError('Search unavailable (no LocationIQ token configured).')
-      return
-    }
 
-    const controller = new AbortController()
+    let cancelled = false
     const timer = setTimeout(async () => {
       setSearching(true)
       setSearchError(null)
       try {
-        const url = new URL('https://api.locationiq.com/v1/autocomplete')
-        url.searchParams.set('key', LOCATIONIQ_TOKEN)
-        url.searchParams.set('q', query.trim())
-        url.searchParams.set('countrycodes', 'in')
-        url.searchParams.set('addressdetails', '1')
-        url.searchParams.set('limit', '5')
-        const res = await fetch(url, { signal: controller.signal })
-        if (!res.ok) throw new Error(`Search failed (${res.status})`)
-        const data = (await res.json()) as SearchResult[]
-        setResults(data)
-      } catch (err) {
-        if (err instanceof DOMException && err.name === 'AbortError') return
-        setSearchError('Search failed. Try again, or place the pin manually.')
-        setResults([])
+        const data = await geocodeSearch(query.trim())
+        if (!cancelled) setResults(data)
+      } catch {
+        if (!cancelled) {
+          setSearchError('Search failed. Try again, or place the pin manually.')
+          setResults([])
+        }
       } finally {
-        setSearching(false)
+        if (!cancelled) setSearching(false)
       }
     }, SEARCH_DEBOUNCE_MS)
 
     return () => {
+      cancelled = true
       clearTimeout(timer)
-      controller.abort()
     }
   }, [query])
 
-  function pickResult(result: SearchResult) {
-    const resultLat = Number(result.lat)
-    const resultLng = Number(result.lon)
-    mapRef.current?.flyTo({ center: [resultLng, resultLat], zoom: PICKED_ZOOM, duration: 1200 })
-    markerRef.current?.setLngLat([resultLng, resultLat])
-    onChange(resultLat, resultLng)
+  function pickResult(result: GeocodeResult) {
+    mapRef.current?.flyTo({ center: [result.lng, result.lat], zoom: PICKED_ZOOM, duration: 1200 })
+    markerRef.current?.setLngLat([result.lng, result.lat])
+    onChange(result.lat, result.lng)
 
-    const villageName = result.address?.village ?? result.address?.town ?? result.address?.city ?? result.address?.county
+    const villageName = result.village ?? result.town ?? result.city ?? result.county
     if (villageName) onSelectVillageName?.(villageName)
 
     setQuery('')
@@ -213,7 +183,7 @@ export default function LocationPicker({ lat, lng, category, initialCenter, onCh
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8a8791" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
                   <path d="M12 21s-7-6.5-7-11.5A7 7 0 0 1 19 9.5C19 14.5 12 21 12 21z" /><circle cx="12" cy="9.5" r="2.2" />
                 </svg>
-                <span className="min-w-0 flex-1 truncate">{r.display_name}</span>
+                <span className="min-w-0 flex-1 truncate">{r.name}</span>
               </button>
             ))}
           </div>

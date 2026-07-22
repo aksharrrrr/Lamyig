@@ -47,6 +47,7 @@ export default function Auth() {
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [resetSent, setResetSent] = useState(false)
+  const [signupConfirmSent, setSignupConfirmSent] = useState(false)
   // Clicking the emailed reset link lands back here already "signed in" (a
   // temporary recovery session) and fires this specific auth event - that's
   // the only way to distinguish "here to set a new password" from an
@@ -179,15 +180,42 @@ export default function Auth() {
     e.preventDefault()
     setError(null)
     setSubmitting(true)
-    const { error } = mode === 'sign-in'
-      ? await supabase!.auth.signInWithPassword({ email, password })
-      : await supabase!.auth.signUp({ email, password })
+
+    if (mode === 'sign-in') {
+      const { error } = await supabase!.auth.signInWithPassword({ email, password })
+      setSubmitting(false)
+      if (error) {
+        setError(error.message)
+        return
+      }
+      navigate('/')
+      return
+    }
+
+    // Email confirmation is on (Authentication -> Providers -> Email in the
+    // Supabase dashboard), so a successful signUp doesn't come with a
+    // session yet - the account exists but is unconfirmed. Redirecting to
+    // '/' here would silently drop back to a signed-out home page with zero
+    // feedback, indistinguishable from nothing having happened at all.
+    const { data, error } = await supabase!.auth.signUp({
+      email,
+      password,
+      options: { emailRedirectTo: `${window.location.origin}/auth` },
+    })
     setSubmitting(false)
     if (error) {
       setError(error.message)
       return
     }
+    if (!data.session) {
+      setSignupConfirmSent(true)
+      return
+    }
     navigate('/')
+  }
+
+  if (signupConfirmSent) {
+    return <p className="text-sm text-muted">Almost there — we sent a confirmation link to {email}. Click it to finish signing up.</p>
   }
 
   return (

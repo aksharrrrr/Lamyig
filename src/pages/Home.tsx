@@ -83,6 +83,12 @@ export default function Home() {
   // No categories selected = no pins - selection is opt-in, not opt-out.
   const visiblePlaces = places.filter((p) => selectedCategories.has(p.category))
 
+  // The quick-nav chip row is for D-009's headline destinations only
+  // (Spiti/Ladakh/Zanskar/Sikkim/Treks) - `regions` itself stays unfiltered
+  // (used for search suggestions and map pins across every region, including
+  // newer non-featured ones like Kutch/Thar/Meghalaya/Ziro/Kumaon).
+  const featuredRegions = regions.filter((r) => r.featured)
+
   function openOverlay(path: string) {
     navigate(path, { state: { background: location } })
   }
@@ -213,8 +219,15 @@ export default function Home() {
         )}
       </button>
 
-      {/* Search */}
-      <div className="absolute left-[18px] right-[18px] top-[78px] z-10 mx-auto max-w-[720px]">
+      {/* Search - z-30, not z-10: this div and the category-pills div below
+          are each position:absolute, which makes each its own stacking
+          context. The dropdown inside declaring z-20 only outranks siblings
+          within THIS div - compared against the pills div (also z-10,
+          later in the DOM), equal z-index falls back to DOM order, so the
+          pills painted on top and hid the dropdown's actual result text
+          behind their opaque buttons (only the trailing "Village"/"Region"
+          label peeked out where the pills row had empty space). */}
+      <div className="absolute left-[18px] right-[18px] top-[78px] z-30 mx-auto max-w-[720px]">
         <div className="flex h-12 items-center gap-2.5 rounded-full border border-ink/[0.06] bg-surface px-[18px] shadow-lg">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8a8791" strokeWidth="2" strokeLinecap="round">
             <circle cx="11" cy="11" r="6.5" /><path d="M16 16l4.5 4.5" />
@@ -309,7 +322,7 @@ export default function Home() {
           browser's bottom chrome. */}
       <div className="absolute bottom-[56px] left-1/2 z-10 max-w-[min(680px,calc(100vw-32px))] -translate-x-1/2 sm:bottom-[22px]">
         <div className="hidden items-center overflow-x-auto rounded-full border border-ink/[0.06] bg-surface px-2 py-1.5 shadow-lg sm:flex sm:gap-1" style={{ scrollbarWidth: 'none' }}>
-          {regions.map((r) => (
+          {featuredRegions.map((r) => (
             <button
               key={r.id}
               onClick={() => flyToRegion(r)}
@@ -361,7 +374,7 @@ export default function Home() {
             <>
               <div className="fixed inset-0 z-10" onClick={() => { setRegionMenuOpen(false); setTrekSubmenuOpen(false) }} />
               <div className="absolute bottom-full left-1/2 z-20 mb-2 w-[min(280px,calc(100vw-32px))] -translate-x-1/2 overflow-hidden rounded-2xl border border-ink/[0.06] bg-surface shadow-xl">
-                {regions.map((r) => (
+                {featuredRegions.map((r) => (
                   <button
                     key={r.id}
                     onClick={() => { flyToRegion(r); setRegionMenuOpen(false) }}

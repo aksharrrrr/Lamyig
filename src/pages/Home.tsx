@@ -83,6 +83,12 @@ export default function Home() {
   // No categories selected = no pins - selection is opt-in, not opt-out.
   const visiblePlaces = places.filter((p) => selectedCategories.has(p.category))
 
+  // The quick-nav chip row is for D-009's headline destinations only
+  // (Spiti/Ladakh/Zanskar/Sikkim/Treks) - `regions` itself stays unfiltered
+  // (used for search suggestions and map pins across every region, including
+  // newer non-featured ones like Kutch/Thar/Meghalaya/Ziro/Kumaon).
+  const featuredRegions = regions.filter((r) => r.featured)
+
   function openOverlay(path: string) {
     navigate(path, { state: { background: location } })
   }
@@ -309,7 +315,7 @@ export default function Home() {
           browser's bottom chrome. */}
       <div className="absolute bottom-[56px] left-1/2 z-10 max-w-[min(680px,calc(100vw-32px))] -translate-x-1/2 sm:bottom-[22px]">
         <div className="hidden items-center overflow-x-auto rounded-full border border-ink/[0.06] bg-surface px-2 py-1.5 shadow-lg sm:flex sm:gap-1" style={{ scrollbarWidth: 'none' }}>
-          {regions.map((r) => (
+          {featuredRegions.map((r) => (
             <button
               key={r.id}
               onClick={() => flyToRegion(r)}
@@ -361,7 +367,7 @@ export default function Home() {
             <>
               <div className="fixed inset-0 z-10" onClick={() => { setRegionMenuOpen(false); setTrekSubmenuOpen(false) }} />
               <div className="absolute bottom-full left-1/2 z-20 mb-2 w-[min(280px,calc(100vw-32px))] -translate-x-1/2 overflow-hidden rounded-2xl border border-ink/[0.06] bg-surface shadow-xl">
-                {regions.map((r) => (
+                {featuredRegions.map((r) => (
                   <button
                     key={r.id}
                     onClick={() => { flyToRegion(r); setRegionMenuOpen(false) }}

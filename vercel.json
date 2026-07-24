@@ -13,7 +13,7 @@
         { "key": "Permissions-Policy", "value": "geolocation=(self), camera=(), microphone=()" },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://tiles.openfreemap.org https://photon.komoot.io https://nominatim.openstreetmap.org; manifest-src 'self'; worker-src 'self' blob:"
+          "value": "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://tiles.openfreemap.org https://photon.komoot.io https://nominatim.openstreetmap.org https://api.locationiq.com; manifest-src 'self'; worker-src 'self' blob:"
         }
       ]
     }

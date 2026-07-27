@@ -470,6 +470,17 @@ export default function Home() {
             <path d="M12 4l8 4.7-8 4.7-8-4.7z" /><path d="M4 13.6l8 4.7 8-4.7" />
           </svg>
         </button>
+        <a
+          href="https://github.com/aksharrrrr/Lamyig"
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Made with ❤️ in India, for everyone — view source on GitHub"
+          className="flex h-11 w-11 items-center justify-center rounded-full border border-ink/[0.08] bg-surface shadow-lg hover:scale-105"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="#55525c">
+            <path d="M12 1.5a10.5 10.5 0 0 0-3.32 20.47c.53.1.72-.23.72-.51v-1.98c-2.94.64-3.56-1.28-3.56-1.28-.48-1.22-1.17-1.55-1.17-1.55-.96-.65.07-.64.07-.64 1.06.07 1.62 1.09 1.62 1.09.94 1.61 2.46 1.15 3.06.87.1-.68.37-1.15.67-1.41-2.35-.27-4.82-1.17-4.82-5.22 0-1.15.41-2.09 1.09-2.83-.11-.27-.47-1.35.1-2.81 0 0 .89-.28 2.91 1.08a10.1 10.1 0 0 1 5.3 0c2.02-1.36 2.91-1.08 2.91-1.08.57 1.46.21 2.54.1 2.81.68.74 1.09 1.68 1.09 2.83 0 4.06-2.48 4.95-4.84 5.21.38.33.72.97.72 1.96v2.9c0 .28.19.62.73.51A10.5 10.5 0 0 0 12 1.5z" />
+          </svg>
+        </a>
       </div>
     </div>
   )

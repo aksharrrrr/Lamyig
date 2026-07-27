@@ -17,13 +17,24 @@ Lamyig documents what's actually there — it isn't advertising space. If you ru
 
 ## Contribute code
 
-```bash
-git clone https://github.com/aksharrrrr/Lamyig.git
-cd Lamyig
-npm install
-cp .env.example .env   # fill in your own Supabase project's URL + anon key
-npm run dev
-```
+### Local setup
+
+You'll need your own free Supabase project — Lamyig never shares production credentials with contributors. Your local copy talks to your own test project; production (`lamyig.vercel.app`) stays on the maintainer's account and only gets updated when a PR is merged to `main`.
+
+1. Create a free project at [supabase.com](https://supabase.com).
+2. In the Supabase SQL Editor, run every file in [`supabase/migrations/`](supabase/migrations) **in filename order** (`0001_...` through the latest), then run [`supabase/seed.sql`](supabase/seed.sql). This gives you the same schema, RLS policies, and starter regions as production.
+3. Get a free [LocationIQ](https://locationiq.com) token (used for map search/geocoding).
+4. Clone and configure:
+
+   ```bash
+   git clone https://github.com/aksharrrrr/Lamyig.git
+   cd Lamyig
+   npm install
+   cp .env.example .env   # fill in your own Supabase project's URL + anon key, and your LocationIQ token
+   npm run dev
+   ```
+
+Your `.env` stays local and gitignored — never commit it, and never open a PR containing real keys.
 
 - **Read [`docs/14-decision-log.md`](docs/14-decision-log.md) before a change that seems to contradict something.** Most "why didn't they just..." questions are already answered there, with the reasoning and alternatives considered.
 - **The full product spec is in [`docs/`](docs)** — start with [`docs/00-executive-summary.md`](docs/00-executive-summary.md) if you want the whole picture.
@@ -34,11 +45,18 @@ npm run dev
 
 By contributing code, you agree it's licensed under this repo's [MIT License](LICENSE).
 
+### Open an issue before a PR
+
+**Open an issue first, before raising a pull request.** This keeps design discussion and proposed approaches in one place instead of scattered across PR reviews. A PR with no linked issue will be closed without review — reopen it once there's an issue to point to.
+
+Exception: trivial fixes (typos, broken links, obvious docs corrections) can go straight to a PR.
+
 ### Branching & review
 
 `main` is protected and auto-deploys straight to production (lamyig.vercel.app) on every push, so it isn't a free-for-all:
 
-1. Branch off `main`, named `<type>/short-description` (kebab-case description):
+1. Open an issue describing the bug or proposed change, if you haven't already (see above).
+2. Branch off `main`, named `<type>/short-description` (kebab-case description):
    - `feat/` — new functionality
    - `fix/` — bug fix
    - `docs/` — documentation only
@@ -46,10 +64,10 @@ By contributing code, you agree it's licensed under this repo's [MIT License](LI
    - `daily/YYYY-MM-DD` — reserved for the maintainer's own end-of-day batches, not for external contributions
 
    e.g. `git checkout -b fix/geolocate-button-overlap`
-2. Open a pull request against `main` instead of pushing directly. GitHub branch protection enforces this for anyone without admin rights on the repo.
-3. Describe what changed and why in the PR body — link the relevant `docs/14-decision-log.md` entry if the change touches something already decided.
-4. Get it reviewed before merging. Right now that's the maintainer signing off; as more regular contributors join, this moves to requiring at least one approval from someone other than the author.
-5. Squash-merge once approved. Delete the branch after.
+3. Open a pull request against `main` instead of pushing directly, linking the issue from step 1. GitHub branch protection enforces the no-direct-push part for anyone without admin rights on the repo.
+4. Describe what changed and why in the PR body — link the relevant `docs/14-decision-log.md` entry if the change touches something already decided.
+5. Get it reviewed before merging. Right now that's the maintainer signing off; as more regular contributors join, this moves to requiring at least one approval from someone other than the author.
+6. Squash-merge once approved. Delete the branch after.
 
 Force-pushes and branch deletion are disabled on `main` at the repo level — that's not a suggestion, GitHub blocks it outright.
 

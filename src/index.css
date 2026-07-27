@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /* Design tokens from the approved Claude Design mockup ("Lamyig Map Home").
-   Keep these as the single source of truth — don't hardcode these colors
+   Keep these as the single source of truth - don't hardcode these colors
    inline elsewhere. */
 @theme {
   --color-bg: #e9e7e2;
@@ -17,7 +17,7 @@
   --font-sans: "Instrument Sans", system-ui, sans-serif;
 }
 
-/* Light-only for now — no dark theme yet. This also stops browsers' own
+/* Light-only for now - no dark theme yet. This also stops browsers' own
    "force dark mode for web content" from repainting inputs/buttons
    inconsistently on top of our (light-only) styles. */
 :root {
@@ -33,11 +33,11 @@ html, body, #root {
 }
 
 /* MapLibre's default popup (map-pin click) is browser-default white with
-   sharp corners — doesn't match the rest of the app. Override to the same
+   sharp corners - doesn't match the rest of the app. Override to the same
    surface/shadow/radius language as the floating chrome.
    !important is warranted here: maplibre-gl.css is imported by Map.tsx and
    ends up injected after this file, so at equal specificity its rules win
-   on source order alone — we don't control that load order. */
+   on source order alone - we don't control that load order. */
 .maplibregl-popup-content {
   background: var(--color-surface) !important;
   border-radius: 14px !important;

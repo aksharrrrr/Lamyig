@@ -215,7 +215,7 @@ export default function Auth() {
   }
 
   if (signupConfirmSent) {
-    return <p className="text-sm text-muted">Almost there — we sent a confirmation link to {email}. Click it to finish signing up.</p>
+    return <p className="text-sm text-muted">Almost there - we sent a confirmation link to {email}. Click it to finish signing up.</p>
   }
 
   return (

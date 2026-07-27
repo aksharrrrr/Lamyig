@@ -1,7 +1,7 @@
 const MAX_DIMENSION = 1600
 const QUALITY = 0.75
 
-// Downscale + re-encode client-side before upload — keeps uploads small for
+// Downscale + re-encode client-side before upload - keeps uploads small for
 // travellers on poor connections. See "Offline" / photo handling in docs/08-mvp.md.
 export async function compressImage(file: File): Promise<Blob> {
   const bitmap = await createImageBitmap(file)

@@ -1,4 +1,4 @@
--- Browsing is open to everyone; contributing requires auth — D-011.
+-- Browsing is open to everyone; contributing requires auth - D-011.
 
 alter table regions enable row level security;
 alter table villages enable row level security;
@@ -21,7 +21,7 @@ create policy "places are publicly readable" on places
 create policy "authenticated users can add places" on places
   for insert to authenticated with check (added_by = auth.uid() and last_edited_by = auth.uid());
 
--- Wiki-style editing: any authenticated user may edit any place — D-012.
+-- Wiki-style editing: any authenticated user may edit any place - D-012.
 create policy "authenticated users can edit any place" on places
   for update to authenticated using (true);
 
@@ -43,7 +43,7 @@ create policy "verification counts are publicly readable" on place_verifications
 create policy "authenticated users can verify a place" on place_verifications
   for insert to authenticated with check (verified_by = auth.uid());
 
--- Reports are not publicly readable — manual maintainer review only, via the
+-- Reports are not publicly readable - manual maintainer review only, via the
 -- Supabase dashboard/service role. No end-user policy grants select.
 create policy "authenticated users can file a report" on place_reports
   for insert to authenticated with check (reporter_id = auth.uid());

@@ -3,7 +3,7 @@
 -- pick from before the community adds more. Run after migrations 0001-0003.
 --
 -- "Treks" (docs/07-information-architecture.md's popular destinations) is
--- deliberately not seeded here — it doesn't fit the India -> State -> Region
+-- deliberately not seeded here - it doesn't fit the India -> State -> Region
 -- -> Village -> Place hierarchy as a place, it's more like a cross-region
 -- collection/tag. Flagged as an open question in docs/14-decision-log.md.
 

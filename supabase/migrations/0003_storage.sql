@@ -1,4 +1,4 @@
--- Public bucket for place photos — publicly readable, authenticated upload only.
+-- Public bucket for place photos - publicly readable, authenticated upload only.
 
 insert into storage.buckets (id, name, public)
 values ('place-photos', 'place-photos', true)

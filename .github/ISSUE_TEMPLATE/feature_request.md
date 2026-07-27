@@ -16,4 +16,4 @@ What you'd want instead.
 Other ways to solve it, if any.
 
 **Additional context**
-Anything else worth knowing — screenshots, links, related issues.
+Anything else worth knowing - screenshots, links, related issues.

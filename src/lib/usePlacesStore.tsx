@@ -10,7 +10,7 @@ interface PlacesContextValue {
 const PlacesContext = createContext<PlacesContextValue | null>(null)
 
 // Home (persistent map) and AddEditPlace (rendered as an overlay on top of
-// it) need to share this list — a successful add has to refresh the pins
+// it) need to share this list - a successful add has to refresh the pins
 // without Home ever remounting, since the overlay pattern keeps it mounted
 // underneath the whole time.
 export function PlacesProvider({ children }: { children: ReactNode }) {

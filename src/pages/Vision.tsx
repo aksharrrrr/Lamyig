@@ -7,8 +7,8 @@ export default function Vision({ onClose }: { onClose?: () => void }) {
   return (
     <div className="flex flex-col gap-4 text-[14.5px] leading-relaxed text-ink">
       <p className="text-muted">
-        Lamyig comes from the Bhoti (Tibetan) language spoken across the Spiti region. It means
-        guidebook, a name that reflects the purpose of this project.
+        Lamyig (ལམ་ཡིག) is the Spiti Bhoti word for guidebook, a name chosen to reflect a guide
+        built from the shared knowledge of local communities and travellers.
       </p>
 
       <p className="font-semibold">Every journey depends on local knowledge.</p>

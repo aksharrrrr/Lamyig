@@ -1,8 +1,20 @@
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
+import { supabase } from '../lib/supabase'
+import { usePlacesStore } from '../lib/usePlacesStore'
 
 export default function Vision({ onClose }: { onClose?: () => void }) {
   const navigate = useNavigate()
   const close = onClose ?? (() => navigate(-1))
+  const { places } = usePlacesStore()
+  const [contributorCount, setContributorCount] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (!supabase) return
+    supabase.from('repo_stats').select('contributor_count').eq('id', true).maybeSingle().then(({ data }) => {
+      if (data) setContributorCount(data.contributor_count)
+    })
+  }, [])
 
   return (
     <div className="flex flex-col gap-4 text-[14.5px] leading-relaxed text-ink">
@@ -39,6 +51,15 @@ export default function Vision({ onClose }: { onClose?: () => void }) {
       </div>
 
       <p>Every place exists because someone believed another traveller should know about it.</p>
+
+      {contributorCount !== null && (
+        <p>
+          Today, Lamyig is being shaped by <span className="font-bold">{contributorCount}</span>{' '}
+          open source {contributorCount === 1 ? 'contributor' : 'contributors'}, while travellers
+          and local communities have already shared{' '}
+          <span className="font-bold">{places.length}</span> places.
+        </p>
+      )}
 
       <div className="mt-1 flex items-center gap-3">
         <button

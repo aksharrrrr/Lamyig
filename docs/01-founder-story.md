@@ -1,5 +1,7 @@
 # Founder Story
 
+*This is the origin story — the specific trip that surfaced the problem Lamyig exists to solve. For what Lamyig is today, see [`00-executive-summary.md`](00-executive-summary.md) and [`06-product-philosophy.md`](06-product-philosophy.md).*
+
 In 2026, after leaving my job, I set out on a solo motorcycle journey through Spiti with a simple plan: travel slowly, meet local people, and keep my accommodation costs as low as possible.
 
 Instead of booking hotels in advance, I followed a routine. Whenever I reached a village, I would stop at a small shop or a tea stall, park the motorcycle, and ask whoever was around whether anyone in the village hosted travellers.

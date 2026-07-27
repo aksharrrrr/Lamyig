@@ -54,10 +54,12 @@ export default function Vision({ onClose }: { onClose?: () => void }) {
 
       {contributorCount !== null && (
         <p>
-          Today, Lamyig is being shaped by <span className="font-bold">{contributorCount}</span>{' '}
-          open source {contributorCount === 1 ? 'contributor' : 'contributors'}, while travellers
-          and local communities have already shared{' '}
-          <span className="font-bold">{places.length}</span> places.
+          Lamyig grows through two kinds of contributions: people who build the platform, and
+          people who share the places that make it worth exploring. Today,{' '}
+          <span className="font-bold">{contributorCount}</span> open source{' '}
+          {contributorCount === 1 ? 'contributor' : 'contributors'} and{' '}
+          <span className="font-bold">{places.length.toLocaleString()}</span> places shared by the
+          community are part of that story.
         </p>
       )}
 

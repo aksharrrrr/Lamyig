@@ -1,5 +1,5 @@
 import { Fragment, useCallback, useEffect, useState } from 'react'
-import { useLocation, useNavigate, useParams, type Location } from 'react-router-dom'
+import { useLocation, useNavigate, useParams, type Location } from 'react-router'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/useAuth'
 import { categoryDef } from '../lib/categories'

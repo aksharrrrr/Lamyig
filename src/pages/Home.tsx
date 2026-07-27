@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router'
 import Map, { MAP_STYLES, type MapHandle, type MapStyleName } from '../components/Map'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/useAuth'

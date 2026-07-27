@@ -1,4 +1,4 @@
-import { Routes, Route, useLocation, useNavigate, type Location } from 'react-router-dom'
+import { Routes, Route, useLocation, useNavigate, type Location } from 'react-router'
 import Home from './pages/Home'
 import Region from './pages/Region'
 import Village from './pages/Village'

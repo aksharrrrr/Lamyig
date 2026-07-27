@@ -2,7 +2,7 @@
 
 ## Git workflow
 
-`main` is protected and auto-deploys to production (lamyig.vercel.app) on every push.
+`main` is protected and auto-deploys to production (www.lamyig.in) on every push.
 
 - GitHub branch protection on `main`: PR required (0 required approvals currently), no force-push, no branch deletion. `enforce_admins` is **off**, so an admin token can still push directly — don't use that shortcut.
 - Never push directly to `main`. Work on a branch and open a PR. Naming convention (see [`CONTRIBUTING.md`](CONTRIBUTING.md)): `feat/`, `fix/`, `docs/`, `chore/` prefix + kebab-case description; `daily/YYYY-MM-DD` is reserved for the maintainer's own end-of-day batches.

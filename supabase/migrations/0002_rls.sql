@@ -43,7 +43,7 @@ create policy "verification counts are publicly readable" on place_verifications
 create policy "authenticated users can verify a place" on place_verifications
   for insert to authenticated with check (verified_by = auth.uid());
 
--- Reports are not publicly readable — manual founder review only, via the
+-- Reports are not publicly readable — manual maintainer review only, via the
 -- Supabase dashboard/service role. No end-user policy grants select.
 create policy "authenticated users can file a report" on place_reports
   for insert to authenticated with check (reporter_id = auth.uid());

@@ -1,6 +1,6 @@
 # Daily / periodic admin checklist
 
-A practical, recurring companion to [`17-admin-runbook.md`](17-admin-runbook.md) (which explains *how* to grant admin and *what* admin access does). This doc is *what to actually check, how often, and what to do about it* — meant to be sufficient on its own for the founder acting as sole admin post-launch. Everything here runs from the Supabase dashboard (Table Editor or SQL Editor) — no CLI or service-role key needed.
+A practical, recurring companion to [`17-admin-runbook.md`](17-admin-runbook.md) (which explains *how* to grant admin and *what* admin access does). This doc is *what to actually check, how often, and what to do about it* — meant to be sufficient on its own for whoever is acting as sole admin post-launch. Everything here runs from the Supabase dashboard (Table Editor or SQL Editor) — no CLI or service-role key needed.
 
 ## Cadence
 

@@ -59,7 +59,7 @@ export default function App() {
         <Routes>
           <Route path="/auth" element={<Overlay title={authTitle} onClose={closeToHome}><Auth /></Overlay>} />
           <Route path="/feedback" element={<Overlay title="Feedback" onClose={closeToHome}><Feedback /></Overlay>} />
-          <Route path="/vision" element={<Overlay title="Our vision" onClose={closeToHome}><Vision onClose={closeToHome} /></Overlay>} />
+          <Route path="/vision" element={<Overlay title="Welcome to Lamyig" onClose={closeToHome}><Vision onClose={closeToHome} /></Overlay>} />
           {/* Every other path lands here otherwise - without it react-router
               logs a "No routes matched" console warning on every load/nav
               (this Routes block uses the real location, not the background

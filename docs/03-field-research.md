@@ -1,6 +1,6 @@
 # field-research
 
-**Status:** Discovery-phase. Based on the founder's direct travel experience across Spiti and Zanskar and conversations along the way — not a formal survey. See [`01-founder-story.md`](01-founder-story.md) for the full narrative.
+**Status:** Discovery-phase. Based on direct, on-the-ground travel experience across Spiti and Zanskar and conversations along the way — not a formal survey. See [`01-founder-story.md`](01-founder-story.md) for the full narrative.
 
 ## Observations
 

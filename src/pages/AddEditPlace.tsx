@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams, useLocation, type Location } from 'react-router-dom'
+import { useNavigate, useParams, useLocation, type Location } from 'react-router'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/useAuth'
 import { usePlacesStore } from '../lib/usePlacesStore'

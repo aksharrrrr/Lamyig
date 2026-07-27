@@ -1,5 +1,5 @@
 import { useCallback, useEffect, type ReactNode } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import { useIsMobile } from '../lib/useIsMobile'
 
 interface OverlayProps {

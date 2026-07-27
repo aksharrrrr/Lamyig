@@ -9,7 +9,7 @@ create table regions (
   name text not null,
   state text not null,
   description text,
-  featured boolean not null default false, -- Spiti, Ladakh, Zanskar, Sikkim, Treks — D-009 "popular destinations"
+  featured boolean not null default false, -- Spiti, Ladakh, Zanskar, Sikkim, Treks - D-009 "popular destinations"
   created_at timestamptz not null default now()
 );
 
@@ -28,7 +28,7 @@ create type place_category as enum (
 );
 
 -- Base fields per docs/08-mvp.md. Category-specific fields live in `attributes`
--- (jsonb) rather than one sparse column per category — see that doc's field table.
+-- (jsonb) rather than one sparse column per category - see that doc's field table.
 create table places (
   id uuid primary key default gen_random_uuid(),
   name text not null,
@@ -64,7 +64,7 @@ create table place_photos (
 
 create index place_photos_place_id_idx on place_photos(place_id);
 
--- Community Notes replace star ratings — D-004.
+-- Community Notes replace star ratings - D-004.
 create table community_notes (
   id uuid primary key default gen_random_uuid(),
   place_id uuid not null references places(id) on delete cascade,
@@ -85,7 +85,7 @@ create table place_verifications (
 
 create type report_reason as enum ('spam', 'incorrect', 'closed', 'duplicate');
 
--- Manual review in V1, no automated takedown — D-012.
+-- Manual review in V1, no automated takedown - D-012.
 create table place_reports (
   id uuid primary key default gen_random_uuid(),
   place_id uuid not null references places(id) on delete cascade,
@@ -101,7 +101,7 @@ create table profiles (
   created_at timestamptz not null default now()
 );
 
--- Keep `updated_at` / `last_edited_by` honest on every wiki-style edit — D-012.
+-- Keep `updated_at` / `last_edited_by` honest on every wiki-style edit - D-012.
 create or replace function set_place_edit_metadata()
 returns trigger as $$
 begin

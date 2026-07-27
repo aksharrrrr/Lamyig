@@ -14,7 +14,7 @@ import { PlacesProvider } from './lib/usePlacesStore'
 
 // Home (the map) stays mounted underneath at all times. Add Place, Profile
 // and Place detail render as an overlay on top of whatever page was showing
-// when they were opened, via React Router's "background location" pattern —
+// when they were opened, via React Router's "background location" pattern - 
 // navigate(path, { state: { background: location } }) opens them as an
 // overlay; a direct link/refresh to the same path (no background state)
 // falls back to a plain full page for those, since they have real content

@@ -14,7 +14,7 @@ const INDIA_ZOOM = 4.2
 export const MAP_STYLES = ['liberty', 'positron', 'dark'] as const
 export type MapStyleName = (typeof MAP_STYLES)[number]
 
-// Same path data as lib/categoryIcons.tsx, as raw SVG markup — markers are
+// Same path data as lib/categoryIcons.tsx, as raw SVG markup - markers are
 // built as plain DOM nodes for MapLibre, outside the React tree, so the
 // React icon components can't be rendered directly here.
 const CATEGORY_ICON_SVG: Record<string, string> = {

@@ -477,7 +477,7 @@ export default function Home() {
           href="https://github.com/aksharrrrr/Lamyig"
           target="_blank"
           rel="noopener noreferrer"
-          title="Made with ❤️ in India, for everyone — view source on GitHub"
+          title="Made with ❤️ in India, for everyone - view source on GitHub"
           className="flex h-11 w-11 items-center justify-center rounded-full border border-ink/[0.08] bg-surface shadow-lg hover:scale-105"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="#55525c">

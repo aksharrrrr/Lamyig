@@ -14,7 +14,7 @@ const MAX_PHOTOS = 6
 const inputClass = 'rounded-[10px] border border-ink/[0.14] bg-surface px-3.5 py-2.5 text-sm outline-none focus:border-accent focus:ring-3 focus:ring-accent-light'
 const labelClass = 'text-[11.5px] font-semibold uppercase tracking-wide text-muted'
 
-// Loose on purpose — accepts +country codes, spaces, dashes, parens — but
+// Loose on purpose - accepts +country codes, spaces, dashes, parens - but
 // rejects "ajbnfkdsj"-style garbage so at least it's plausibly a phone number.
 // The parens MUST be escaped inside the character class: HTML5's `pattern`
 // compiles with the regex "v" flag, which treats bare ( ) inside [...] as a
@@ -74,7 +74,7 @@ export default function AddEditPlace() {
   }, [])
 
   // Villages in the selected region, purely to power the datalist suggestions
-  // below the Village field — typing a name that isn't in this list creates
+  // below the Village field - typing a name that isn't in this list creates
   // a new village on submit instead of blocking you.
   useEffect(() => {
     if (!supabase || !regionId) {
@@ -226,7 +226,7 @@ export default function AddEditPlace() {
         if (insertError) throw insertError
         id = data.id
 
-        // You just personally confirmed this place exists — that's a verification.
+        // You just personally confirmed this place exists - that's a verification.
         await supabase.from('place_verifications').insert({ place_id: id, verified_by: session.user.id })
       }
 

@@ -1,5 +1,5 @@
 // Exact icon paths ported from the approved Claude Design mockup
-// ("Lamyig Map Home") icon() method — kept 1:1 so the app matches the
+// ("Lamyig Map Home") icon() method - kept 1:1 so the app matches the
 // approved design, not a reinterpretation of it.
 
 interface IconProps {

@@ -8,7 +8,7 @@ interface OverlayProps {
   onClose?: () => void
 }
 
-// Home (the map) always stays mounted underneath — this only ever renders
+// Home (the map) always stays mounted underneath - this only ever renders
 // on top of it. Desktop: centered modal. Mobile: bottom sheet. Both close on
 // backdrop click, Escape, or the browser back button (default onClose is
 // navigate(-1), which is what makes back-button-closes work for free).

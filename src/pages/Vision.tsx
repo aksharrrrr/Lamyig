@@ -6,8 +6,6 @@ export default function Vision({ onClose }: { onClose?: () => void }) {
 
   return (
     <div className="flex flex-col gap-4 text-[14.5px] leading-relaxed text-ink">
-      <img src="/pwa-192x192.png" alt="Lamyig" className="h-14 w-14" />
-
       <p className="font-semibold">Every journey depends on local knowledge.</p>
 
       <div>
@@ -36,8 +34,6 @@ export default function Vision({ onClose }: { onClose?: () => void }) {
       </div>
 
       <p>Every place exists because someone believed another traveller should know about it.</p>
-
-      <p className="font-semibold">Welcome to Lamyig.</p>
 
       <div className="mt-1 flex items-center gap-3">
         <button

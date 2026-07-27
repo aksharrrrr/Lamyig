@@ -1,0 +1,30 @@
+name: Update contributor count
+
+on:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch: {}
+
+jobs:
+  update-count:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Count human contributors
+        id: count
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          count=$(gh api repos/${{ github.repository }}/contributors --paginate --jq '[.[] | select(.type != "Bot")] | length')
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+
+      - name: Upsert into Supabase
+        env:
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          COUNT: ${{ steps.count.outputs.count }}
+        run: |
+          curl -sf -X POST "https://giemsgvbqlmcwcffvnlv.supabase.co/rest/v1/repo_stats?on_conflict=id" \
+            -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "Content-Type: application/json" \
+            -H "Prefer: resolution=merge-duplicates" \
+            -d "{\"id\": true, \"contributor_count\": $COUNT, \"updated_at\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}"

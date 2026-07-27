@@ -6,7 +6,7 @@ export default function Vision({ onClose }: { onClose?: () => void }) {
 
   return (
     <div className="flex flex-col gap-4 text-[14.5px] leading-relaxed text-ink">
-      <img src="/pwa-192x192.png" alt="Lamyig" className="h-12 w-12 rounded-xl" />
+      <img src="/pwa-192x192.png" alt="Lamyig" className="h-14 w-14" />
 
       <p className="font-semibold">Every journey depends on local knowledge.</p>
 

@@ -201,9 +201,12 @@ export default function Home() {
       />
 
       {/* Title, top-left corner */}
-      <div className="absolute left-[18px] top-[18px] z-10 flex flex-col items-start justify-center rounded-2xl border border-ink/[0.06] bg-surface px-4 py-1.5 leading-tight shadow-lg">
-        <span className="text-[15px] font-bold tracking-tight">Lamyig</span>
-        <span className="text-[11px] font-medium text-muted-light">ལམ་ཡིག</span>
+      <div className="absolute left-[18px] top-[18px] z-10 flex items-center gap-2 rounded-2xl border border-ink/[0.06] bg-surface px-3 py-1.5 leading-tight shadow-lg">
+        <img src="/pwa-192x192.png" alt="" className="h-7 w-7 flex-none" />
+        <div className="flex flex-col items-start justify-center">
+          <span className="text-[15px] font-bold tracking-tight">Lamyig</span>
+          <span className="text-[11px] font-medium text-muted-light">ལམ་ཡིག</span>
+        </div>
       </div>
 
       {/* Profile avatar */}

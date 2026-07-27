@@ -26,7 +26,7 @@ Browsing requires no account. Contributing does.
 
 See D-012 in [`14-decision-log.md`](14-decision-log.md) for why publish is instant rather than queued, and how editing, verification, and reporting work on top of that.
 
-Region and Village are both required, but the Village picker isn't limited to a pre-seeded list — "+ Add a village not on this list…" lets a contributor add one inline (same auto-publish trust model as places). Regions stay founder-curated for now — the top-level geography is a bigger structural call than adding one more village.
+Region and Village are both required, but the Village picker isn't limited to a pre-seeded list — "+ Add a village not on this list…" lets a contributor add one inline (same auto-publish trust model as places). Regions stay centrally curated for now — the top-level geography is a bigger structural call than adding one more village.
 
 ## Data model
 
@@ -63,7 +63,7 @@ Free-text factual observations, replacing reviews — see D-004 in [`14-decision
 
 - **Editing** — any logged-in user can edit any Place. "Last updated"/"added by" reflect the latest editor.
 - **Verification** — one-tap "Still accurate" button updates the last-verified date and increments verifier count (e.g. "verified May 2026 by 14 riders"). Adding a Place counts as verifying it — you just personally confirmed it exists — so a new Place starts at "verified today by 1 rider" instead of "not yet verified." One verification per person per Place; the button reads "You verified this" and disables once you've used it.
-- **Reporting** — "Report" on a Place (reason: spam / incorrect / closed / duplicate) logs a record for manual founder review. No automated hide in V1.
+- **Reporting** — "Report" on a Place (reason: spam / incorrect / closed / duplicate) logs a record for manual review. No automated hide in V1.
 
 See D-012 in [`14-decision-log.md`](14-decision-log.md).
 
@@ -81,7 +81,7 @@ Built on OpenStreetMap + MapLibre, not a proprietary stack — see D-006 and [`1
 
 ## Launch data
 
-The founder seeds a small verified core of places (starting with Spiti, drawing on firsthand knowledge — see [`01-founder-story.md`](01-founder-story.md)) before public launch, so the first travellers arriving from the community push don't land on an empty map. The community — starting with solo travellers reached via Reddit — adds and verifies from there.
+A small verified core of places (starting with Spiti — see [`01-founder-story.md`](01-founder-story.md) for how that initial knowledge was gathered) is seeded before public launch, so the first travellers arriving from the community push don't land on an empty map. The community — starting with solo travellers reached via Reddit — adds and verifies from there.
 
 ## Out of scope for V1
 
@@ -89,7 +89,7 @@ Explicitly deferred, not forgotten:
 
 - Star ratings, comments/discussion threads, gamification — permanently excluded, see D-004 and D-011.
 - Moderation dashboard / automated flag-based takedown — manual review of "Report" records only (see Trust mechanics, above).
-- Edit history / rollback UI — if wiki-style editing is abused, founder corrects directly in Supabase for now.
+- Edit history / rollback UI — if wiki-style editing is abused, corrected directly in Supabase for now.
 - Saved/favourite places, trip planning, notifications, multi-language, recommendations, advanced/natural-language search.
 - Phone/OTP login (see D-013).
 

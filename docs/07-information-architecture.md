@@ -59,7 +59,7 @@ Search covers exactly three entities: **Region**, **Village**, **Place** (e.g. "
 
 ## Popular destinations
 
-Frequently visited regions surfaced directly on the homepage as quick entry points: Spiti, Ladakh, Zanskar, Sikkim, Treks. These are the founder-seeded starting regions (see D-009), not the product's scope boundary — Lamyig covers India.
+Frequently visited regions surfaced directly on the homepage as quick entry points: Spiti, Ladakh, Zanskar, Sikkim, Treks. These are the initial featured regions (see D-009), not the product's scope boundary — Lamyig covers India.
 
 ## Region flow
 

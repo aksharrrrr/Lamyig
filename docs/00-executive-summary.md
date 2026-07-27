@@ -8,4 +8,4 @@ The platform is built around information, not transactions. Every feature is tes
 
 **The biggest product decision:** Lamyig is not a map. It is a community-maintained travel knowledge base, organised geographically (India → State → Region → Village → Place). The map is one interface for exploring that knowledge, not the product itself. See [`07-information-architecture.md`](07-information-architecture.md).
 
-**Scope:** India-wide from launch, not limited to any single region. Spiti, Ladakh, Zanskar, Sikkim, and major treks are the featured, founder-seeded starting regions — not the boundary of the product. See D-009 in [`14-decision-log.md`](14-decision-log.md).
+**Scope:** India-wide from launch, not limited to any single region. Spiti, Ladakh, Zanskar, Sikkim, and major treks are the featured starting regions, seeded with an initial verified core before public launch — not the boundary of the product. See D-009 in [`14-decision-log.md`](14-decision-log.md).

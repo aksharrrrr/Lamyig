@@ -1,4 +1,4 @@
--- Founder-seeded starting regions + a few real villages from the founder
+-- Initial starting regions + a few real villages, drawn from the origin
 -- story (docs/01-founder-story.md), so the Add-place form has something to
 -- pick from before the community adds more. Run after migrations 0001-0003.
 --

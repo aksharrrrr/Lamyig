@@ -5,7 +5,7 @@
 -- by this trigger; added_by wasn't. Live-confirmed during the 2026-07-17
 -- security assessment: an unrelated authenticated user could PATCH any
 -- place and forge added_by to an arbitrary real user's id, which undermines
--- D-012's manual-moderation model (added_by is the signal a founder reviews
+-- D-012's manual-moderation model (added_by is the signal a maintainer reviews
 -- to know who actually contributed what).
 --
 -- added_by should be set once at insert and never move again - same

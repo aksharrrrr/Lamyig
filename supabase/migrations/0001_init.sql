@@ -85,7 +85,7 @@ create table place_verifications (
 
 create type report_reason as enum ('spam', 'incorrect', 'closed', 'duplicate');
 
--- Manual founder review in V1, no automated takedown — D-012.
+-- Manual review in V1, no automated takedown — D-012.
 create table place_reports (
   id uuid primary key default gen_random_uuid(),
   place_id uuid not null references places(id) on delete cascade,

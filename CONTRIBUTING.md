@@ -15,6 +15,16 @@ The map only works if travellers and locals actually add and verify places. This
 
 Lamyig documents what's actually there — it isn't advertising space. If you run a homestay, a mechanic shop, anything — you're welcome to add factual information about it (location, what it offers, price range). You're not welcome to write it like an ad, add it more than once, or use Community Notes to promote rather than inform. This is a travel-community knowledge base first; places that read like marketing get reported and removed.
 
+## Never used GitHub before? You can still help
+
+None of this needs git, a terminal, or any coding knowledge — just a browser and a free GitHub account ([github.com/signup](https://github.com/signup)).
+
+- **Spot a typo, unclear sentence, or wrong info in any doc or the README?** Open the file on GitHub, click the pencil icon ("Edit this file") in the top right, make your change, then scroll down and click **"Propose changes"**. GitHub automatically creates your own copy of the repo and opens a pull request for you — no other setup needed.
+- **Have an idea, question, or something that doesn't feel right, but don't want to edit anything yourself?** Go to the [Issues tab](https://github.com/aksharrrrr/Lamyig/issues) → **New issue** and describe it in plain language. That's a complete, valid contribution on its own.
+- **Know a place that should be documented, or one that's listed wrong?** See "Contribute data" above — that's done entirely through the live app, no GitHub involved at all.
+
+If you get stuck at any step, open an issue describing what you were trying to do — that's useful information too, since it usually means this guide should be clearer.
+
 ## Contribute code
 
 ### Local setup

@@ -297,6 +297,7 @@ export default function Home() {
             {CATEGORIES.map((c) => {
               const selected = selectedCategories.has(c.value)
               const CategoryIcon = CATEGORY_ICONS[c.value]
+              const count = places.reduce((n, p) => (p.category === c.value ? n + 1 : n), 0)
               return (
                 <button
                   key={c.value}
@@ -311,6 +312,12 @@ export default function Home() {
                   <CategoryIcon color={selected ? '#ffffff' : '#55525c'} size={16} />
                   <span className="whitespace-nowrap text-[13px] font-semibold" style={{ color: selected ? '#ffffff' : 'var(--color-ink)' }}>
                     {c.label}
+                  </span>
+                  <span
+                    className="whitespace-nowrap text-[12px] font-medium"
+                    style={{ color: selected ? 'rgba(255,255,255,0.75)' : 'var(--color-muted-light)' }}
+                  >
+                    {count}
                   </span>
                 </button>
               )

@@ -4,7 +4,7 @@
 
 Lamyig is an open-source, offline-first, community-maintained travel knowledge map for remote India, starting with the Himalaya (Spiti, Ladakh, Zanskar, Sikkim) and Dharamkot.
 
-**Live at [lamyig.vercel.app](https://lamyig.vercel.app).**
+**Live at [www.lamyig.in](https://www.lamyig.in).**
 
 It is not a booking platform. It is a shared record of what travellers and locals actually know: where the homestays are, where the mechanic is, where you can refill water, where the road is broken, where the network dies. The kind of knowledge that today lives only in tea stalls, WhatsApp groups, and the memory of the last rider who passed through.
 
@@ -16,7 +16,7 @@ This project is the community's lamyig, rebuilt for the offline-first internet. 
 
 ## Status
 
-**Live MVP.** Browse, search, add and edit places, verify and report, all working today at [lamyig.vercel.app](https://lamyig.vercel.app). Everything in `/docs` is the source of truth for what Lamyig is and why — start with [`docs/14-decision-log.md`](docs/14-decision-log.md) if you're wondering why something works the way it does.
+**Live MVP.** Browse, search, add and edit places, verify and report, all working today at [www.lamyig.in](https://www.lamyig.in). Everything in `/docs` is the source of truth for what Lamyig is and why — start with [`docs/14-decision-log.md`](docs/14-decision-log.md) if you're wondering why something works the way it does.
 
 ## What Lamyig believes
 

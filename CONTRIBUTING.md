@@ -6,7 +6,7 @@ Two very different ways to contribute, and both matter equally — most won't be
 
 The map only works if travellers and locals actually add and verify places. This is the main way most people will contribute.
 
-- **Add a place** — sign in at [lamyig.vercel.app](https://lamyig.vercel.app) and use **+ Add a place**.
+- **Add a place** — sign in at [www.lamyig.in](https://www.lamyig.in) and use **+ Add a place**.
 - **Verify something's still accurate** — tap "Still accurate" on any place you can personally confirm.
 - **Fix something wrong** — any signed-in user can edit any place (wiki-style — see D-012 in [`docs/14-decision-log.md`](docs/14-decision-log.md)). Just fix it directly.
 - **Flag spam or bad content** — use "Report." It's reviewed manually for now; there's no automated takedown.
@@ -15,11 +15,21 @@ The map only works if travellers and locals actually add and verify places. This
 
 Lamyig documents what's actually there — it isn't advertising space. If you run a homestay, a mechanic shop, anything — you're welcome to add factual information about it (location, what it offers, price range). You're not welcome to write it like an ad, add it more than once, or use Community Notes to promote rather than inform. This is a travel-community knowledge base first; places that read like marketing get reported and removed.
 
+## Never used GitHub before? You can still help
+
+None of this needs git, a terminal, or any coding knowledge — just a browser and a free GitHub account ([github.com/signup](https://github.com/signup)).
+
+- **Spot a typo, unclear sentence, or wrong info in any doc or the README?** Open the file on GitHub, click the pencil icon ("Edit this file") in the top right, make your change, then scroll down and click **"Propose changes"**. GitHub automatically creates your own copy of the repo and opens a pull request for you — no other setup needed.
+- **Have an idea, question, or something that doesn't feel right, but don't want to edit anything yourself?** Go to the [Issues tab](https://github.com/aksharrrrr/Lamyig/issues) → **New issue** and describe it in plain language. That's a complete, valid contribution on its own.
+- **Know a place that should be documented, or one that's listed wrong?** See "Contribute data" above — that's done entirely through the live app, no GitHub involved at all.
+
+If you get stuck at any step, open an issue describing what you were trying to do — that's useful information too, since it usually means this guide should be clearer.
+
 ## Contribute code
 
 ### Local setup
 
-You'll need your own free Supabase project — Lamyig never shares production credentials with contributors. Your local copy talks to your own test project; production (`lamyig.vercel.app`) stays on the maintainer's account and only gets updated when a PR is merged to `main`.
+You'll need your own free Supabase project — Lamyig never shares production credentials with contributors. Your local copy talks to your own test project; production (`www.lamyig.in`) stays on the maintainer's account and only gets updated when a PR is merged to `main`.
 
 1. Create a free project at [supabase.com](https://supabase.com).
 2. In the Supabase SQL Editor, run every file in [`supabase/migrations/`](supabase/migrations) **in filename order** (`0001_...` through the latest), then run [`supabase/seed.sql`](supabase/seed.sql). This gives you the same schema, RLS policies, and starter regions as production.
@@ -53,7 +63,7 @@ Exception: trivial fixes (typos, broken links, obvious docs corrections) can go 
 
 ### Branching & review
 
-`main` is protected and auto-deploys straight to production (lamyig.vercel.app) on every push, so it isn't a free-for-all:
+`main` is protected and auto-deploys straight to production (www.lamyig.in) on every push, so it isn't a free-for-all:
 
 1. Open an issue describing the bug or proposed change, if you haven't already (see above).
 2. Branch off `main`, named `<type>/short-description` (kebab-case description):

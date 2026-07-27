@@ -7,6 +7,7 @@ import AddEditPlace from './pages/AddEditPlace'
 import Auth from './pages/Auth'
 import Profile from './pages/Profile'
 import Feedback from './pages/Feedback'
+import Vision from './pages/Vision'
 import Overlay from './components/Overlay'
 import { ToastProvider } from './lib/useToast'
 import { PlacesProvider } from './lib/usePlacesStore'
@@ -47,6 +48,7 @@ export default function App() {
           <Route path="/village/:villageSlug" element={<Village />} />
           <Route path="/auth" element={<Home />} />
           <Route path="/feedback" element={<Home />} />
+          <Route path="/vision" element={<Home />} />
           {/* Fallback full-page versions when there's no background to overlay onto */}
           <Route path="/place/:placeId" element={<div className="mx-auto max-w-lg p-6"><Place /></div>} />
           <Route path="/add" element={<div className="mx-auto max-w-lg p-6"><h1 className="mb-4 text-2xl font-bold">Add a place</h1><AddEditPlace /></div>} />
@@ -57,6 +59,7 @@ export default function App() {
         <Routes>
           <Route path="/auth" element={<Overlay title={authTitle} onClose={closeToHome}><Auth /></Overlay>} />
           <Route path="/feedback" element={<Overlay title="Feedback" onClose={closeToHome}><Feedback /></Overlay>} />
+          <Route path="/vision" element={<Overlay title="Our vision" onClose={closeToHome}><Vision onClose={closeToHome} /></Overlay>} />
           {/* Every other path lands here otherwise - without it react-router
               logs a "No routes matched" console warning on every load/nav
               (this Routes block uses the real location, not the background

@@ -104,6 +104,12 @@ async function main() {
     const center = villageCenters[`${r.region}:${r.village_slug}`]
     const villageId = await ensureVillage(region.id, r.village_slug, r.village_name, center?.lat, center?.lng, villageCache)
 
+    // Idempotency: this script has no transaction/run tracking, and gets
+    // re-run as the seed CSV grows, so skip anything already present
+    // (same name in the same village) rather than duplicating it.
+    const { data: dupe } = await supabase.from('places').select('id').eq('village_id', villageId).eq('name', r.name).maybeSingle()
+    if (dupe) { skipped.push({ row: r.name, reason: 'already exists in this village' }); continue }
+
     let attributes = {}
     try { attributes = r.attributes_json ? JSON.parse(r.attributes_json) : {} } catch { attributes = {} }
     attributes = {

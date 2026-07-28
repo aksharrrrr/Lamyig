@@ -5,8 +5,10 @@ export default function Village() {
   return (
     <div className="p-6">
       <h1 className="text-2xl font-medium capitalize">{villageSlug}</h1>
+      {/* Village info, available categories, community updates, Open Map. See docs/08-mvp.md. */}
       <p className="mt-2 text-neutral-500">
-        Village info, available categories, community updates, Open Map. See docs/08-mvp.md.
+        We're still mapping this part of the journey. Village info and community updates are on
+        the roadmap as Lamyig grows.
       </p>
     </div>
   )

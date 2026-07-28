@@ -220,7 +220,9 @@ export default function Auth() {
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-sm text-muted">Browsing Lamyig is always free. Sign in to add or edit a place.</p>
+      <p className="text-sm text-muted">
+        Browsing Lamyig is always free. {mode === 'sign-in' ? 'Sign in' : 'Join'} to add or edit a place.
+      </p>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         <input

@@ -19,8 +19,8 @@ const TREKS: { name: string; lat: number; lng: number }[] = [
   { name: 'Hampta Pass', lat: 32.2408, lng: 77.2668 },
   { name: 'Pin Parvati Pass', lat: 31.9522, lng: 77.6539 },
   { name: 'Bhrigu Lake', lat: 32.2957, lng: 77.3324 },
-  { name: 'Kanamo Peak', lat: 32.2965, lng: 78.2189 },
-  { name: 'Markha Valley', lat: 34.045, lng: 77.628 },
+  { name: 'Triund', lat: 32.2438, lng: 76.3389 },
+  { name: 'Kheerganga', lat: 32.0186, lng: 77.3204 },
 ]
 
 const CATEGORY_FILTER_KEY = 'lamyig:selectedCategories'
@@ -95,7 +95,7 @@ export default function Home() {
 
   function flyToRegion(region: Region) {
     if (region.center_lat == null || region.center_lng == null) {
-      showToast(`No map location set for ${region.name} yet`)
+      showToast(`Don't have a map location for ${region.name} yet`)
       return
     }
     mapRef.current?.flyTo(region.center_lat, region.center_lng, region.default_zoom)
@@ -104,7 +104,7 @@ export default function Home() {
 
   function flyToVillage(village: Village) {
     if (village.center_lat == null || village.center_lng == null) {
-      showToast(`No map location set for ${village.name} yet`)
+      showToast(`Don't have a map location for ${village.name} yet`)
       return
     }
     mapRef.current?.flyTo(village.center_lat, village.center_lng, VILLAGE_ZOOM)
@@ -240,7 +240,7 @@ export default function Home() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={handleSearchKeyDown}
-            placeholder="Search a region, village, or place…"
+            placeholder="Search anywhere along your journey…"
             className="min-w-0 flex-1 bg-transparent text-[14.5px] outline-none placeholder:text-muted-light"
           />
           <button
@@ -273,7 +273,7 @@ export default function Home() {
               </button>
             ))}
             {searchResults.length === 0 && geocoding && (
-              <div className="px-4 py-2.5 text-[13px] text-muted-light">Searching…</div>
+              <div className="px-4 py-2.5 text-[13px] text-muted-light">Looking that up…</div>
             )}
             {searchResults.length === 0 && !geocoding && query.length >= 3 && (
               <div className="px-4 py-2.5 text-[13px] text-muted-light">

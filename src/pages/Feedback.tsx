@@ -33,7 +33,7 @@ export default function Feedback() {
       setError(error.message)
       return
     }
-    showToast('Thanks, feedback sent.')
+    showToast('Thanks for the feedback.')
     navigate(-1)
   }
 
@@ -66,7 +66,7 @@ export default function Feedback() {
           disabled={submitting || !message.trim()}
           className="rounded-[11px] bg-accent px-4 py-2.5 text-sm font-semibold text-surface disabled:opacity-50"
         >
-          Send feedback
+          {submitting ? 'Sending…' : 'Send feedback'}
         </button>
       </form>
     </div>

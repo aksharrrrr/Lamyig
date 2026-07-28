@@ -1,20 +1,10 @@
-import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
-import { supabase } from '../lib/supabase'
 import { usePlacesStore } from '../lib/usePlacesStore'
 
 export default function Vision({ onClose }: { onClose?: () => void }) {
   const navigate = useNavigate()
   const close = onClose ?? (() => navigate(-1))
-  const { places } = usePlacesStore()
-  const [contributorCount, setContributorCount] = useState<number | null>(null)
-
-  useEffect(() => {
-    if (!supabase) return
-    supabase.from('repo_stats').select('contributor_count').eq('id', true).maybeSingle().then(({ data }) => {
-      if (data) setContributorCount(data.contributor_count)
-    })
-  }, [])
+  const { places, contributorCount } = usePlacesStore()
 
   return (
     <div className="flex flex-col gap-4 text-[14.5px] leading-relaxed text-ink">

@@ -241,6 +241,18 @@ On first open, the app shows a live map of India with no forced setup; if locati
 
 ---
 
+## D-020 - Removed one-tap place verification from the UI; author self-delete for community notes
+
+**Date:** 2026-07-28 · **Status:** Final
+
+**Decision:** Two changes, both from live product feedback while building. First, removed the "Still accurate?" / "You confirmed this" one-tap verification button from `Place.tsx` entirely, along with the "Last confirmed {date}" / "Not yet confirmed" line and the auto-verification insert on place creation. The `place_verifications` table, `places.verified_count`, and `places.last_verified_at` columns are left in place (dormant, unused by the UI) rather than dropped - no data loss, easy to resurrect if verification comes back in a different form. Second, added an author-only delete policy on `community_notes` (migration `0022`) - a scoped, deliberate exception to D-012's "no delete for anyone, manual-review-only" stance, for notes specifically. Reporting is still the only option on someone else's note (and is now hidden on your own note, since reporting yourself made no sense); an admin-delete policy for notes was also added in migration `0021` alongside a per-note "Report" action.
+
+**Reasoning:** The verification feature shipped without ever surfacing `verified_count` (the actual trust signal `08-mvp.md` specified - "verified May 2026 by 14 riders") - the UI only ever showed a single date, so a place confirmed by 1 person and one confirmed by 40 looked identical. Rather than patch that gap, product judgment was to cut the feature until there's a version worth shipping, instead of half-a-signal that confuses more than it helps. Community notes are lower-stakes than places (free text, no wiki-edit history, near-zero blast radius from removing one) and mistake/typo notes are common - author self-delete removes the friction of waiting on manual review for the common case, while spam/abuse from other users still routes through Report → manual/admin review, so D-012's actual security concern (unauthenticated or automated mass takedown) is unaffected.
+
+**Alternatives considered:** Fixing verification by also showing `verified_count` (rejected for now: the button's exact meaning/wording was still confusing per direct feedback - worth a real redesign later, not a quick patch); dropping the `place_verifications` table and columns outright (rejected: no upside to a destructive schema change when leaving them dormant costs nothing and preserves the option).
+
+---
+
 ## Open questions
 
 - **Data license:** should Lamyig's place/region/village data be ODbL-compatible so it can flow back into OpenStreetMap? Separate from D-015's code license.

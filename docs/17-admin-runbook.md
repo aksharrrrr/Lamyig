@@ -20,7 +20,7 @@ select id, display_name from profiles where display_name ilike '%<name>%';
 
 Signed in as an admin (via the app's normal login, not the dashboard), a user can now:
 - Read `place_reports` and `feedback` - nobody else can, not even the reporter re-reading their own report
-- Delete a place, a place report, a feedback row, or a community note - nobody else can delete any of these, not even the place's/note's own author
+- Delete a place, a place report, or a feedback row - nobody else can delete any of these, not even the place's own author (a community note's own author can already delete it themselves, D-020)
 
 Everything else (adding/editing places, verifying) works the same as any other signed-in user - admin doesn't change those.
 

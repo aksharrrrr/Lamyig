@@ -225,9 +225,6 @@ export default function AddEditPlace() {
           .single()
         if (insertError) throw insertError
         id = data.id
-
-        // You just personally confirmed this place exists - that's a verification.
-        await supabase.from('place_verifications').insert({ place_id: id, verified_by: session.user.id })
       }
 
       for (const [index, file] of photos.entries()) {

@@ -7,6 +7,20 @@ import type { CommunityNote, Place as PlaceT, PlacePhoto } from '../lib/types'
 
 const REPORT_REASONS = ['spam', 'incorrect', 'closed', 'duplicate'] as const
 const pillButtonClass = 'rounded-full border border-ink/10 bg-surface px-3.5 py-1.5 text-[13px] font-medium text-ink disabled:opacity-50'
+const noteIconButtonClass = 'flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-muted-light hover:bg-ink/5'
+
+function relativeNoteTime(iso: string): string {
+  const minutes = Math.floor((Date.now() - new Date(iso).getTime()) / 60000)
+  if (minutes < 1) return 'Just now'
+  if (minutes < 60) return `${minutes}m ago`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours}h ago`
+  const days = Math.floor(hours / 24)
+  if (days < 30) return `${days}d ago`
+  const months = Math.floor(days / 30)
+  if (months < 12) return `${months}mo ago`
+  return `${Math.floor(months / 12)}y ago`
+}
 
 export default function Place() {
   const { placeId } = useParams()
@@ -25,7 +39,6 @@ export default function Place() {
   const [reportReason, setReportReason] = useState<typeof REPORT_REASONS[number]>('incorrect')
   const [status, setStatus] = useState<string | null>(null)
   const [noteStatus, setNoteStatus] = useState<string | null>(null)
-  const [hasVerified, setHasVerified] = useState(false)
 
   const load = useCallback(async () => {
     if (!supabase || !placeId) return
@@ -37,26 +50,9 @@ export default function Place() {
     if (placeData) setPlace(placeData as PlaceT)
     if (photoData) setPhotos(photoData as PlacePhoto[])
     if (noteData) setNotes(noteData as CommunityNote[])
-
-    if (session) {
-      const { data: verification } = await supabase
-        .from('place_verifications')
-        .select('id')
-        .eq('place_id', placeId)
-        .eq('verified_by', session.user.id)
-        .maybeSingle()
-      setHasVerified(Boolean(verification))
-    }
-  }, [placeId, session])
+  }, [placeId])
 
   useEffect(() => { load() }, [load])
-
-  async function verify() {
-    if (!supabase || !session || !placeId || hasVerified) return
-    const { error } = await supabase.from('place_verifications').insert({ place_id: placeId, verified_by: session.user.id })
-    setStatus(error ? error.message : "Thanks for helping keep Lamyig accurate.")
-    load()
-  }
 
   async function report() {
     if (!supabase || !session || !placeId) return
@@ -68,6 +64,13 @@ export default function Place() {
     if (!supabase || !session || !placeId) return
     const { error } = await supabase.from('place_reports').insert({ place_id: placeId, reporter_id: session.user.id, reason: 'spam', note_id: noteId })
     setNoteStatus(error ? error.message : "Thanks for the heads up - we'll take a look.")
+  }
+
+  async function deleteNote(noteId: string) {
+    if (!supabase || !session) return
+    const { error } = await supabase.from('community_notes').delete().eq('id', noteId)
+    setNoteStatus(error ? error.message : 'Note removed.')
+    load()
   }
 
   async function submitNote() {
@@ -133,42 +136,45 @@ export default function Place() {
         })}
       </dl>
 
-      <p className="mt-4 text-sm text-muted">
-        {place.last_verified_at
-          ? `Last confirmed ${new Date(place.last_verified_at).toLocaleDateString()}`
-          : 'Not yet confirmed'}
-      </p>
-
       {session ? (
         <div className="mt-4 flex flex-wrap gap-2">
-          <button onClick={verify} disabled={hasVerified} className={pillButtonClass}>
-            {hasVerified ? 'You confirmed this' : 'Still accurate?'}
-          </button>
           <select value={reportReason} onChange={(e) => setReportReason(e.target.value as typeof reportReason)} className={pillButtonClass}>
             {REPORT_REASONS.map((r) => <option key={r} value={r}>{r}</option>)}
           </select>
-          <button onClick={report} className={pillButtonClass}>Help improve this place</button>
+          <button onClick={report} className={pillButtonClass}>Report</button>
         </div>
       ) : (
         <p className="mt-4 text-sm text-muted">
-          <button onClick={() => navigate('/auth', { state: { background } })} className="font-medium text-accent underline">Sign in</button> to confirm, help improve, or edit this place.
+          <button onClick={() => navigate('/auth', { state: { background } })} className="font-medium text-accent underline">Sign in</button> to report or edit this place.
         </p>
       )}
       {status && <p className="mt-2 text-sm text-muted">{status}</p>}
 
       <h2 className="mt-8 text-[15px] font-bold">Community notes</h2>
-      <div className="mt-2 flex flex-col gap-3">
-        {notes.map((n) => (
-          <div key={n.id} className="rounded-xl bg-accent-light p-3 text-sm">
-            <p>{n.body}</p>
-            {session && (
-              <button onClick={() => reportNote(n.id)} className="mt-1.5 text-[11.5px] font-medium text-muted underline">
-                Report
+      <div className="mt-1">
+        {notes.map((n, i) => (
+          <div key={n.id} className={`flex items-start justify-between gap-3 py-3 ${i > 0 ? 'border-t border-ink/10' : ''}`}>
+            <div className="min-w-0">
+              <p className="text-sm">{n.body}</p>
+              <p className="mt-1 text-[12px] text-muted-light">{relativeNoteTime(n.created_at)}</p>
+            </div>
+            {session && session.user.id === n.author_id && (
+              <button onClick={() => deleteNote(n.id)} title="Delete your note" className={noteIconButtonClass}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 7h16" /><path d="M10 11v6" /><path d="M14 11v6" /><path d="M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13" /><path d="M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3" />
+                </svg>
+              </button>
+            )}
+            {session && session.user.id !== n.author_id && (
+              <button onClick={() => reportNote(n.id)} title="Report this note" className={noteIconButtonClass}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 21V4" /><path d="M5 4h12l-3 4 3 4H5" />
+                </svg>
               </button>
             )}
           </div>
         ))}
-        {notes.length === 0 && <p className="text-sm text-muted">No community notes yet. Share something future travellers should know.</p>}
+        {notes.length === 0 && <p className="py-3 text-sm text-muted">No community notes yet. Share something future travellers should know.</p>}
       </div>
       {session && (
         <div className="mt-3 flex gap-2">

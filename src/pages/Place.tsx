@@ -64,6 +64,12 @@ export default function Place() {
     setStatus(error ? error.message : "Thanks for the heads up - we'll take a look.")
   }
 
+  async function reportNote(noteId: string) {
+    if (!supabase || !session || !placeId) return
+    const { error } = await supabase.from('place_reports').insert({ place_id: placeId, reporter_id: session.user.id, reason: 'spam', note_id: noteId })
+    setNoteStatus(error ? error.message : "Thanks for the heads up - we'll take a look.")
+  }
+
   async function submitNote() {
     if (!supabase || !session || !placeId || !newNote.trim()) return
     setNoteStatus(null)
@@ -153,7 +159,14 @@ export default function Place() {
       <h2 className="mt-8 text-[15px] font-bold">Community notes</h2>
       <div className="mt-2 flex flex-col gap-3">
         {notes.map((n) => (
-          <p key={n.id} className="rounded-xl bg-accent-light p-3 text-sm">{n.body}</p>
+          <div key={n.id} className="rounded-xl bg-accent-light p-3 text-sm">
+            <p>{n.body}</p>
+            {session && (
+              <button onClick={() => reportNote(n.id)} className="mt-1.5 text-[11.5px] font-medium text-muted underline">
+                Report
+              </button>
+            )}
+          </div>
         ))}
         {notes.length === 0 && <p className="text-sm text-muted">No community notes yet. Share something future travellers should know.</p>}
       </div>

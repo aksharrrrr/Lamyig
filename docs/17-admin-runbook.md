@@ -20,7 +20,7 @@ select id, display_name from profiles where display_name ilike '%<name>%';
 
 Signed in as an admin (via the app's normal login, not the dashboard), a user can now:
 - Read `place_reports` and `feedback` - nobody else can, not even the reporter re-reading their own report
-- Delete a place, a place report, or a feedback row - nobody else can delete anything, not even a place's own author
+- Delete a place, a place report, a feedback row, or a community note - nobody else can delete any of these, not even the place's/note's own author
 
 Everything else (adding/editing places, verifying) works the same as any other signed-in user - admin doesn't change those.
 
@@ -28,13 +28,25 @@ Everything else (adding/editing places, verifying) works the same as any other s
 
 Nothing below is automated or notified - check on whatever cadence makes sense as traffic grows (weekly is reasonable at low volume).
 
-**Place reports** (spam / incorrect / closed / duplicate):
+**Place reports** (spam / incorrect / closed / duplicate) - `note_id` is null for these:
 ```sql
 select pr.id, pr.reason, pr.note, pr.created_at, p.name as place_name, p.id as place_id
 from place_reports pr join places p on p.id = pr.place_id
+where pr.note_id is null
 order by pr.created_at desc;
 ```
 Fix the place directly (wiki-style edit, same as any user) if it's a correctable error. Delete the place if the report is legitimate spam/duplicate/permanently-closed. Delete the report row once handled - there's no `resolved` flag, so a cleared report is one that's been deleted.
+
+**Reported community notes** (migration `0021`) - a note's own report always uses reason `spam`, and `note_id` points at the flagged note:
+```sql
+select pr.id, pr.created_at, cn.body as note_body, cn.author_id, p.name as place_name, p.id as place_id
+from place_reports pr
+join community_notes cn on cn.id = pr.note_id
+join places p on p.id = pr.place_id
+where pr.note_id is not null
+order by pr.created_at desc;
+```
+Delete the note (`delete from community_notes where id = '<note-id>'`) if it's genuinely spam/off-topic/a mistake. Delete the report row once handled, same "delete = handled" model as place reports.
 
 **General feedback:**
 ```sql

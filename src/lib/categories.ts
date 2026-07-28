@@ -6,6 +6,7 @@ export interface CategoryField {
   type: FieldType
   options?: string[]
   required?: boolean
+  placeholder?: string
 }
 
 export type FieldVisibility = 'required' | 'optional' | 'hidden'
@@ -43,7 +44,7 @@ export const CATEGORIES: CategoryDef[] = [
     showPhotos: true,
     color: '#C1694F',
     fields: [
-      { key: 'host_name', label: 'Host name', type: 'text', required: true },
+      { key: 'host_name', label: 'Host name', type: 'text', required: true, placeholder: 'e.g. Tashi' },
       { key: 'meals_included', label: 'Meals included', type: 'boolean' },
       { key: 'parking', label: 'Parking', type: 'select', options: ['none', 'bike', 'car', 'bike and car'], required: true },
       { key: 'cash_only', label: 'Cash only', type: 'boolean' },
@@ -63,7 +64,7 @@ export const CATEGORIES: CategoryDef[] = [
     fields: [
       { key: 'services', label: 'Services', type: 'multiselect', options: ['tubeless puncture', 'tube puncture', 'general repair', 'spare parts'], required: true },
       { key: 'vehicle_types', label: 'Vehicle types serviced', type: 'multiselect', options: ['bike', 'car'], required: true },
-      { key: 'hours', label: 'Hours (e.g. "8am-8pm" or "24x7")', type: 'text', required: true },
+      { key: 'hours', label: 'Hours', type: 'text', required: true, placeholder: 'e.g. 8am-8pm or 24x7' },
     ],
   },
   {
@@ -80,7 +81,7 @@ export const CATEGORIES: CategoryDef[] = [
     fields: [
       { key: 'fuel_types', label: 'Fuel types', type: 'multiselect', options: ['petrol', 'diesel'], required: true },
       { key: 'source', label: 'Source', type: 'select', options: ['pump', 'informal (jerry can)'], required: true },
-      { key: 'hours', label: 'Hours (e.g. "8am-8pm" or "24x7")', type: 'text' },
+      { key: 'hours', label: 'Hours', type: 'text', placeholder: 'e.g. 8am-8pm or 24x7' },
     ],
   },
   {

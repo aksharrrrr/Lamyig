@@ -54,14 +54,14 @@ export default function Place() {
   async function verify() {
     if (!supabase || !session || !placeId || hasVerified) return
     const { error } = await supabase.from('place_verifications').insert({ place_id: placeId, verified_by: session.user.id })
-    setStatus(error ? error.message : 'Marked as still accurate.')
+    setStatus(error ? error.message : "Thanks for helping keep Lamyig accurate.")
     load()
   }
 
   async function report() {
     if (!supabase || !session || !placeId) return
     const { error } = await supabase.from('place_reports').insert({ place_id: placeId, reporter_id: session.user.id, reason: reportReason })
-    setStatus(error ? error.message : 'Reported. Thanks, this goes to manual review.')
+    setStatus(error ? error.message : "Thanks for the heads up - we'll take a look.")
   }
 
   async function submitNote() {
@@ -72,7 +72,7 @@ export default function Place() {
       setNoteStatus(error.message)
       return
     }
-    setNoteStatus('Note posted.')
+    setNoteStatus('Your note is up - future travellers will see it.')
     setNewNote('')
     load()
   }
@@ -81,7 +81,7 @@ export default function Place() {
     return <p className="text-sm text-muted">Backend isn't connected yet.</p>
   }
 
-  if (!place) return <p className="text-sm text-muted">Loading…</p>
+  if (!place) return <p className="text-sm text-muted">Finding this place…</p>
 
   const def = categoryDef(place.category)
   const publicUrl = (path: string) => supabase!.storage.from('place-photos').getPublicUrl(path).data.publicUrl
@@ -129,23 +129,23 @@ export default function Place() {
 
       <p className="mt-4 text-sm text-muted">
         {place.last_verified_at
-          ? `Last verified ${new Date(place.last_verified_at).toLocaleDateString()}`
-          : 'Not yet verified'}
+          ? `Last confirmed ${new Date(place.last_verified_at).toLocaleDateString()}`
+          : 'Not yet confirmed'}
       </p>
 
       {session ? (
         <div className="mt-4 flex flex-wrap gap-2">
           <button onClick={verify} disabled={hasVerified} className={pillButtonClass}>
-            {hasVerified ? 'You verified this' : 'Still accurate'}
+            {hasVerified ? 'You confirmed this' : 'Still accurate?'}
           </button>
           <select value={reportReason} onChange={(e) => setReportReason(e.target.value as typeof reportReason)} className={pillButtonClass}>
             {REPORT_REASONS.map((r) => <option key={r} value={r}>{r}</option>)}
           </select>
-          <button onClick={report} className={pillButtonClass}>Report</button>
+          <button onClick={report} className={pillButtonClass}>Help improve this place</button>
         </div>
       ) : (
         <p className="mt-4 text-sm text-muted">
-          <button onClick={() => navigate('/auth', { state: { background } })} className="font-medium text-accent underline">Sign in</button> to verify, report, or edit.
+          <button onClick={() => navigate('/auth', { state: { background } })} className="font-medium text-accent underline">Sign in</button> to confirm, help improve, or edit this place.
         </p>
       )}
       {status && <p className="mt-2 text-sm text-muted">{status}</p>}
@@ -155,7 +155,7 @@ export default function Place() {
         {notes.map((n) => (
           <p key={n.id} className="rounded-xl bg-accent-light p-3 text-sm">{n.body}</p>
         ))}
-        {notes.length === 0 && <p className="text-sm text-muted">No notes yet.</p>}
+        {notes.length === 0 && <p className="text-sm text-muted">No community notes yet. Share something future travellers should know.</p>}
       </div>
       {session && (
         <div className="mt-3 flex gap-2">

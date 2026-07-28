@@ -29,7 +29,7 @@ export default function App() {
   const navigate = useNavigate()
   const background = (location.state as { background?: Location } | null)?.background
   const authTitle = location.search.includes('mode=sign-up')
-    ? 'Sign up'
+    ? 'Join Lamyig'
     : location.search.includes('mode=forgot')
       ? 'Reset password'
       : 'Sign in'

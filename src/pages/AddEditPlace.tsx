@@ -231,7 +231,7 @@ export default function AddEditPlace() {
       }
 
       for (const [index, file] of photos.entries()) {
-        setUploadProgress(`Uploading photo ${index + 1} of ${photos.length}…`)
+        setUploadProgress(`Adding photo ${index + 1} of ${photos.length}…`)
         const compressed = await compressImage(file)
         const path = `${id}/${crypto.randomUUID()}.webp`
         const { error: uploadError } = await supabase.storage.from('place-photos').upload(path, compressed)
@@ -245,7 +245,7 @@ export default function AddEditPlace() {
       } else {
         refetch()
         const regionName = regions.find((r) => r.id === regionId)?.name ?? ''
-        showToast(`"${finalName}" added${regionName ? ` to ${regionName}` : ''}`)
+        showToast(`Thanks for sharing "${finalName}"${regionName ? ` in ${regionName}` : ''}.`)
         navigate('/')
       }
     } catch (err) {
@@ -254,7 +254,7 @@ export default function AddEditPlace() {
       // message and always showing "Something went wrong."
       const message = err instanceof Error
         ? err.message
-        : (typeof err === 'object' && err && 'message' in err ? String(err.message) : 'Something went wrong.')
+        : (typeof err === 'object' && err && 'message' in err ? String(err.message) : "Couldn't save that. Try again.")
       setError(message)
     } finally {
       setSubmitting(false)
@@ -273,7 +273,7 @@ export default function AddEditPlace() {
   if (!authLoading && !session) {
     return (
       <div>
-        <p className="text-sm text-muted">Sign in to contribute.</p>
+        <p className="text-sm text-muted">Sign in to add a place.</p>
         <button
           onClick={() => navigate('/auth', { state: { background } })}
           className="mt-4 inline-block rounded-[10px] bg-accent px-4 py-2 text-sm font-semibold text-surface"
@@ -396,6 +396,7 @@ export default function AddEditPlace() {
                   required={f.required}
                   value={(attributes[f.key] as string) ?? ''}
                   onChange={(e) => setAttributes({ ...attributes, [f.key]: e.target.value })}
+                  placeholder={f.placeholder}
                   className={inputClass}
                 />
               )}
@@ -503,7 +504,7 @@ export default function AddEditPlace() {
         disabled={submitting}
         className="mt-1 rounded-[11px] bg-accent px-4 py-3 text-sm font-semibold text-surface disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {submitting ? (uploadProgress ?? 'Submitting…') : isEdit ? 'Save changes' : 'Save place'}
+        {submitting ? (uploadProgress ?? (isEdit ? 'Saving changes…' : 'Sharing your place…')) : isEdit ? 'Save changes' : 'Save place'}
       </button>
     </form>
   )

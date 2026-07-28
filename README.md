@@ -6,6 +6,8 @@ Lamyig is an open-source, offline-first, community-maintained travel knowledge m
 
 **Live at [www.lamyig.in](https://www.lamyig.in).**
 
+![Lamyig map view showing homestays, mechanics, fuel stations, and camping sites across India](docs/brand/screenshot-map.png)
+
 It is not a booking platform. It is a shared record of what travellers and locals actually know: where the homestays are, where the mechanic is, where you can refill water, where the road is broken, where the network dies. The kind of knowledge that today lives only in tea stalls, WhatsApp groups, and the memory of the last rider who passed through.
 
 ## The name

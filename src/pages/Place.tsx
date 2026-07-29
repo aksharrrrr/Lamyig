@@ -1,6 +1,6 @@
 import { Fragment, useCallback, useEffect, useState } from 'react'
 import { useLocation, useNavigate, useParams, type Location } from 'react-router'
-import { supabase } from '../lib/supabase'
+import { supabase, BACKEND_NOT_CONFIGURED_MESSAGE } from '../lib/supabase'
 import { useAuth } from '../lib/useAuth'
 import { categoryDef } from '../lib/categories'
 import type { CommunityNote, Place as PlaceT, PlacePhoto } from '../lib/types'
@@ -87,7 +87,7 @@ export default function Place() {
   }
 
   if (!configured) {
-    return <p className="text-sm text-muted">Backend isn't connected yet.</p>
+    return <p className="text-sm text-muted">{BACKEND_NOT_CONFIGURED_MESSAGE}</p>
   }
 
   if (!place) return <p className="text-sm text-muted">Finding this place…</p>

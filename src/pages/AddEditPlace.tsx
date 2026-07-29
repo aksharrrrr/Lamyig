@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams, useLocation, type Location } from 'react-router'
-import { supabase } from '../lib/supabase'
+import { supabase, BACKEND_NOT_CONFIGURED_MESSAGE } from '../lib/supabase'
 import { useAuth } from '../lib/useAuth'
 import { usePlacesStore } from '../lib/usePlacesStore'
 import { useToast } from '../lib/useToast'
@@ -266,11 +266,7 @@ export default function AddEditPlace() {
   }
 
   if (!configured) {
-    return (
-      <p className="text-sm text-muted">
-        Backend isn't connected yet. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.
-      </p>
-    )
+    return <p className="text-sm text-muted">{BACKEND_NOT_CONFIGURED_MESSAGE}</p>
   }
 
   if (!authLoading && !session) {

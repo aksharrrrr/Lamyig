@@ -61,6 +61,9 @@ const LocationPicker = forwardRef<LocationPickerHandle, LocationPickerProps>(fun
     })
     map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right')
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right')
+    // The picker is a small 224px-tall box - a YouTube-style expand button
+    // makes it easy to drop the pin precisely without that cramped view.
+    map.addControl(new maplibregl.FullscreenControl(), 'bottom-right')
 
     const marker = new maplibregl.Marker({ element: createMarkerElement(category), draggable: true, anchor: 'center' })
       .setLngLat([start.lng, start.lat])

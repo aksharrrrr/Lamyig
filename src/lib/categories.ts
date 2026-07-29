@@ -1,4 +1,4 @@
-export type FieldType = 'text' | 'number' | 'boolean' | 'select' | 'multiselect'
+export type FieldType = 'text' | 'number' | 'boolean' | 'select' | 'multiselect' | 'hours'
 
 export interface CategoryField {
   key: string
@@ -48,7 +48,9 @@ export const CATEGORIES: CategoryDef[] = [
     fields: [
       { key: 'host_name', label: 'Host name', type: 'text', required: true, placeholder: 'e.g. Tashi' },
       { key: 'meals_included', label: 'Meals included', type: 'boolean' },
-      { key: 'parking', label: 'Parking', type: 'select', options: ['none', 'bike', 'car', 'bike and car'], required: true },
+      // No "required" - an empty selection legitimately means no parking,
+      // same as the multiselect fields below (Services, Vehicle types).
+      { key: 'parking', label: 'Parking', type: 'multiselect', options: ['bike', 'car'] },
       { key: 'cash_only', label: 'Cash only', type: 'boolean' },
     ],
   },
@@ -67,7 +69,7 @@ export const CATEGORIES: CategoryDef[] = [
     fields: [
       { key: 'services', label: 'Services', type: 'multiselect', options: ['tubeless puncture', 'tube puncture', 'general repair', 'spare parts'], required: true },
       { key: 'vehicle_types', label: 'Vehicle types serviced', type: 'multiselect', options: ['bike', 'car'], required: true },
-      { key: 'hours', label: 'Hours', type: 'text', required: true, placeholder: 'e.g. 8am-8pm or 24x7' },
+      { key: 'hours', label: 'Hours', type: 'hours', required: true },
     ],
   },
   {
@@ -84,7 +86,7 @@ export const CATEGORIES: CategoryDef[] = [
     fields: [
       { key: 'fuel_types', label: 'Fuel types', type: 'multiselect', options: ['petrol', 'diesel'], required: true },
       { key: 'source', label: 'Source', type: 'select', options: ['pump', 'informal (jerry can)'], required: true },
-      { key: 'hours', label: 'Hours', type: 'text', placeholder: 'e.g. 8am-8pm or 24x7' },
+      { key: 'hours', label: 'Hours', type: 'hours' },
     ],
   },
   {

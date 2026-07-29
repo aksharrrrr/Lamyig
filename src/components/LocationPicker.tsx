@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { createMarkerElement } from './Map'
@@ -21,7 +21,14 @@ interface LocationPickerProps {
   onSelectVillageName?: (name: string) => void
 }
 
-export default function LocationPicker({ lat, lng, category, initialCenter, onChange, onSelectVillageName }: LocationPickerProps) {
+export interface LocationPickerHandle {
+  flyTo: (lat: number, lng: number, zoom: number) => void
+}
+
+const LocationPicker = forwardRef<LocationPickerHandle, LocationPickerProps>(function LocationPicker(
+  { lat, lng, category, initialCenter, onChange, onSelectVillageName },
+  ref,
+) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
   const markerRef = useRef<maplibregl.Marker | null>(null)
@@ -32,6 +39,10 @@ export default function LocationPicker({ lat, lng, category, initialCenter, onCh
   const [results, setResults] = useState<GeocodeResult[]>([])
   const [searching, setSearching] = useState(false)
   const [searchError, setSearchError] = useState<string | null>(null)
+
+  useImperativeHandle(ref, () => ({
+    flyTo: (flyLat, flyLng, zoom) => mapRef.current?.flyTo({ center: [flyLng, flyLat], zoom, duration: 1500 }),
+  }), [])
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return
@@ -193,4 +204,6 @@ export default function LocationPicker({ lat, lng, category, initialCenter, onCh
       <div ref={containerRef} className="h-56 w-full overflow-hidden rounded-xl border border-ink/10" />
     </div>
   )
-}
+})
+
+export default LocationPicker

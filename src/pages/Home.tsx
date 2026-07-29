@@ -192,7 +192,12 @@ export default function Home() {
 
   return (
     <div className="relative h-full w-full overflow-hidden">
-      <Map ref={mapRef} places={visiblePlaces} onSelectPlace={(id) => openOverlay(`/place/${id}`)} />
+      <Map
+        ref={mapRef}
+        places={visiblePlaces}
+        onSelectPlace={(id) => openOverlay(`/place/${id}`)}
+        onLocateError={() => showToast("Couldn't get your location. Check permissions and try again.")}
+      />
 
       {/* Subtle vignette so floating light UI stays legible over any map color underneath */}
       <div
@@ -457,7 +462,7 @@ export default function Home() {
           </svg>
         </button>
         <button
-          onClick={() => { mapRef.current?.locate(); showToast('Centered on your location') }}
+          onClick={() => mapRef.current?.locate()}
           title="My location"
           className="flex h-11 w-11 items-center justify-center rounded-full border border-ink/[0.08] bg-surface shadow-lg hover:scale-105"
         >

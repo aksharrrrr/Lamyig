@@ -39,10 +39,22 @@ const LocationPicker = forwardRef<LocationPickerHandle, LocationPickerProps>(fun
   const [results, setResults] = useState<GeocodeResult[]>([])
   const [searching, setSearching] = useState(false)
   const [searchError, setSearchError] = useState<string | null>(null)
+  // Bigger-in-place, not the browser's real Fullscreen API - the map grows
+  // to a large centered box with the page still dimly visible behind it, and
+  // a close button undoes it. MapLibre auto-resizes the canvas via its own
+  // ResizeObserver on the container, so no manual map.resize() call needed.
+  const [expanded, setExpanded] = useState(false)
 
   useImperativeHandle(ref, () => ({
     flyTo: (flyLat, flyLng, zoom) => mapRef.current?.flyTo({ center: [flyLng, flyLat], zoom, duration: 1500 }),
   }), [])
+
+  useEffect(() => {
+    if (!expanded) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setExpanded(false) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [expanded])
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return
@@ -61,9 +73,6 @@ const LocationPicker = forwardRef<LocationPickerHandle, LocationPickerProps>(fun
     })
     map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right')
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right')
-    // The picker is a small 224px-tall box - a YouTube-style expand button
-    // makes it easy to drop the pin precisely without that cramped view.
-    map.addControl(new maplibregl.FullscreenControl(), 'bottom-right')
 
     const marker = new maplibregl.Marker({ element: createMarkerElement(category), draggable: true, anchor: 'center' })
       .setLngLat([start.lng, start.lat])
@@ -204,7 +213,37 @@ const LocationPicker = forwardRef<LocationPickerHandle, LocationPickerProps>(fun
         )}
       </div>
       <p className="text-[11.5px] text-muted">Search to jump to the area, then drag the pin (or tap the map) to the exact spot.</p>
-      <div ref={containerRef} className="h-56 w-full overflow-hidden rounded-xl border border-ink/10" />
+      <div
+        className={expanded ? 'fixed inset-0 z-50 flex items-center justify-center bg-[rgba(22,18,30,0.34)] p-6' : ''}
+        onClick={() => expanded && setExpanded(false)}
+      >
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className={
+            expanded
+              ? 'relative h-[75vh] w-[92vw] max-w-[900px] overflow-hidden rounded-2xl border border-ink/10 shadow-2xl'
+              : 'relative h-56 w-full overflow-hidden rounded-xl border border-ink/10'
+          }
+        >
+          <div ref={containerRef} className="h-full w-full" />
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            title={expanded ? 'Close' : 'Expand map'}
+            className="absolute right-2.5 top-2.5 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-surface/90 text-ink shadow hover:bg-surface"
+          >
+            {expanded ? (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M6 6l12 12" /><path d="M18 6L6 18" />
+              </svg>
+            ) : (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M8 3H3v5" /><path d="M16 3h5v5" /><path d="M21 16v5h-5" /><path d="M3 16v5h5" />
+              </svg>
+            )}
+          </button>
+        </div>
+      </div>
     </div>
   )
 })

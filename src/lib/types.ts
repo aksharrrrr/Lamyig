@@ -25,8 +25,8 @@ export interface Place {
   category: string
   lat: number
   lng: number
-  village_id: string
-  region_id: string
+  village_id: string | null
+  region_id: string | null
   description: string
   phone: string | null
   whatsapp: string | null

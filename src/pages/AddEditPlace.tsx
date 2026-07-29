@@ -99,7 +99,7 @@ export default function AddEditPlace() {
       setDescription(data.description)
       setLat(String(data.lat))
       setLng(String(data.lng))
-      setRegionId(data.region_id)
+      setRegionId(data.region_id ?? '')
       setPhone(data.phone ?? '')
       setWhatsapp(data.whatsapp ?? '')
       setPriceRange(data.price_range ?? '')
@@ -133,10 +133,6 @@ export default function AddEditPlace() {
       setError('Set a location on the map.')
       return
     }
-    if (!regionId) {
-      setError('Select a region.')
-      return
-    }
     if (def.name === 'required' && !name.trim()) {
       setError('Enter a name.')
       return
@@ -165,7 +161,12 @@ export default function AddEditPlace() {
       const trimmedVillage = villageName.trim()
       let resolvedVillageId: string | null = null
 
-      if (trimmedVillage) {
+      // A village always belongs to a region (villages.region_id is NOT
+      // NULL) - Region being optional now means this can be reached with a
+      // village name but no region (e.g. auto-filled from a map search
+      // before Region was touched). Nothing to resolve in that case; the
+      // place just submits without a village.
+      if (trimmedVillage && regionId) {
         const villageSlug = slugify(trimmedVillage)
         const { data: existingVillage } = await supabase
           .from('villages')
@@ -209,7 +210,7 @@ export default function AddEditPlace() {
         category,
         lat: Number(lat),
         lng: Number(lng),
-        region_id: regionId,
+        region_id: regionId || null,
         village_id: resolvedVillageId,
         description: def.description === 'hidden' ? '' : description,
         phone: def.showPhone ? (phone || null) : null,
@@ -356,9 +357,9 @@ export default function AddEditPlace() {
       </div>
 
       <label className="flex flex-col gap-1.5">
-        <span className={labelClass}>Region {requiredMark}</span>
-        <select required value={regionId} onChange={(e) => { setRegionId(e.target.value); setVillageName('') }} className={inputClass}>
-          <option value="" disabled>Select a region…</option>
+        <span className={labelClass}>Region</span>
+        <select value={regionId} onChange={(e) => { setRegionId(e.target.value); setVillageName('') }} className={inputClass}>
+          <option value="">No region</option>
           {regions.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
         </select>
       </label>

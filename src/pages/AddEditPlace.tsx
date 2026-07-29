@@ -352,28 +352,12 @@ export default function AddEditPlace() {
         />
       </div>
 
-      <label className="flex flex-col gap-1.5">
-        <span className={labelClass}>Region</span>
-        <select value={regionId} onChange={(e) => { setRegionId(e.target.value); setVillageName('') }} className={inputClass}>
-          <option value="">No region</option>
-          {regions.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
-        </select>
-      </label>
-
-      <label className="flex flex-col gap-1.5">
-        <span className={labelClass}>Village</span>
-        <input
-          list="village-suggestions"
-          value={villageName}
-          onChange={(e) => setVillageName(e.target.value)}
-          disabled={!regionId}
-          placeholder="Type a village name…"
-          className={`${inputClass} disabled:opacity-50`}
-        />
-        <datalist id="village-suggestions">
-          {villages.map((v) => <option key={v.id} value={v.name} />)}
-        </datalist>
-      </label>
+      {/* Region and Village fields are hidden for now, not removed - both
+          only matter for the Region/Village pages and offline download
+          packs (D-005), neither of which is built yet, so requiring them
+          was pure friction with no current payoff. regionId/villageName
+          state and the submit-time village lookup/creation logic are left
+          intact below; bring these two fields back once that work starts. */}
 
       {def && def.fields.length > 0 && (
         <fieldset className="flex flex-col gap-3 rounded-xl border border-ink/10 p-3.5">

@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { createMarkerElement } from './Map'
@@ -19,21 +19,17 @@ interface LocationPickerProps {
   onChange: (lat: number, lng: number) => void
   /** Best-effort village name from a search result's address components - caller decides whether to use it (e.g. only if the Village field is still empty). */
   onSelectVillageName?: (name: string) => void
+  onLocateError?: () => void
 }
 
-export interface LocationPickerHandle {
-  flyTo: (lat: number, lng: number, zoom: number) => void
-}
-
-const LocationPicker = forwardRef<LocationPickerHandle, LocationPickerProps>(function LocationPicker(
-  { lat, lng, category, initialCenter, onChange, onSelectVillageName },
-  ref,
-) {
+export default function LocationPicker({ lat, lng, category, initialCenter, onChange, onSelectVillageName, onLocateError }: LocationPickerProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
   const markerRef = useRef<maplibregl.Marker | null>(null)
   const onChangeRef = useRef(onChange)
   onChangeRef.current = onChange
+  const onLocateErrorRef = useRef(onLocateError)
+  onLocateErrorRef.current = onLocateError
 
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<GeocodeResult[]>([])
@@ -44,10 +40,6 @@ const LocationPicker = forwardRef<LocationPickerHandle, LocationPickerProps>(fun
   // a close button undoes it. MapLibre auto-resizes the canvas via its own
   // ResizeObserver on the container, so no manual map.resize() call needed.
   const [expanded, setExpanded] = useState(false)
-
-  useImperativeHandle(ref, () => ({
-    flyTo: (flyLat, flyLng, zoom) => mapRef.current?.flyTo({ center: [flyLng, flyLat], zoom, duration: 1500 }),
-  }), [])
 
   useEffect(() => {
     if (!expanded) return
@@ -165,6 +157,19 @@ const LocationPicker = forwardRef<LocationPickerHandle, LocationPickerProps>(fun
     }
   }, [query])
 
+  function locate() {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords
+        mapRef.current?.flyTo({ center: [longitude, latitude], zoom: PICKED_ZOOM, duration: 1500 })
+        markerRef.current?.setLngLat([longitude, latitude])
+        onChangeRef.current(latitude, longitude)
+      },
+      () => onLocateErrorRef.current?.(),
+      { enableHighAccuracy: true },
+    )
+  }
+
   function pickResult(result: GeocodeResult) {
     mapRef.current?.flyTo({ center: [result.lng, result.lat], zoom: PICKED_ZOOM, duration: 1200 })
     markerRef.current?.setLngLat([result.lng, result.lat])
@@ -230,7 +235,7 @@ const LocationPicker = forwardRef<LocationPickerHandle, LocationPickerProps>(fun
             type="button"
             onClick={() => setExpanded((v) => !v)}
             title={expanded ? 'Close' : 'Expand map'}
-            className="absolute right-2.5 top-2.5 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-surface/90 text-ink shadow hover:bg-surface"
+            className="absolute left-2.5 top-2.5 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-surface/90 text-ink shadow hover:bg-surface"
           >
             {expanded ? (
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -242,10 +247,21 @@ const LocationPicker = forwardRef<LocationPickerHandle, LocationPickerProps>(fun
               </svg>
             )}
           </button>
+          {/* Same crosshair icon as Home's "My location" button, for a
+              consistent locate affordance across the app. */}
+          <button
+            type="button"
+            onClick={locate}
+            title="Use my current location"
+            className="absolute bottom-2.5 left-2.5 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-surface/90 text-ink shadow hover:bg-surface"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <circle cx="12" cy="12" r="6.2" /><circle cx="12" cy="12" r="1.6" />
+              <path d="M12 2.5v3" /><path d="M12 18.5v3" /><path d="M2.5 12h3" /><path d="M18.5 12h3" />
+            </svg>
+          </button>
         </div>
       </div>
     </div>
   )
-})
-
-export default LocationPicker
+}

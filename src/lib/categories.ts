@@ -17,6 +17,7 @@ export interface CategoryDef {
   fields: CategoryField[]
   minPhotos: number
   name: FieldVisibility
+  namePlaceholder?: string
   description: FieldVisibility
   showPhone: boolean
   showWhatsapp: boolean
@@ -37,6 +38,7 @@ export const CATEGORIES: CategoryDef[] = [
     label: 'Homestay',
     minPhotos: 3,
     name: 'required',
+    namePlaceholder: "e.g. Tashi's Homestay",
     description: 'optional',
     showPhone: true,
     showWhatsapp: true,
@@ -55,6 +57,7 @@ export const CATEGORIES: CategoryDef[] = [
     label: 'Mechanic',
     minPhotos: 0,
     name: 'optional',
+    namePlaceholder: "e.g. Norbu Auto Works",
     description: 'hidden',
     showPhone: true,
     showWhatsapp: true,

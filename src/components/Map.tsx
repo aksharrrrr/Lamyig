@@ -5,6 +5,12 @@ import { categoryDef } from '../lib/categories'
 
 const INDIA_CENTER: [number, number] = [78.6569, 22.9734]
 const INDIA_ZOOM = 4.2
+// GeolocateControl's own camera move (fitBounds on the accuracy circle) can
+// land anywhere depending on GPS accuracy and whatever zoom the map was
+// already at - not the "always zoom in and center on me" behavior a normal
+// map app gives you. Flying here explicitly, to a fixed zoom, after every
+// successful fix guarantees that regardless of the control's own heuristic.
+const MY_LOCATION_ZOOM = 15
 
 // OpenFreeMap serves several real styles beyond our default (liberty) -
 // confirmed live: liberty/bright/positron/dark/fiord all return valid style
@@ -59,16 +65,31 @@ export interface MapHandle {
 interface MapProps {
   places?: PlaceMarker[]
   onSelectPlace?: (id: string) => void
+  onLocateError?: () => void
 }
 
-const Map = forwardRef<MapHandle, MapProps>(function Map({ places = [], onSelectPlace }, ref) {
+const Map = forwardRef<MapHandle, MapProps>(function Map({ places = [], onSelectPlace, onLocateError }, ref) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
   const markersRef = useRef<maplibregl.Marker[]>([])
   const geolocateRef = useRef<maplibregl.GeolocateControl | null>(null)
+  const onLocateErrorRef = useRef(onLocateError)
+  onLocateErrorRef.current = onLocateError
 
   useImperativeHandle(ref, () => ({
-    locate: () => geolocateRef.current?.trigger(),
+    // Not geolocateRef.current?.trigger() - the control's own camera move
+    // (fitBounds on the accuracy circle, capped at zoom 15) depends on GPS
+    // accuracy and whatever zoom the map already was at, so it doesn't
+    // reliably "zoom in and center on me" the way a normal map app does.
+    // Getting the position directly and flying to a fixed zoom ourselves
+    // does that reliably, every time.
+    locate: () => {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => mapRef.current?.flyTo({ center: [pos.coords.longitude, pos.coords.latitude], zoom: MY_LOCATION_ZOOM, duration: 1500 }),
+        () => onLocateErrorRef.current?.(),
+        { enableHighAccuracy: true },
+      )
+    },
     flyTo: (lat, lng, zoom) => mapRef.current?.flyTo({ center: [lng, lat], zoom, duration: 1500 }),
     // Markers/controls aren't part of the style, so they survive a
     // setStyle() call - MapLibre re-attaches them once the new style loads.

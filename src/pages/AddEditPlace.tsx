@@ -10,21 +10,13 @@ import { compressImage } from '../lib/compressImage'
 import LocationPicker from '../components/LocationPicker'
 import HoursInput from '../components/HoursInput'
 import type { Region, Village, Trek } from '../lib/types'
+import { MAX_PHOTOS, PHONE_PATTERN } from '../lib/constants'
 
-const MAX_PHOTOS = 6
 const inputClass = 'rounded-[10px] border border-ink/[0.14] bg-surface px-3.5 py-2.5 text-sm outline-none focus:border-accent focus:ring-3 focus:ring-accent-light'
 const labelClass = 'text-[11.5px] font-semibold uppercase tracking-wide text-muted'
 // The standard red-asterisk-for-required convention, not "(optional)" text
 // on everything else - required fields are the exception, not the norm.
 const requiredMark = <span className="text-danger">*</span>
-
-// Loose on purpose - accepts +country codes, spaces, dashes, parens - but
-// rejects "ajbnfkdsj"-style garbage so at least it's plausibly a phone number.
-// The parens MUST be escaped inside the character class: HTML5's `pattern`
-// compiles with the regex "v" flag, which treats bare ( ) inside [...] as a
-// syntax error - and an unparseable pattern is spec'd to silently impose no
-// restriction at all, so validation looked like it was doing nothing.
-const PHONE_PATTERN = '^[0-9+][0-9+\\-\\s\\(\\)]{6,19}$'
 
 function slugify(text: string) {
   return text.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')

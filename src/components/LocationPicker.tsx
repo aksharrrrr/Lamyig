@@ -3,11 +3,10 @@ import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { createMarkerElement } from './Map'
 import { geocodeSearch, type GeocodeResult } from '../lib/geocode'
+import { INDIA_CENTER, ZOOM_INDIA, ZOOM_REGION, ZOOM_PRECISE } from '../lib/constants'
 
 const SEARCH_DEBOUNCE_MS = 450
 const MIN_QUERY_LENGTH = 3
-const DEFAULT_ZOOM = 13
-const PICKED_ZOOM = 15
 
 interface LocationPickerProps {
   lat: number | null
@@ -53,8 +52,8 @@ export default function LocationPicker({ lat, lng, category, initialCenter, onCh
 
     const start = lat != null && lng != null
       ? { lat, lng }
-      : initialCenter ?? { lat: 22.9734, lng: 78.6569 }
-    const startZoom = lat != null && lng != null ? PICKED_ZOOM : (initialCenter ? DEFAULT_ZOOM : 4.2)
+      : initialCenter ?? INDIA_CENTER
+    const startZoom = lat != null && lng != null ? ZOOM_PRECISE : (initialCenter ? ZOOM_REGION : ZOOM_INDIA)
 
     const map = new maplibregl.Map({
       container: containerRef.current,
@@ -161,7 +160,7 @@ export default function LocationPicker({ lat, lng, category, initialCenter, onCh
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const { latitude, longitude } = pos.coords
-        mapRef.current?.flyTo({ center: [longitude, latitude], zoom: PICKED_ZOOM, duration: 1500 })
+        mapRef.current?.flyTo({ center: [longitude, latitude], zoom: ZOOM_PRECISE, duration: 1500 })
         markerRef.current?.setLngLat([longitude, latitude])
         onChangeRef.current(latitude, longitude)
       },
@@ -171,7 +170,7 @@ export default function LocationPicker({ lat, lng, category, initialCenter, onCh
   }
 
   function pickResult(result: GeocodeResult) {
-    mapRef.current?.flyTo({ center: [result.lng, result.lat], zoom: PICKED_ZOOM, duration: 1200 })
+    mapRef.current?.flyTo({ center: [result.lng, result.lat], zoom: ZOOM_PRECISE, duration: 1200 })
     markerRef.current?.setLngLat([result.lng, result.lat])
     onChange(result.lat, result.lng)
 

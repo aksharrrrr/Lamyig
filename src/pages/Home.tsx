@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router'
-import Map, { MAP_STYLES, MAP_STYLE_LABELS, type MapHandle, type MapStyleName } from '../components/Map'
+import Map, { type MapHandle, type MapStyleName } from '../components/Map'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/useAuth'
 import { usePlacesStore } from '../lib/usePlacesStore'
@@ -8,13 +8,13 @@ import { useToast } from '../lib/useToast'
 import { CATEGORIES } from '../lib/categories'
 import { CATEGORY_ICONS } from '../lib/categoryIcons'
 import { geocodeSearch, type GeocodeResult } from '../lib/geocode'
+import { MAP_STYLES, MAP_STYLE_LABELS, ZOOM_VILLAGE } from '../lib/constants'
 import type { Region, Village } from '../lib/types'
 
-const VILLAGE_ZOOM = 12
-
-// Stopgap until treks get real modeling (a trek spans villages/regions, so it
-// doesn't fit the Region table - see docs/14-decision-log.md's open question
-// on this). Flat list with an approximate fly-to center per trek.
+// Treks now also exist as a real, place-attachable entity (the `treks`
+// table, migration 0024) - this flat list is kept independent on purpose,
+// just for this dropdown's fly-to behavior, rather than round-tripping
+// through a fetch for something this small and rarely-changing.
 const TREKS: { name: string; lat: number; lng: number }[] = [
   { name: 'Hampta Pass', lat: 32.2408, lng: 77.2668 },
   { name: 'Pin Parvati Pass', lat: 31.9522, lng: 77.6539 },
@@ -107,12 +107,12 @@ export default function Home() {
       showToast(`Don't have a map location for ${village.name} yet`)
       return
     }
-    mapRef.current?.flyTo(village.center_lat, village.center_lng, VILLAGE_ZOOM)
+    mapRef.current?.flyTo(village.center_lat, village.center_lng, ZOOM_VILLAGE)
     setSearchQuery('')
   }
 
   function flyToTrek(trek: (typeof TREKS)[number]) {
-    mapRef.current?.flyTo(trek.lat, trek.lng, VILLAGE_ZOOM)
+    mapRef.current?.flyTo(trek.lat, trek.lng, ZOOM_VILLAGE)
   }
 
   // Search matches regions and villages first (real Lamyig content). If

@@ -4,8 +4,8 @@ import { supabase, BACKEND_NOT_CONFIGURED_MESSAGE } from '../lib/supabase'
 import { useAuth } from '../lib/useAuth'
 import { categoryDef } from '../lib/categories'
 import type { CommunityNote, Place as PlaceT, PlacePhoto } from '../lib/types'
+import { REPORT_REASONS } from '../lib/constants'
 
-const REPORT_REASONS = ['spam', 'incorrect', 'closed', 'duplicate'] as const
 const pillButtonClass = 'rounded-full border border-ink/10 bg-surface px-3.5 py-1.5 text-[13px] font-medium text-ink disabled:opacity-50'
 const noteIconButtonClass = 'flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-muted-light hover:bg-ink/5'
 

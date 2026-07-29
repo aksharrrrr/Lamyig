@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useParams, useLocation, type Location } from 'react-router'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/useAuth'
@@ -7,11 +7,10 @@ import { useToast } from '../lib/useToast'
 import { CATEGORIES, categoryDef, sanitizeAttributes } from '../lib/categories'
 import { CATEGORY_ICONS } from '../lib/categoryIcons'
 import { compressImage } from '../lib/compressImage'
-import LocationPicker, { type LocationPickerHandle } from '../components/LocationPicker'
+import LocationPicker from '../components/LocationPicker'
 import type { Region, Village } from '../lib/types'
 
 const MAX_PHOTOS = 6
-const MY_LOCATION_ZOOM = 15
 const inputClass = 'rounded-[10px] border border-ink/[0.14] bg-surface px-3.5 py-2.5 text-sm outline-none focus:border-accent focus:ring-3 focus:ring-accent-light'
 const labelClass = 'text-[11.5px] font-semibold uppercase tracking-wide text-muted'
 
@@ -52,7 +51,6 @@ export default function AddEditPlace() {
   const [priceRange, setPriceRange] = useState('')
   const [attributes, setAttributes] = useState<Record<string, unknown>>({})
   const [photos, setPhotos] = useState<File[]>([])
-  const locationPickerRef = useRef<LocationPickerHandle>(null)
 
   const [submitting, setSubmitting] = useState(false)
   const [uploadProgress, setUploadProgress] = useState<string | null>(null)
@@ -107,18 +105,6 @@ export default function AddEditPlace() {
       if (village) setVillageName(village.name)
     })
   }, [placeId])
-
-  function useMyLocation() {
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const { latitude, longitude } = pos.coords
-        setLat(String(latitude))
-        setLng(String(longitude))
-        locationPickerRef.current?.flyTo(latitude, longitude, MY_LOCATION_ZOOM)
-      },
-      () => setError('Could not get your location. Enter coordinates manually.'),
-    )
-  }
 
   function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []).slice(0, MAX_PHOTOS)
@@ -330,18 +316,15 @@ export default function AddEditPlace() {
       <div className="flex flex-col gap-1.5">
         <span className={labelClass}>Location</span>
         <LocationPicker
-          ref={locationPickerRef}
           lat={lat ? Number(lat) : null}
           lng={lng ? Number(lng) : null}
           category={category}
           initialCenter={pickerInitialCenter}
           onChange={(newLat, newLng) => { setLat(String(newLat)); setLng(String(newLng)) }}
           onSelectVillageName={(name) => { if (!villageName.trim()) setVillageName(name) }}
+          onLocateError={() => setError('Could not get your location. Enter coordinates manually.')}
         />
       </div>
-      <button type="button" onClick={useMyLocation} className="self-start text-[13px] font-medium text-accent underline">
-        Use my current location
-      </button>
 
       <div className="flex gap-2">
         <label className="flex flex-1 flex-col gap-1.5">

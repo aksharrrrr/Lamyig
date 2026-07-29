@@ -348,7 +348,7 @@ export default function AddEditPlace() {
           initialCenter={pickerInitialCenter}
           onChange={(newLat, newLng) => { setLat(String(newLat)); setLng(String(newLng)) }}
           onSelectVillageName={(name) => { if (!villageName.trim()) setVillageName(name) }}
-          onLocateError={() => setError("Could not get your location - search or tap the map to set it instead.")}
+          onLocateError={() => setError("Couldn't get your location - search or tap the map to set it instead.")}
         />
       </div>
 

@@ -19,6 +19,13 @@ const MY_LOCATION_ZOOM = 15
 // 3-way toggle.
 export const MAP_STYLES = ['liberty', 'positron', 'dark'] as const
 export type MapStyleName = (typeof MAP_STYLES)[number]
+// OpenFreeMap's own style names ("liberty", "positron") mean nothing to a
+// traveller - these are what the map-style toggle actually shows/announces.
+export const MAP_STYLE_LABELS: Record<MapStyleName, string> = {
+  liberty: 'Default',
+  positron: 'Light',
+  dark: 'Dark',
+}
 
 // Same path data as lib/categoryIcons.tsx, as raw SVG markup - markers are
 // built as plain DOM nodes for MapLibre, outside the React tree, so the

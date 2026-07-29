@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router'
-import Map, { MAP_STYLES, type MapHandle, type MapStyleName } from '../components/Map'
+import Map, { MAP_STYLES, MAP_STYLE_LABELS, type MapHandle, type MapStyleName } from '../components/Map'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/useAuth'
 import { usePlacesStore } from '../lib/usePlacesStore'
@@ -160,7 +160,7 @@ export default function Home() {
     else {
       mapRef.current?.flyTo(result.item.lat, result.item.lng, 11)
       setSearchQuery('')
-      showToast('No Lamyig places here yet. Be the first to add one')
+      showToast('No Lamyig places here yet. Be the first to add one.')
     }
   }
 
@@ -174,7 +174,7 @@ export default function Home() {
   function startVoiceSearch() {
     const SpeechRecognition = (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition
     if (!SpeechRecognition) {
-      showToast('Voice search isn’t supported on this browser')
+      showToast("Voice search isn't supported on this browser.")
       return
     }
     const recognition = new SpeechRecognition()
@@ -476,7 +476,7 @@ export default function Home() {
             const next = MAP_STYLES[(MAP_STYLES.indexOf(mapStyle) + 1) % MAP_STYLES.length]
             setMapStyleState(next)
             mapRef.current?.setMapStyle(next)
-            showToast(`Map style: ${next}`)
+            showToast(`Map style: ${MAP_STYLE_LABELS[next]}`)
           }}
           title="Map style"
           className="flex h-11 w-11 items-center justify-center rounded-full border border-ink/[0.08] bg-surface shadow-lg hover:scale-105"

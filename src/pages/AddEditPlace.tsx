@@ -283,7 +283,21 @@ export default function AddEditPlace() {
               <button
                 key={c.value}
                 type="button"
-                onClick={() => { setCategory(c.value); setAttributes({}) }}
+                onClick={() => {
+                  if (c.value === category) return
+                  // Each category has its own form (see categories.ts) - carrying
+                  // typed-in values across a category switch means what you see
+                  // no longer matches what's about to be submitted (e.g. a
+                  // Homestay name silently surviving a switch to Mechanic).
+                  setCategory(c.value)
+                  setName('')
+                  setDescription('')
+                  setPhone('')
+                  setWhatsapp('')
+                  setPriceRange('')
+                  setAttributes({})
+                  setPhotos([])
+                }}
                 className="flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-[12.5px] font-semibold transition-all"
                 style={{
                   background: selected ? c.color : 'var(--color-surface)',
@@ -302,7 +316,7 @@ export default function AddEditPlace() {
       {def && def.name !== 'hidden' && (
         <label className="flex flex-col gap-1.5">
           <span className={labelClass}>Name{def.name === 'optional' && ' (optional)'}</span>
-          <input required={def.name === 'required'} value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Tashi's Homestay" className={inputClass} />
+          <input required={def.name === 'required'} value={name} onChange={(e) => setName(e.target.value)} placeholder={def.namePlaceholder} className={inputClass} />
         </label>
       )}
 

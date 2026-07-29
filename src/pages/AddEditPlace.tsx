@@ -8,11 +8,15 @@ import { CATEGORIES, categoryDef, sanitizeAttributes } from '../lib/categories'
 import { CATEGORY_ICONS } from '../lib/categoryIcons'
 import { compressImage } from '../lib/compressImage'
 import LocationPicker from '../components/LocationPicker'
+import HoursInput from '../components/HoursInput'
 import type { Region, Village } from '../lib/types'
 
 const MAX_PHOTOS = 6
 const inputClass = 'rounded-[10px] border border-ink/[0.14] bg-surface px-3.5 py-2.5 text-sm outline-none focus:border-accent focus:ring-3 focus:ring-accent-light'
 const labelClass = 'text-[11.5px] font-semibold uppercase tracking-wide text-muted'
+// The standard red-asterisk-for-required convention, not "(optional)" text
+// on everything else - required fields are the exception, not the norm.
+const requiredMark = <span className="text-danger">*</span>
 
 // Loose on purpose - accepts +country codes, spaces, dashes, parens - but
 // rejects "ajbnfkdsj"-style garbage so at least it's plausibly a phone number.
@@ -121,6 +125,14 @@ export default function AddEditPlace() {
       setError(`Upload at least ${minPhotos} photo${minPhotos === 1 ? '' : 's'} for a ${def.label.toLowerCase()}.`)
       return
     }
+    // Lat/lng no longer have their own visible inputs - the map is the only
+    // way to set them (search, drag, tap, or locate), none of which run
+    // automatically, so an untouched map would otherwise silently submit
+    // (0, 0) now that there's no `required` input left to catch it.
+    if (!lat || !lng) {
+      setError('Set a location on the map.')
+      return
+    }
     if (!regionId) {
       setError('Select a region.')
       return
@@ -129,14 +141,17 @@ export default function AddEditPlace() {
       setError('Enter a name.')
       return
     }
-    // Multiselect fields are custom button toggles, not a native form
-    // control, so HTML5 `required` (already applied to text/select fields
-    // via their `required` attribute) doesn't reach them - check by hand.
-    const missingMultiselect = def.fields.find(
-      (f) => f.required && f.type === 'multiselect' && ((attributes[f.key] as string[] | undefined) ?? []).length === 0,
-    )
-    if (missingMultiselect) {
-      setError(`Select at least one option for "${missingMultiselect.label}".`)
+    // Multiselect and Hours fields are custom controls, not native form
+    // inputs, so HTML5 `required` (already applied to text/select fields via
+    // their `required` attribute) doesn't reach them - check by hand.
+    const missingField = def.fields.find((f) => {
+      if (!f.required) return false
+      if (f.type === 'multiselect') return ((attributes[f.key] as string[] | undefined) ?? []).length === 0
+      if (f.type === 'hours') return !(attributes[f.key] as string | undefined)?.trim()
+      return false
+    })
+    if (missingField) {
+      setError(`${missingField.type === 'multiselect' ? 'Select at least one option for' : 'Set'} "${missingField.label}".`)
       return
     }
 
@@ -315,14 +330,14 @@ export default function AddEditPlace() {
 
       {def && def.name !== 'hidden' && (
         <label className="flex flex-col gap-1.5">
-          <span className={labelClass}>Name{def.name === 'optional' && ' (optional)'}</span>
+          <span className={labelClass}>Name{def.name === 'required' && <> {requiredMark}</>}</span>
           <input required={def.name === 'required'} value={name} onChange={(e) => setName(e.target.value)} placeholder={def.namePlaceholder} className={inputClass} />
         </label>
       )}
 
       {def && def.description !== 'hidden' && (
         <label className="flex flex-col gap-1.5">
-          <span className={labelClass}>Description{def.description === 'optional' && ' (optional)'}</span>
+          <span className={labelClass}>Description{def.description === 'required' && <> {requiredMark}</>}</span>
           <textarea required={def.description === 'required'} value={description} onChange={(e) => setDescription(e.target.value)} rows={3} placeholder="What makes this place worth marking?" className={`${inputClass} resize-none`} />
         </label>
       )}
@@ -336,23 +351,12 @@ export default function AddEditPlace() {
           initialCenter={pickerInitialCenter}
           onChange={(newLat, newLng) => { setLat(String(newLat)); setLng(String(newLng)) }}
           onSelectVillageName={(name) => { if (!villageName.trim()) setVillageName(name) }}
-          onLocateError={() => setError('Could not get your location. Enter coordinates manually.')}
+          onLocateError={() => setError("Could not get your location - search or tap the map to set it instead.")}
         />
       </div>
 
-      <div className="flex gap-2">
-        <label className="flex flex-1 flex-col gap-1.5">
-          <span className={labelClass}>Latitude</span>
-          <input required type="number" step="any" min={-90} max={90} value={lat} onChange={(e) => setLat(e.target.value)} className={inputClass} />
-        </label>
-        <label className="flex flex-1 flex-col gap-1.5">
-          <span className={labelClass}>Longitude</span>
-          <input required type="number" step="any" min={-180} max={180} value={lng} onChange={(e) => setLng(e.target.value)} className={inputClass} />
-        </label>
-      </div>
-
       <label className="flex flex-col gap-1.5">
-        <span className={labelClass}>Region</span>
+        <span className={labelClass}>Region {requiredMark}</span>
         <select required value={regionId} onChange={(e) => { setRegionId(e.target.value); setVillageName('') }} className={inputClass}>
           <option value="" disabled>Select a region…</option>
           {regions.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
@@ -360,7 +364,7 @@ export default function AddEditPlace() {
       </label>
 
       <label className="flex flex-col gap-1.5">
-        <span className={labelClass}>Village (optional)</span>
+        <span className={labelClass}>Village</span>
         <input
           list="village-suggestions"
           value={villageName}
@@ -379,7 +383,7 @@ export default function AddEditPlace() {
           <legend className="px-1 text-[13px] font-semibold">{def.label} details</legend>
           {def.fields.map((f) => (
             <label key={f.key} className="flex flex-col gap-1.5 text-sm">
-              {f.type !== 'boolean' && <span className={labelClass}>{f.label}{!f.required && ' (optional)'}</span>}
+              {f.type !== 'boolean' && <span className={labelClass}>{f.label}{f.required && <> {requiredMark}</>}</span>}
               {f.type === 'boolean' && (
                 <span className="flex items-center gap-2">
                   <input
@@ -399,7 +403,31 @@ export default function AddEditPlace() {
                   className={inputClass}
                 />
               )}
-              {f.type === 'select' && (
+              {/* Exactly 2 options is a binary choice - a toggle is one tap,
+                  a <select> is "open menu, then pick" for no extra benefit. */}
+              {f.type === 'select' && f.options?.length === 2 && (
+                <div className="flex gap-2">
+                  {f.options.map((o) => {
+                    const selected = (attributes[f.key] as string) === o
+                    return (
+                      <button
+                        type="button"
+                        key={o}
+                        onClick={() => setAttributes({ ...attributes, [f.key]: o })}
+                        className="flex-1 rounded-full border px-3 py-2 text-xs font-medium capitalize"
+                        style={{
+                          background: selected ? 'var(--color-ink)' : 'var(--color-surface)',
+                          color: selected ? 'var(--color-surface)' : 'var(--color-ink)',
+                          borderColor: selected ? 'var(--color-ink)' : 'rgba(32,31,35,0.14)',
+                        }}
+                      >
+                        {o}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+              {f.type === 'select' && f.options?.length !== 2 && (
                 <select
                   required={f.required}
                   value={(attributes[f.key] as string) ?? ''}
@@ -409,6 +437,13 @@ export default function AddEditPlace() {
                   <option value="" disabled>Select…</option>
                   {f.options?.map((o) => <option key={o} value={o}>{o}</option>)}
                 </select>
+              )}
+              {f.type === 'hours' && (
+                <HoursInput
+                  key={category}
+                  value={(attributes[f.key] as string) ?? ''}
+                  onChange={(v) => setAttributes({ ...attributes, [f.key]: v })}
+                />
               )}
               {f.type === 'multiselect' && (
                 <div className="flex flex-wrap gap-2">
@@ -445,7 +480,7 @@ export default function AddEditPlace() {
 
       {def?.showPhone && (
         <label className="flex flex-col gap-1.5">
-          <span className={labelClass}>Phone (optional)</span>
+          <span className={labelClass}>Phone</span>
           <input
             type="tel"
             value={phone}
@@ -458,7 +493,7 @@ export default function AddEditPlace() {
       )}
       {def?.showWhatsapp && (
         <label className="flex flex-col gap-1.5">
-          <span className={labelClass}>WhatsApp (optional)</span>
+          <span className={labelClass}>WhatsApp</span>
           <input
             type="tel"
             value={whatsapp}
@@ -471,7 +506,7 @@ export default function AddEditPlace() {
       )}
       {def?.showPriceRange && (
         <label className="flex flex-col gap-1.5">
-          <span className={labelClass}>Price range (optional)</span>
+          <span className={labelClass}>Price range</span>
           <input value={priceRange} onChange={(e) => setPriceRange(e.target.value)} placeholder="e.g. ₹800–1200/night" className={inputClass} />
         </label>
       )}
@@ -479,7 +514,7 @@ export default function AddEditPlace() {
       {!isEdit && def?.showPhotos && (
         <div className="flex flex-col gap-1.5">
           <span className={labelClass}>
-            Photos {def && def.minPhotos > 0 ? `(min ${def.minPhotos}, max ${MAX_PHOTOS})` : `(optional, max ${MAX_PHOTOS})`}
+            Photos {def && def.minPhotos > 0 && requiredMark} ({def && def.minPhotos > 0 ? `min ${def.minPhotos}, ` : ''}max {MAX_PHOTOS})
           </span>
           <div className="flex flex-wrap gap-2.5">
             {photos.map((file, i) => (

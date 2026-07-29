@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams, useLocation, type Location } from 'react-router'
-import { supabase } from '../lib/supabase'
+import { supabase, BACKEND_NOT_CONFIGURED_MESSAGE } from '../lib/supabase'
 import { useAuth } from '../lib/useAuth'
 import { usePlacesStore } from '../lib/usePlacesStore'
 import { useToast } from '../lib/useToast'
@@ -9,22 +9,14 @@ import { CATEGORY_ICONS } from '../lib/categoryIcons'
 import { compressImage } from '../lib/compressImage'
 import LocationPicker from '../components/LocationPicker'
 import HoursInput from '../components/HoursInput'
-import type { Region, Village } from '../lib/types'
+import type { Region, Village, Trek } from '../lib/types'
+import { MAX_PHOTOS, PHONE_PATTERN } from '../lib/constants'
 
-const MAX_PHOTOS = 6
 const inputClass = 'rounded-[10px] border border-ink/[0.14] bg-surface px-3.5 py-2.5 text-sm outline-none focus:border-accent focus:ring-3 focus:ring-accent-light'
 const labelClass = 'text-[11.5px] font-semibold uppercase tracking-wide text-muted'
 // The standard red-asterisk-for-required convention, not "(optional)" text
 // on everything else - required fields are the exception, not the norm.
 const requiredMark = <span className="text-danger">*</span>
-
-// Loose on purpose - accepts +country codes, spaces, dashes, parens - but
-// rejects "ajbnfkdsj"-style garbage so at least it's plausibly a phone number.
-// The parens MUST be escaped inside the character class: HTML5's `pattern`
-// compiles with the regex "v" flag, which treats bare ( ) inside [...] as a
-// syntax error - and an unparseable pattern is spec'd to silently impose no
-// restriction at all, so validation looked like it was doing nothing.
-const PHONE_PATTERN = '^[0-9+][0-9+\\-\\s\\(\\)]{6,19}$'
 
 function slugify(text: string) {
   return text.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
@@ -42,6 +34,7 @@ export default function AddEditPlace() {
 
   const [regions, setRegions] = useState<Region[]>([])
   const [villages, setVillages] = useState<Village[]>([])
+  const [treks, setTreks] = useState<Trek[]>([])
 
   const [name, setName] = useState('')
   const [category, setCategory] = useState(CATEGORIES[0].value)
@@ -50,6 +43,7 @@ export default function AddEditPlace() {
   const [lng, setLng] = useState('')
   const [regionId, setRegionId] = useState('')
   const [villageName, setVillageName] = useState('')
+  const [trekId, setTrekId] = useState('')
   const [phone, setPhone] = useState('')
   const [whatsapp, setWhatsapp] = useState('')
   const [priceRange, setPriceRange] = useState('')
@@ -64,16 +58,29 @@ export default function AddEditPlace() {
 
   const selectedVillage = villages.find((v) => v.name.trim().toLowerCase() === villageName.trim().toLowerCase())
   const selectedRegion = regions.find((r) => r.id === regionId)
+  const selectedTrek = treks.find((t) => t.id === trekId)
+  // Region/Village are hidden for now (see below), so for a new place, Trek
+  // is the only thing left besides "Use my current location" that can help
+  // center the map anywhere other than India-wide.
   const pickerInitialCenter = selectedVillage?.center_lat != null && selectedVillage?.center_lng != null
     ? { lat: selectedVillage.center_lat, lng: selectedVillage.center_lng }
     : selectedRegion?.center_lat != null && selectedRegion?.center_lng != null
       ? { lat: selectedRegion.center_lat, lng: selectedRegion.center_lng }
-      : undefined
+      : selectedTrek?.center_lat != null && selectedTrek?.center_lng != null
+        ? { lat: selectedTrek.center_lat, lng: selectedTrek.center_lng }
+        : undefined
 
   useEffect(() => {
     if (!supabase) return
     supabase.from('regions').select('*').order('name').then(({ data }) => {
       if (data) setRegions(data as Region[])
+    })
+  }, [])
+
+  useEffect(() => {
+    if (!supabase) return
+    supabase.from('treks').select('*').order('name').then(({ data }) => {
+      if (data) setTreks(data as Trek[])
     })
   }, [])
 
@@ -99,7 +106,8 @@ export default function AddEditPlace() {
       setDescription(data.description)
       setLat(String(data.lat))
       setLng(String(data.lng))
-      setRegionId(data.region_id)
+      setRegionId(data.region_id ?? '')
+      setTrekId(data.trek_id ?? '')
       setPhone(data.phone ?? '')
       setWhatsapp(data.whatsapp ?? '')
       setPriceRange(data.price_range ?? '')
@@ -133,10 +141,6 @@ export default function AddEditPlace() {
       setError('Set a location on the map.')
       return
     }
-    if (!regionId) {
-      setError('Select a region.')
-      return
-    }
     if (def.name === 'required' && !name.trim()) {
       setError('Enter a name.')
       return
@@ -165,7 +169,12 @@ export default function AddEditPlace() {
       const trimmedVillage = villageName.trim()
       let resolvedVillageId: string | null = null
 
-      if (trimmedVillage) {
+      // A village always belongs to a region (villages.region_id is NOT
+      // NULL) - Region being optional now means this can be reached with a
+      // village name but no region (e.g. auto-filled from a map search
+      // before Region was touched). Nothing to resolve in that case; the
+      // place just submits without a village.
+      if (trimmedVillage && regionId) {
         const villageSlug = slugify(trimmedVillage)
         const { data: existingVillage } = await supabase
           .from('villages')
@@ -209,8 +218,9 @@ export default function AddEditPlace() {
         category,
         lat: Number(lat),
         lng: Number(lng),
-        region_id: regionId,
+        region_id: regionId || null,
         village_id: resolvedVillageId,
+        trek_id: trekId || null,
         description: def.description === 'hidden' ? '' : description,
         phone: def.showPhone ? (phone || null) : null,
         whatsapp: def.showWhatsapp ? (whatsapp || null) : null,
@@ -265,11 +275,7 @@ export default function AddEditPlace() {
   }
 
   if (!configured) {
-    return (
-      <p className="text-sm text-muted">
-        Backend isn't connected yet. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.
-      </p>
-    )
+    return <p className="text-sm text-muted">{BACKEND_NOT_CONFIGURED_MESSAGE}</p>
   }
 
   if (!authLoading && !session) {
@@ -351,32 +357,26 @@ export default function AddEditPlace() {
           initialCenter={pickerInitialCenter}
           onChange={(newLat, newLng) => { setLat(String(newLat)); setLng(String(newLng)) }}
           onSelectVillageName={(name) => { if (!villageName.trim()) setVillageName(name) }}
-          onLocateError={() => setError("Could not get your location - search or tap the map to set it instead.")}
+          onLocateError={() => setError("Couldn't get your location - search or tap the map to set it instead.")}
         />
       </div>
 
-      <label className="flex flex-col gap-1.5">
-        <span className={labelClass}>Region {requiredMark}</span>
-        <select required value={regionId} onChange={(e) => { setRegionId(e.target.value); setVillageName('') }} className={inputClass}>
-          <option value="" disabled>Select a region…</option>
-          {regions.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
-        </select>
-      </label>
+      {/* Region and Village fields are hidden for now, not removed - both
+          only matter for the Region/Village pages and offline download
+          packs (D-005), neither of which is built yet, so requiring them
+          was pure friction with no current payoff. regionId/villageName
+          state and the submit-time village lookup/creation logic are left
+          intact below; bring these two fields back once that work starts. */}
 
-      <label className="flex flex-col gap-1.5">
-        <span className={labelClass}>Village</span>
-        <input
-          list="village-suggestions"
-          value={villageName}
-          onChange={(e) => setVillageName(e.target.value)}
-          disabled={!regionId}
-          placeholder="Type a village name…"
-          className={`${inputClass} disabled:opacity-50`}
-        />
-        <datalist id="village-suggestions">
-          {villages.map((v) => <option key={v.id} value={v.name} />)}
-        </datalist>
-      </label>
+      {treks.length > 0 && (
+        <label className="flex flex-col gap-1.5">
+          <span className={labelClass}>Trek (optional)</span>
+          <select value={trekId} onChange={(e) => setTrekId(e.target.value)} className={inputClass}>
+            <option value="">Not on a trek</option>
+            {treks.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+          </select>
+        </label>
+      )}
 
       {def && def.fields.length > 0 && (
         <fieldset className="flex flex-col gap-3 rounded-xl border border-ink/10 p-3.5">

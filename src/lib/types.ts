@@ -19,14 +19,23 @@ export interface Village {
   center_lng: number | null
 }
 
+export interface Trek {
+  id: string
+  slug: string
+  name: string
+  center_lat: number | null
+  center_lng: number | null
+}
+
 export interface Place {
   id: string
   name: string
   category: string
   lat: number
   lng: number
-  village_id: string
-  region_id: string
+  village_id: string | null
+  region_id: string | null
+  trek_id: string | null
   description: string
   phone: string | null
   whatsapp: string | null

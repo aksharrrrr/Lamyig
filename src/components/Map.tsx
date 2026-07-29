@@ -2,23 +2,9 @@ import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { categoryDef } from '../lib/categories'
+import { INDIA_CENTER, ZOOM_INDIA, ZOOM_PRECISE, type MapStyleName } from '../lib/constants'
 
-const INDIA_CENTER: [number, number] = [78.6569, 22.9734]
-const INDIA_ZOOM = 4.2
-// GeolocateControl's own camera move (fitBounds on the accuracy circle) can
-// land anywhere depending on GPS accuracy and whatever zoom the map was
-// already at - not the "always zoom in and center on me" behavior a normal
-// map app gives you. Flying here explicitly, to a fixed zoom, after every
-// successful fix guarantees that regardless of the control's own heuristic.
-const MY_LOCATION_ZOOM = 15
-
-// OpenFreeMap serves several real styles beyond our default (liberty) -
-// confirmed live: liberty/bright/positron/dark/fiord all return valid style
-// JSON at tiles.openfreemap.org/styles/{name}. Cycling a curated 3 rather
-// than all 5, matching the original design reference's voyager/light/dark
-// 3-way toggle.
-export const MAP_STYLES = ['liberty', 'positron', 'dark'] as const
-export type MapStyleName = (typeof MAP_STYLES)[number]
+export type { MapStyleName }
 
 // Same path data as lib/categoryIcons.tsx, as raw SVG markup - markers are
 // built as plain DOM nodes for MapLibre, outside the React tree, so the
@@ -85,7 +71,7 @@ const Map = forwardRef<MapHandle, MapProps>(function Map({ places = [], onSelect
     // does that reliably, every time.
     locate: () => {
       navigator.geolocation.getCurrentPosition(
-        (pos) => mapRef.current?.flyTo({ center: [pos.coords.longitude, pos.coords.latitude], zoom: MY_LOCATION_ZOOM, duration: 1500 }),
+        (pos) => mapRef.current?.flyTo({ center: [pos.coords.longitude, pos.coords.latitude], zoom: ZOOM_PRECISE, duration: 1500 }),
         () => onLocateErrorRef.current?.(),
         { enableHighAccuracy: true },
       )
@@ -102,8 +88,8 @@ const Map = forwardRef<MapHandle, MapProps>(function Map({ places = [], onSelect
     const map = new maplibregl.Map({
       container: containerRef.current,
       style: 'https://tiles.openfreemap.org/styles/liberty',
-      center: INDIA_CENTER,
-      zoom: INDIA_ZOOM,
+      center: [INDIA_CENTER.lng, INDIA_CENTER.lat],
+      zoom: ZOOM_INDIA,
       attributionControl: false,
     })
 

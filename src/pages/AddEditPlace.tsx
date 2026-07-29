@@ -9,7 +9,7 @@ import { CATEGORY_ICONS } from '../lib/categoryIcons'
 import { compressImage } from '../lib/compressImage'
 import LocationPicker from '../components/LocationPicker'
 import HoursInput from '../components/HoursInput'
-import type { Region, Village } from '../lib/types'
+import type { Region, Village, Trek } from '../lib/types'
 
 const MAX_PHOTOS = 6
 const inputClass = 'rounded-[10px] border border-ink/[0.14] bg-surface px-3.5 py-2.5 text-sm outline-none focus:border-accent focus:ring-3 focus:ring-accent-light'
@@ -42,6 +42,7 @@ export default function AddEditPlace() {
 
   const [regions, setRegions] = useState<Region[]>([])
   const [villages, setVillages] = useState<Village[]>([])
+  const [treks, setTreks] = useState<Trek[]>([])
 
   const [name, setName] = useState('')
   const [category, setCategory] = useState(CATEGORIES[0].value)
@@ -50,6 +51,7 @@ export default function AddEditPlace() {
   const [lng, setLng] = useState('')
   const [regionId, setRegionId] = useState('')
   const [villageName, setVillageName] = useState('')
+  const [trekId, setTrekId] = useState('')
   const [phone, setPhone] = useState('')
   const [whatsapp, setWhatsapp] = useState('')
   const [priceRange, setPriceRange] = useState('')
@@ -64,16 +66,29 @@ export default function AddEditPlace() {
 
   const selectedVillage = villages.find((v) => v.name.trim().toLowerCase() === villageName.trim().toLowerCase())
   const selectedRegion = regions.find((r) => r.id === regionId)
+  const selectedTrek = treks.find((t) => t.id === trekId)
+  // Region/Village are hidden for now (see below), so for a new place, Trek
+  // is the only thing left besides "Use my current location" that can help
+  // center the map anywhere other than India-wide.
   const pickerInitialCenter = selectedVillage?.center_lat != null && selectedVillage?.center_lng != null
     ? { lat: selectedVillage.center_lat, lng: selectedVillage.center_lng }
     : selectedRegion?.center_lat != null && selectedRegion?.center_lng != null
       ? { lat: selectedRegion.center_lat, lng: selectedRegion.center_lng }
-      : undefined
+      : selectedTrek?.center_lat != null && selectedTrek?.center_lng != null
+        ? { lat: selectedTrek.center_lat, lng: selectedTrek.center_lng }
+        : undefined
 
   useEffect(() => {
     if (!supabase) return
     supabase.from('regions').select('*').order('name').then(({ data }) => {
       if (data) setRegions(data as Region[])
+    })
+  }, [])
+
+  useEffect(() => {
+    if (!supabase) return
+    supabase.from('treks').select('*').order('name').then(({ data }) => {
+      if (data) setTreks(data as Trek[])
     })
   }, [])
 
@@ -100,6 +115,7 @@ export default function AddEditPlace() {
       setLat(String(data.lat))
       setLng(String(data.lng))
       setRegionId(data.region_id ?? '')
+      setTrekId(data.trek_id ?? '')
       setPhone(data.phone ?? '')
       setWhatsapp(data.whatsapp ?? '')
       setPriceRange(data.price_range ?? '')
@@ -212,6 +228,7 @@ export default function AddEditPlace() {
         lng: Number(lng),
         region_id: regionId || null,
         village_id: resolvedVillageId,
+        trek_id: trekId || null,
         description: def.description === 'hidden' ? '' : description,
         phone: def.showPhone ? (phone || null) : null,
         whatsapp: def.showWhatsapp ? (whatsapp || null) : null,
@@ -358,6 +375,16 @@ export default function AddEditPlace() {
           was pure friction with no current payoff. regionId/villageName
           state and the submit-time village lookup/creation logic are left
           intact below; bring these two fields back once that work starts. */}
+
+      {treks.length > 0 && (
+        <label className="flex flex-col gap-1.5">
+          <span className={labelClass}>Trek (optional)</span>
+          <select value={trekId} onChange={(e) => setTrekId(e.target.value)} className={inputClass}>
+            <option value="">Not on a trek</option>
+            {treks.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+          </select>
+        </label>
+      )}
 
       {def && def.fields.length > 0 && (
         <fieldset className="flex flex-col gap-3 rounded-xl border border-ink/10 p-3.5">

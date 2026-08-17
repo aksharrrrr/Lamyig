@@ -9,6 +9,11 @@ on:
 jobs:
   build-and-lint:
     runs-on: ubuntu-latest
+    env:
+      # Browser tests intercept every backend request. Placeholder public
+      # client settings let Supabase initialise without exposing production.
+      VITE_SUPABASE_URL: https://test.supabase.co
+      VITE_SUPABASE_ANON_KEY: ci-placeholder-anon-key
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7

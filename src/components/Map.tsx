@@ -42,6 +42,7 @@ export interface PlaceMarker {
   category: string
   lat: number
   lng: number
+  photoUrl?: string
 }
 
 export interface MapHandle {
@@ -163,27 +164,74 @@ const Map = forwardRef<MapHandle, MapProps>(function Map({ places = [], offlineM
       return valid
     })
 
+    const hoverTimers = new Set<number>()
+    const supportsHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches
+    const schedule = (callback: () => void, delay: number) => {
+      const timer = window.setTimeout(() => {
+        hoverTimers.delete(timer)
+        callback()
+      }, delay)
+      hoverTimers.add(timer)
+      return timer
+    }
+
     markersRef.current = validPlaces.map((place) => {
       const popupNode = document.createElement('div')
-      popupNode.style.minWidth = '160px'
-      popupNode.innerHTML = `
+      popupNode.style.cssText = `min-width:${place.photoUrl ? '250px' : '160px'};display:flex;gap:12px;align-items:stretch`
+      if (place.photoUrl) {
+        const photo = document.createElement('img')
+        photo.src = place.photoUrl
+        photo.alt = ''
+        photo.loading = 'lazy'
+        photo.style.cssText = 'width:92px;height:92px;flex:0 0 92px;object-fit:cover;border-radius:8px'
+        popupNode.appendChild(photo)
+      }
+      const summary = document.createElement('div')
+      summary.style.cssText = 'min-width:0;display:flex;flex-direction:column;justify-content:center'
+      summary.innerHTML = `
         <div style="font-weight:600;font-size:14px;color:var(--color-ink)">${escapeHtml(place.name)}</div>
-        <div style="font-size:12.5px;color:var(--color-muted);margin-bottom:8px">${escapeHtml(place.category)}</div>
+        <div style="font-size:12.5px;color:var(--color-muted);margin-bottom:6px;text-transform:capitalize">${escapeHtml(place.category)}</div>
       `
       const detailsButton = document.createElement('button')
       detailsButton.textContent = 'More details'
-      detailsButton.style.cssText = 'background:var(--color-accent-light);color:var(--color-accent-text);font-size:12.5px;font-weight:600;border:none;border-radius:999px;padding:6px 12px;cursor:pointer'
+      detailsButton.style.cssText = 'align-self:flex-start;background:transparent;color:var(--color-accent-text);font-size:12.5px;font-weight:600;border:0;padding:3px 0;cursor:pointer'
       detailsButton.onclick = () => onSelectPlace?.(place.id)
-      popupNode.appendChild(detailsButton)
+      summary.appendChild(detailsButton)
+      popupNode.appendChild(summary)
 
-      const marker = new maplibregl.Marker({ element: createMarkerElement(place.category) })
+      const markerElement = createMarkerElement(place.category)
+      const popup = new maplibregl.Popup({ offset: 24 }).setDOMContent(popupNode)
+      const marker = new maplibregl.Marker({ element: markerElement })
         .setLngLat([place.lng, place.lat])
-        .setPopup(new maplibregl.Popup({ offset: 24 }).setDOMContent(popupNode))
+        .setPopup(popup)
         .addTo(map)
+
+      if (supportsHover) {
+        let openTimer: number | undefined
+        let closeTimer: number | undefined
+        const cancel = (timer: number | undefined) => {
+          if (timer === undefined) return
+          window.clearTimeout(timer)
+          hoverTimers.delete(timer)
+        }
+        const openSoon = () => {
+          cancel(closeTimer)
+          openTimer = schedule(() => { if (!popup.isOpen()) marker.togglePopup() }, 160)
+        }
+        const closeSoon = () => {
+          cancel(openTimer)
+          closeTimer = schedule(() => { if (popup.isOpen()) popup.remove() }, 220)
+        }
+        markerElement.addEventListener('mouseenter', openSoon)
+        markerElement.addEventListener('mouseleave', closeSoon)
+        popupNode.addEventListener('mouseenter', () => cancel(closeTimer))
+        popupNode.addEventListener('mouseleave', closeSoon)
+      }
       return marker
     })
 
     return () => {
+      hoverTimers.forEach((timer) => window.clearTimeout(timer))
       markersRef.current.forEach((m) => m.remove())
       markersRef.current = []
     }

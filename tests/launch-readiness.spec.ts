@@ -74,11 +74,14 @@ test('Spiti pack persists and renders its saved places without network', async (
   })
   await page.route('**/rest/v1/places**', (route) => route.fulfill({ json: [{ ...place, place_photos: photos }] }))
   await page.route('**/rest/v1/place_photos**', (route) => route.fulfill({ json: photos }))
-  await page.route('**/storage/v1/object/public/place-photos/**', (route) => route.fulfill({
-    status: 200,
-    contentType: 'image/png',
-    body: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M/wHwAF/gL+XQebWQAAAABJRU5ErkJggg==', 'base64'),
-  }))
+  await page.route('**/storage/v1/object/public/place-photos/**', (route) => {
+    if (route.request().url().endsWith('/second.png')) return route.fulfill({ status: 503 })
+    return route.fulfill({
+      status: 200,
+      contentType: 'image/png',
+      body: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M/wHwAF/gL+XQebWQAAAABJRU5ErkJggg==', 'base64'),
+    })
+  })
   await page.route('**/rest/v1/community_notes**', (route) => route.fulfill({ json: [] }))
   await page.route('**/rest/v1/villages**', (route) => route.fulfill({ json: [] }))
   await page.route('**/rest/v1/repo_stats**', (route) => route.fulfill({ json: [] }))
@@ -94,7 +97,8 @@ test('Spiti pack persists and renders its saved places without network', async (
   await expect(page.locator('.maplibregl-canvas')).toBeVisible()
   await page.getByRole('button', { name: 'Download Spiti' }).click()
   await expect(page.getByText('Ready for the road', { exact: false })).toBeVisible({ timeout: 60_000 })
-  await expect(page.getByText('Place guide').locator('..')).toContainText('1')
+  await expect(page.getByText('Place guide', { exact: true }).locator('..')).toContainText('1')
+  await expect(page.getByText('1 photo was unavailable', { exact: false })).toBeVisible()
 
   serverRevision = 2
   await page.getByRole('button', { name: 'Open map' }).click()

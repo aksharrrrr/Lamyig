@@ -33,8 +33,8 @@ export default function OfflineMaps() {
                 <span className="mt-0.5 block text-xs text-muted-light">{(config.mapBytes / 1_000_000).toFixed(1)} MB</span>
               </span>
             </span>
-            <span className={`text-xs font-semibold ${status?.updateAvailable ? 'text-danger' : saved ? 'text-accent-text' : 'text-muted-light'}`}>
-              {status?.updateAvailable ? 'Update available' : saved ? 'On this device' : 'Download'} →
+            <span className={`text-xs font-semibold ${status?.updateAvailable || status?.pack.missingPhotoCount ? 'text-danger' : saved ? 'text-accent-text' : 'text-muted-light'}`}>
+              {status?.updateAvailable ? 'Update available' : status?.pack.missingPhotoCount ? 'Photos incomplete' : saved ? 'On this device' : 'Download'} →
             </span>
           </button>
         )

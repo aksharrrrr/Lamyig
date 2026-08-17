@@ -52,6 +52,11 @@ export default function Region() {
           New community knowledge is ready. Update before your next stretch without signal.
         </p>
       )}
+      {pack && Boolean(pack.missingPhotoCount) && (
+        <p className="mt-3 rounded-xl bg-bg px-3 py-2 text-sm text-muted">
+          {pack.missingPhotoCount} {pack.missingPhotoCount === 1 ? 'photo was' : 'photos were'} unavailable. Your map and place guide are ready; update later to try again.
+        </p>
+      )}
       {progress && <p className="mt-4 text-sm font-medium text-accent-text">{progress}</p>}
       {error && <p className="mt-4 text-sm text-danger">{error}</p>}
 
@@ -65,7 +70,8 @@ export default function Region() {
               setPack(await downloadOfflinePack(regionSlug, setProgress))
               setUpdateAvailable(false)
             } catch (downloadError) {
-              setError(downloadError instanceof Error ? downloadError.message : `Could not download ${config.name}.`)
+              const message = downloadError instanceof Error ? downloadError.message : `Could not download ${config.name}.`
+              setError(pack ? `${message} Your saved copy is still ready.` : message)
             } finally {
               setProgress(null)
             }

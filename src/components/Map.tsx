@@ -1,5 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
 import maplibregl from 'maplibre-gl'
+import { layers, namedFlavor } from '@protomaps/basemaps'
+import { FileSource, PMTiles, Protocol } from 'pmtiles'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { categoryDef } from '../lib/categories'
 import { INDIA_CENTER, ZOOM_INDIA, ZOOM_PRECISE, type MapStyleName } from '../lib/constants'
@@ -50,16 +52,40 @@ export interface MapHandle {
 
 interface MapProps {
   places?: PlaceMarker[]
+  offlineMapFile?: File | null
   onSelectPlace?: (id: string) => void
   onLocateError?: () => void
 }
 
-const Map = forwardRef<MapHandle, MapProps>(function Map({ places = [], onSelectPlace, onLocateError }, ref) {
+const pmtilesProtocol = new Protocol()
+maplibregl.addProtocol('pmtiles', pmtilesProtocol.tile)
+
+function offlineStyle(file: File): maplibregl.StyleSpecification {
+  const archive = new PMTiles(new FileSource(file))
+  pmtilesProtocol.add(archive)
+  return {
+    version: 8,
+    sources: {
+      protomaps: {
+        type: 'vector',
+        url: `pmtiles://${file.name}`,
+        attribution: 'Protomaps © OpenStreetMap contributors',
+      },
+    },
+    // Labels require separate glyph/font downloads. The offline pack keeps
+    // the terrain, roads, water, and Lamyig's own labelled place pins fully
+    // local instead of pretending remote labels are available without signal.
+    layers: layers('protomaps', namedFlavor('light')),
+  }
+}
+
+const Map = forwardRef<MapHandle, MapProps>(function Map({ places = [], offlineMapFile, onSelectPlace, onLocateError }, ref) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
   const markersRef = useRef<maplibregl.Marker[]>([])
   const geolocateRef = useRef<maplibregl.GeolocateControl | null>(null)
   const onLocateErrorRef = useRef(onLocateError)
+  const initialOfflineFileRef = useRef(offlineMapFile)
   onLocateErrorRef.current = onLocateError
 
   useImperativeHandle(ref, () => ({
@@ -87,7 +113,7 @@ const Map = forwardRef<MapHandle, MapProps>(function Map({ places = [], onSelect
 
     const map = new maplibregl.Map({
       container: containerRef.current,
-      style: 'https://tiles.openfreemap.org/styles/liberty',
+      style: initialOfflineFileRef.current ? offlineStyle(initialOfflineFileRef.current) : 'https://tiles.openfreemap.org/styles/liberty',
       center: [INDIA_CENTER.lng, INDIA_CENTER.lat],
       zoom: ZOOM_INDIA,
       attributionControl: false,
@@ -114,6 +140,10 @@ const Map = forwardRef<MapHandle, MapProps>(function Map({ places = [], onSelect
       geolocateRef.current = null
     }
   }, [])
+
+  useEffect(() => {
+    if (offlineMapFile && mapRef.current) mapRef.current.setStyle(offlineStyle(offlineMapFile))
+  }, [offlineMapFile])
 
   // Map-pin tap -> essential info popup -> "More Details" (docs/08-mvp.md
   // screen 4). The popup is a plain DOM node since MapLibre popups live

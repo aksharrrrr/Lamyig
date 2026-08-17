@@ -10,6 +10,7 @@ import { CATEGORY_ICONS } from '../lib/categoryIcons'
 import { geocodeSearch, type GeocodeResult } from '../lib/geocode'
 import { MAP_STYLES, MAP_STYLE_LABELS, ZOOM_VILLAGE } from '../lib/constants'
 import type { Region, Village } from '../lib/types'
+import { getOfflinePack, type OfflineRegionPack } from '../lib/offlinePack'
 
 // Treks now also exist as a real, place-attachable entity (the `treks`
 // table, migration 0024) - this flat list is kept independent on purpose,
@@ -55,6 +56,31 @@ export default function Home() {
   const [regionMenuOpen, setRegionMenuOpen] = useState(false)
   const [trekSubmenuOpen, setTrekSubmenuOpen] = useState(false)
   const [trekDropdownOpen, setTrekDropdownOpen] = useState(false)
+  const [offlinePack, setOfflinePack] = useState<OfflineRegionPack | null>(null)
+  const [online, setOnline] = useState(navigator.onLine)
+
+  useEffect(() => {
+    const refreshPack = () => getOfflinePack().then(setOfflinePack).catch(() => setOfflinePack(null))
+    const connectionChanged = () => { setOnline(navigator.onLine); refreshPack() }
+    refreshPack()
+    window.addEventListener('online', connectionChanged)
+    window.addEventListener('offline', connectionChanged)
+    window.addEventListener('lamyig:offline-pack-updated', refreshPack)
+    return () => {
+      window.removeEventListener('online', connectionChanged)
+      window.removeEventListener('offline', connectionChanged)
+      window.removeEventListener('lamyig:offline-pack-updated', refreshPack)
+    }
+  }, [])
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    if (params.get('region') !== 'spiti') return
+    const spiti = regions.find((region) => region.slug === 'spiti')
+    if (spiti?.center_lat != null && spiti.center_lng != null) {
+      mapRef.current?.flyTo(spiti.center_lat, spiti.center_lng, spiti.default_zoom)
+    }
+  }, [location.search, regions])
 
   useEffect(() => {
     if (!supabase) return
@@ -195,6 +221,7 @@ export default function Home() {
       <Map
         ref={mapRef}
         places={visiblePlaces}
+        offlineMapFile={!online ? offlinePack?.mapFile : null}
         onSelectPlace={(id) => openOverlay(`/place/${id}`)}
         onLocateError={() => showToast("Couldn't get your location. Check permissions and try again.")}
       />
@@ -340,7 +367,7 @@ export default function Home() {
           {featuredRegions.map((r) => (
             <button
               key={r.id}
-              onClick={() => flyToRegion(r)}
+              onClick={() => navigate(`/region/${r.slug}`)}
               className="flex-none whitespace-nowrap rounded-full px-3.5 py-1.5 text-[13px] font-medium text-ink hover:bg-ink/5"
             >
               {r.name}
@@ -392,7 +419,7 @@ export default function Home() {
                 {featuredRegions.map((r) => (
                   <button
                     key={r.id}
-                    onClick={() => { flyToRegion(r); setRegionMenuOpen(false) }}
+                    onClick={() => { navigate(`/region/${r.slug}`); setRegionMenuOpen(false) }}
                     className="flex w-full items-center px-4 py-2.5 text-left text-[14px] hover:bg-ink/5"
                   >
                     {r.name}

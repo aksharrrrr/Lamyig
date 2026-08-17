@@ -27,3 +27,5 @@ dist-ssr
 .vercel
 .env*
 *.stackdump
+test-results
+playwright-report

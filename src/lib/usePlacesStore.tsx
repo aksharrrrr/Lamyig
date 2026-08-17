@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
 import { supabase } from './supabase'
 import type { PlaceMarker } from '../components/Map'
+import { getOfflinePack } from './offlinePack'
 
 interface PlacesContextValue {
   places: PlaceMarker[]
@@ -24,12 +25,29 @@ export function PlacesProvider({ children }: { children: ReactNode }) {
 
   const refetch = useCallback(() => {
     if (!supabase) return
-    supabase.from('places').select('id, name, category, lat, lng').then(({ data }) => {
+    if (!navigator.onLine) {
+      getOfflinePack().then((pack) => { if (pack) setPlaces(pack.places) })
+      return
+    }
+    supabase.from('places').select('id, name, category, lat, lng').then(({ data, error }) => {
       if (data) setPlaces(data as PlaceMarker[])
+      else if (error) getOfflinePack().then((pack) => { if (pack) setPlaces(pack.places) })
     })
   }, [])
 
   useEffect(() => { refetch() }, [refetch])
+
+  useEffect(() => {
+    const refresh = () => refetch()
+    window.addEventListener('online', refresh)
+    window.addEventListener('offline', refresh)
+    window.addEventListener('lamyig:offline-pack-updated', refresh)
+    return () => {
+      window.removeEventListener('online', refresh)
+      window.removeEventListener('offline', refresh)
+      window.removeEventListener('lamyig:offline-pack-updated', refresh)
+    }
+  }, [refetch])
 
   useEffect(() => {
     if (!supabase) return

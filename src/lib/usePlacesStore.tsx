@@ -1,6 +1,7 @@
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import { supabase } from './supabase'
 import type { PlaceMarker } from '../components/Map'
+import { getOfflinePack } from './offlinePack'
 
 interface PlacesContextValue {
   places: PlaceMarker[]
@@ -21,15 +22,59 @@ const PlacesContext = createContext<PlacesContextValue | null>(null)
 export function PlacesProvider({ children }: { children: ReactNode }) {
   const [places, setPlaces] = useState<PlaceMarker[]>([])
   const [contributorCount, setContributorCount] = useState<number | null>(null)
+  const photoObjectUrls = useRef<string[]>([])
 
-  const refetch = useCallback(() => {
-    if (!supabase) return
-    supabase.from('places').select('id, name, category, lat, lng').then(({ data }) => {
-      if (data) setPlaces(data as PlaceMarker[])
-    })
+  const replacePlaces = useCallback((nextPlaces: PlaceMarker[]) => {
+    photoObjectUrls.current.forEach((url) => URL.revokeObjectURL(url))
+    photoObjectUrls.current = nextPlaces
+      .map((place) => place.photoUrl)
+      .filter((url): url is string => Boolean(url?.startsWith('blob:')))
+    setPlaces(nextPlaces)
   }, [])
 
+  const loadOfflinePack = useCallback(async () => {
+    const pack = await getOfflinePack()
+    if (!pack) return
+    replacePlaces(pack.places.map((place) => {
+      const photo = pack.photos.find((candidate) => candidate.place_id === place.id)
+      return { ...place, photoUrl: photo ? URL.createObjectURL(photo.blob) : undefined }
+    }))
+  }, [replacePlaces])
+
+  const refetch = useCallback(() => {
+    const client = supabase
+    if (!client) return
+    if (!navigator.onLine) return void loadOfflinePack()
+    client.from('places').select('id, name, category, lat, lng, place_photos(storage_path)').then(({ data, error }) => {
+      if (data) {
+        replacePlaces(data.map((place) => {
+          const storagePath = place.place_photos?.[0]?.storage_path
+          const photoUrl = storagePath
+            ? client.storage.from('place-photos').getPublicUrl(storagePath).data.publicUrl
+            : undefined
+          return { ...place, photoUrl }
+        }))
+      } else if (error) void loadOfflinePack()
+    })
+  }, [loadOfflinePack, replacePlaces])
+
   useEffect(() => { refetch() }, [refetch])
+
+  useEffect(() => () => {
+    photoObjectUrls.current.forEach((url) => URL.revokeObjectURL(url))
+  }, [])
+
+  useEffect(() => {
+    const refresh = () => refetch()
+    window.addEventListener('online', refresh)
+    window.addEventListener('offline', refresh)
+    window.addEventListener('lamyig:offline-pack-updated', refresh)
+    return () => {
+      window.removeEventListener('online', refresh)
+      window.removeEventListener('offline', refresh)
+      window.removeEventListener('lamyig:offline-pack-updated', refresh)
+    }
+  }, [refetch])
 
   useEffect(() => {
     if (!supabase) return

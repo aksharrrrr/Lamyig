@@ -1,7 +1,7 @@
 {
   "installCommand": "npm ci",
   "rewrites": [
-    { "source": "/((?!assets/|manifest.webmanifest|registerSW.js|favicon.png|apple-touch-icon.png).*)", "destination": "/index.html" }
+    { "source": "/((?!assets/|offline/|manifest.webmanifest|registerSW.js|favicon.png|apple-touch-icon.png).*)", "destination": "/index.html" }
   ],
   "headers": [
     {

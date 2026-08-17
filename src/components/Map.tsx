@@ -1,5 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
 import maplibregl from 'maplibre-gl'
+import { layers, namedFlavor } from '@protomaps/basemaps'
+import { FileSource, PMTiles, Protocol } from 'pmtiles'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { categoryDef } from '../lib/categories'
 import { INDIA_CENTER, ZOOM_INDIA, ZOOM_PRECISE, type MapStyleName } from '../lib/constants'
@@ -40,6 +42,7 @@ export interface PlaceMarker {
   category: string
   lat: number
   lng: number
+  photoUrl?: string
 }
 
 export interface MapHandle {
@@ -50,16 +53,40 @@ export interface MapHandle {
 
 interface MapProps {
   places?: PlaceMarker[]
+  offlineMapFile?: File | null
   onSelectPlace?: (id: string) => void
   onLocateError?: () => void
 }
 
-const Map = forwardRef<MapHandle, MapProps>(function Map({ places = [], onSelectPlace, onLocateError }, ref) {
+const pmtilesProtocol = new Protocol()
+maplibregl.addProtocol('pmtiles', pmtilesProtocol.tile)
+
+function offlineStyle(file: File): maplibregl.StyleSpecification {
+  const archive = new PMTiles(new FileSource(file))
+  pmtilesProtocol.add(archive)
+  return {
+    version: 8,
+    sources: {
+      protomaps: {
+        type: 'vector',
+        url: `pmtiles://${file.name}`,
+        attribution: 'Protomaps © OpenStreetMap contributors',
+      },
+    },
+    // Labels require separate glyph/font downloads. The offline pack keeps
+    // the terrain, roads, water, and Lamyig's own labelled place pins fully
+    // local instead of pretending remote labels are available without signal.
+    layers: layers('protomaps', namedFlavor('light')),
+  }
+}
+
+const Map = forwardRef<MapHandle, MapProps>(function Map({ places = [], offlineMapFile, onSelectPlace, onLocateError }, ref) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
   const markersRef = useRef<maplibregl.Marker[]>([])
   const geolocateRef = useRef<maplibregl.GeolocateControl | null>(null)
   const onLocateErrorRef = useRef(onLocateError)
+  const initialOfflineFileRef = useRef(offlineMapFile)
   onLocateErrorRef.current = onLocateError
 
   useImperativeHandle(ref, () => ({
@@ -87,7 +114,7 @@ const Map = forwardRef<MapHandle, MapProps>(function Map({ places = [], onSelect
 
     const map = new maplibregl.Map({
       container: containerRef.current,
-      style: 'https://tiles.openfreemap.org/styles/liberty',
+      style: initialOfflineFileRef.current ? offlineStyle(initialOfflineFileRef.current) : 'https://tiles.openfreemap.org/styles/liberty',
       center: [INDIA_CENTER.lng, INDIA_CENTER.lat],
       zoom: ZOOM_INDIA,
       attributionControl: false,
@@ -115,6 +142,10 @@ const Map = forwardRef<MapHandle, MapProps>(function Map({ places = [], onSelect
     }
   }, [])
 
+  useEffect(() => {
+    if (offlineMapFile && mapRef.current) mapRef.current.setStyle(offlineStyle(offlineMapFile))
+  }, [offlineMapFile])
+
   // Map-pin tap -> essential info popup -> "More Details" (docs/08-mvp.md
   // screen 4). The popup is a plain DOM node since MapLibre popups live
   // outside the React tree.
@@ -133,27 +164,74 @@ const Map = forwardRef<MapHandle, MapProps>(function Map({ places = [], onSelect
       return valid
     })
 
+    const hoverTimers = new Set<number>()
+    const supportsHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches
+    const schedule = (callback: () => void, delay: number) => {
+      const timer = window.setTimeout(() => {
+        hoverTimers.delete(timer)
+        callback()
+      }, delay)
+      hoverTimers.add(timer)
+      return timer
+    }
+
     markersRef.current = validPlaces.map((place) => {
       const popupNode = document.createElement('div')
-      popupNode.style.minWidth = '160px'
-      popupNode.innerHTML = `
+      popupNode.style.cssText = `min-width:${place.photoUrl ? '250px' : '160px'};display:flex;gap:12px;align-items:stretch`
+      if (place.photoUrl) {
+        const photo = document.createElement('img')
+        photo.src = place.photoUrl
+        photo.alt = ''
+        photo.loading = 'lazy'
+        photo.style.cssText = 'width:92px;height:92px;flex:0 0 92px;object-fit:cover;border-radius:8px'
+        popupNode.appendChild(photo)
+      }
+      const summary = document.createElement('div')
+      summary.style.cssText = 'min-width:0;display:flex;flex-direction:column;justify-content:center'
+      summary.innerHTML = `
         <div style="font-weight:600;font-size:14px;color:var(--color-ink)">${escapeHtml(place.name)}</div>
-        <div style="font-size:12.5px;color:var(--color-muted);margin-bottom:8px">${escapeHtml(place.category)}</div>
+        <div style="font-size:12.5px;color:var(--color-muted);margin-bottom:6px;text-transform:capitalize">${escapeHtml(place.category)}</div>
       `
       const detailsButton = document.createElement('button')
       detailsButton.textContent = 'More details'
-      detailsButton.style.cssText = 'background:var(--color-accent-light);color:var(--color-accent-text);font-size:12.5px;font-weight:600;border:none;border-radius:999px;padding:6px 12px;cursor:pointer'
+      detailsButton.style.cssText = 'align-self:flex-start;background:transparent;color:var(--color-accent-text);font-size:12.5px;font-weight:600;border:0;padding:3px 0;cursor:pointer'
       detailsButton.onclick = () => onSelectPlace?.(place.id)
-      popupNode.appendChild(detailsButton)
+      summary.appendChild(detailsButton)
+      popupNode.appendChild(summary)
 
-      const marker = new maplibregl.Marker({ element: createMarkerElement(place.category) })
+      const markerElement = createMarkerElement(place.category)
+      const popup = new maplibregl.Popup({ offset: 24 }).setDOMContent(popupNode)
+      const marker = new maplibregl.Marker({ element: markerElement })
         .setLngLat([place.lng, place.lat])
-        .setPopup(new maplibregl.Popup({ offset: 24 }).setDOMContent(popupNode))
+        .setPopup(popup)
         .addTo(map)
+
+      if (supportsHover) {
+        let openTimer: number | undefined
+        let closeTimer: number | undefined
+        const cancel = (timer: number | undefined) => {
+          if (timer === undefined) return
+          window.clearTimeout(timer)
+          hoverTimers.delete(timer)
+        }
+        const openSoon = () => {
+          cancel(closeTimer)
+          openTimer = schedule(() => { if (!popup.isOpen()) marker.togglePopup() }, 160)
+        }
+        const closeSoon = () => {
+          cancel(openTimer)
+          closeTimer = schedule(() => { if (popup.isOpen()) popup.remove() }, 220)
+        }
+        markerElement.addEventListener('mouseenter', openSoon)
+        markerElement.addEventListener('mouseleave', closeSoon)
+        popupNode.addEventListener('mouseenter', () => cancel(closeTimer))
+        popupNode.addEventListener('mouseleave', closeSoon)
+      }
       return marker
     })
 
     return () => {
+      hoverTimers.forEach((timer) => window.clearTimeout(timer))
       markersRef.current.forEach((m) => m.remove())
       markersRef.current = []
     }

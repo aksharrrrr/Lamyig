@@ -9,6 +9,7 @@ import Profile from './pages/Profile'
 import Feedback from './pages/Feedback'
 import Vision from './pages/Vision'
 import NotFound from './pages/NotFound'
+import Legal from './pages/Legal'
 import Overlay from './components/Overlay'
 import { ToastProvider } from './lib/useToast'
 import { PlacesProvider } from './lib/usePlacesStore'
@@ -50,6 +51,8 @@ export default function App() {
           <Route path="/auth" element={<Home />} />
           <Route path="/feedback" element={<Home />} />
           <Route path="/vision" element={<Home />} />
+          <Route path="/privacy" element={<Legal />} />
+          <Route path="/terms" element={<Legal />} />
           {/* Fallback full-page versions when there's no background to overlay onto */}
           <Route path="/place/:placeId" element={<div className="mx-auto max-w-lg p-6"><Place /></div>} />
           <Route path="/add" element={<div className="mx-auto max-w-lg p-6"><h1 className="mb-4 text-2xl font-bold">Add a place</h1><AddEditPlace /></div>} />

@@ -5,6 +5,7 @@ import { useAuth } from '../lib/useAuth'
 import { categoryDef } from '../lib/categories'
 import type { CommunityNote, Place as PlaceT, PlacePhoto } from '../lib/types'
 import { REPORT_REASONS } from '../lib/constants'
+import { getOfflinePack } from '../lib/offlinePack'
 
 const pillButtonClass = 'rounded-full border border-ink/10 bg-surface px-3.5 py-1.5 text-[13px] font-medium text-ink disabled:opacity-50'
 const noteIconButtonClass = 'flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-muted-light hover:bg-ink/5'
@@ -39,15 +40,33 @@ export default function Place() {
   const [reportReason, setReportReason] = useState<typeof REPORT_REASONS[number]>('incorrect')
   const [status, setStatus] = useState<string | null>(null)
   const [noteStatus, setNoteStatus] = useState<string | null>(null)
+  const [offlinePhotoUrls, setOfflinePhotoUrls] = useState<Record<string, string>>({})
 
   const load = useCallback(async () => {
     if (!supabase || !placeId) return
+    if (!navigator.onLine) {
+      const pack = await getOfflinePack()
+      const offlinePlace = pack?.places.find((candidate) => candidate.id === placeId)
+      if (offlinePlace) {
+        setPlace(offlinePlace)
+        const offlinePhotos = pack!.photos.filter((photo) => photo.place_id === placeId)
+        setPhotos(offlinePhotos)
+        setNotes(pack!.notes.filter((note) => note.place_id === placeId).sort((a, b) => b.created_at.localeCompare(a.created_at)))
+        setOfflinePhotoUrls(Object.fromEntries(offlinePhotos.map((photo) => [photo.storage_path, URL.createObjectURL(photo.blob)])))
+      }
+      return
+    }
     const [{ data: placeData }, { data: photoData }, { data: noteData }] = await Promise.all([
       supabase.from('places').select('*').eq('id', placeId).single(),
       supabase.from('place_photos').select('*').eq('place_id', placeId),
       supabase.from('community_notes').select('*').eq('place_id', placeId).order('created_at', { ascending: false }),
     ])
     if (placeData) setPlace(placeData as PlaceT)
+    else {
+      const pack = await getOfflinePack()
+      const offlinePlace = pack?.places.find((candidate) => candidate.id === placeId)
+      if (offlinePlace) setPlace(offlinePlace)
+    }
     if (photoData) setPhotos(photoData as PlacePhoto[])
     if (noteData) setNotes(noteData as CommunityNote[])
   }, [placeId])
@@ -93,7 +112,7 @@ export default function Place() {
   if (!place) return <p className="text-sm text-muted">Finding this place…</p>
 
   const def = categoryDef(place.category)
-  const publicUrl = (path: string) => supabase!.storage.from('place-photos').getPublicUrl(path).data.publicUrl
+  const publicUrl = (path: string) => offlinePhotoUrls[path] ?? supabase!.storage.from('place-photos').getPublicUrl(path).data.publicUrl
 
   return (
     <div>

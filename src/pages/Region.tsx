@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import {
   downloadOfflinePack, formatPackDate, getOfflinePack, isOfflineRegionSlug,
-  OFFLINE_REGION_CONFIG, removeOfflinePack, type OfflineRegionPack,
+  OFFLINE_REGION_CONFIG, offlinePackNeedsUpdate, removeOfflinePack, type OfflineRegionPack,
 } from '../lib/offlinePack'
 
 export default function Region() {
@@ -12,8 +12,16 @@ export default function Region() {
   const [pack, setPack] = useState<OfflineRegionPack | null>(null)
   const [progress, setProgress] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [updateAvailable, setUpdateAvailable] = useState(false)
 
-  useEffect(() => { getOfflinePack(regionSlug).then(setPack).catch(() => setPack(null)) }, [regionSlug])
+  useEffect(() => {
+    getOfflinePack(regionSlug)
+      .then(async (savedPack) => {
+        setPack(savedPack)
+        setUpdateAvailable(savedPack ? await offlinePackNeedsUpdate(savedPack) : false)
+      })
+      .catch(() => { setPack(null); setUpdateAvailable(false) })
+  }, [regionSlug])
 
   if (!config || !isOfflineRegionSlug(regionSlug)) {
     return <p className="text-sm leading-relaxed text-muted">Offline access is not available for this region yet.</p>
@@ -39,6 +47,11 @@ export default function Region() {
           Ready for the road · updated {formatPackDate(pack.downloadedAt)}
         </div>
       )}
+      {pack && updateAvailable && (
+        <p className="mt-3 rounded-xl bg-accent-light px-3 py-2 text-sm font-medium text-accent-text">
+          New community knowledge is ready. Update before your next stretch without signal.
+        </p>
+      )}
       {progress && <p className="mt-4 text-sm font-medium text-accent-text">{progress}</p>}
       {error && <p className="mt-4 text-sm text-danger">{error}</p>}
 
@@ -50,6 +63,7 @@ export default function Region() {
             setError(null)
             try {
               setPack(await downloadOfflinePack(regionSlug, setProgress))
+              setUpdateAvailable(false)
             } catch (downloadError) {
               setError(downloadError instanceof Error ? downloadError.message : `Could not download ${config.name}.`)
             } finally {

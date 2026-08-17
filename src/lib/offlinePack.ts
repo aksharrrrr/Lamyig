@@ -23,12 +23,18 @@ export interface OfflinePhoto extends PlacePhoto {
 
 export interface OfflineRegionPack {
   slug: string
+  revision?: number
   downloadedAt: string
   region: Region
   mapFile: File
   places: Place[]
   photos: OfflinePhoto[]
   notes: CommunityNote[]
+}
+
+export interface OfflinePackStatus {
+  pack: OfflineRegionPack
+  updateAvailable: boolean
 }
 
 function openDatabase(): Promise<IDBDatabase> {
@@ -55,6 +61,37 @@ export async function getOfflinePack(slug: string = DEFAULT_OFFLINE_REGION): Pro
 export async function getOfflinePacks(): Promise<OfflineRegionPack[]> {
   const packs = await Promise.all(Object.keys(OFFLINE_REGION_CONFIG).map((slug) => getOfflinePack(slug)))
   return packs.filter((pack): pack is OfflineRegionPack => Boolean(pack))
+}
+
+export async function getOfflinePackStatuses(): Promise<OfflinePackStatus[]> {
+  const packs = await getOfflinePacks()
+  if (packs.length === 0) return []
+  if (!supabase || !navigator.onLine) return packs.map((pack) => ({ pack, updateAvailable: false }))
+
+  const { data, error } = await supabase
+    .from('regions')
+    .select('slug, offline_revision')
+    .in('slug', packs.map((pack) => pack.slug))
+  if (error || !data) return packs.map((pack) => ({ pack, updateAvailable: false }))
+
+  const revisions = new Map(data.map((region) => [region.slug, Number(region.offline_revision)]))
+  return packs.map((pack) => ({
+    pack,
+    // Packs downloaded before revision tracking deliberately get one update
+    // prompt so their future freshness can be compared authoritatively.
+    updateAvailable: revisions.has(pack.slug) && pack.revision !== revisions.get(pack.slug),
+  }))
+}
+
+export async function offlinePackNeedsUpdate(pack: OfflineRegionPack): Promise<boolean> {
+  if (!supabase || !navigator.onLine) return false
+  const { data, error } = await supabase
+    .from('regions')
+    .select('offline_revision')
+    .eq('slug', pack.slug)
+    .maybeSingle()
+  if (error || !data) return false
+  return pack.revision !== Number(data.offline_revision)
 }
 
 async function saveOfflinePack(pack: OfflineRegionPack): Promise<void> {
@@ -128,7 +165,16 @@ export async function downloadOfflinePack(slug: OfflineRegionSlug, onProgress: (
   const mapFile = new File([await mapResponse.blob()], `${slug}.pmtiles`, { type: 'application/octet-stream' })
 
   onProgress(`Saving ${config.name} for the road…`)
-  const pack: OfflineRegionPack = { slug, downloadedAt: new Date().toISOString(), region, mapFile, places, photos, notes }
+  const pack: OfflineRegionPack = {
+    slug,
+    revision: Number(region.offline_revision ?? 0),
+    downloadedAt: new Date().toISOString(),
+    region,
+    mapFile,
+    places,
+    photos,
+    notes,
+  }
   await saveOfflinePack(pack)
   await navigator.storage?.persist?.()
   window.dispatchEvent(new CustomEvent('lamyig:offline-pack-updated'))

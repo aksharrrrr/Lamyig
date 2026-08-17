@@ -272,6 +272,8 @@ Place publishing is finalized transactionally after every selected photo uploads
 **Alternatives considered:** caching OpenStreetMap/OpenFreeMap public tiles in bulk (rejected: provider policies do not permit this); online-only Spiti with an installable shell (rejected: does not serve the no-signal use case); downloading all India immediately (rejected: unnecessary size and unvalidated complexity); deleting factual places with an account (rejected: destroys community knowledge when anonymization satisfies the account-erasure purpose).
 
 **Update 2026-08-17:** The same self-hosted, browser-stored pack pattern now covers Ladakh (35.9 MB) and Zanskar (6.6 MB). A single Offline Maps panel lists all available packs and their device-local status; the shared Region overlay keeps future regional additions visually and behaviorally consistent.
+
+**Freshness update 2026-08-17:** Each downloadable region now carries a database revision. Changes to included places, photos, Community Notes, or region metadata increment it; downloaded guides remember their revision and show an update signal the next time Lamyig is online. Updates remain user-controlled and replace the saved guide only after a complete download.
 - **Governance:** who can merge data changes once contributors arrive?
 - **Verification mechanics:** what exactly counts as "verified," and by whom?
 - **Top bar contents:** exact contents of the top navigation bar (beyond featuring Spiti/Ladakh/treks) still to be decided.

@@ -8,6 +8,11 @@ export interface Region {
   center_lat: number | null
   center_lng: number | null
   default_zoom: number
+  offline_revision?: number
+  offline_west?: number | null
+  offline_south?: number | null
+  offline_east?: number | null
+  offline_north?: number | null
 }
 
 export interface Village {

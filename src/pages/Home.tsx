@@ -10,7 +10,7 @@ import { CATEGORY_ICONS } from '../lib/categoryIcons'
 import { geocodeSearch, type GeocodeResult } from '../lib/geocode'
 import { MAP_STYLES, MAP_STYLE_LABELS, ZOOM_VILLAGE } from '../lib/constants'
 import type { Region, Village } from '../lib/types'
-import { getOfflinePacks, isOfflineRegionSlug, type OfflineRegionPack } from '../lib/offlinePack'
+import { getOfflinePackStatuses, isOfflineRegionSlug, type OfflinePackStatus } from '../lib/offlinePack'
 
 // Treks now also exist as a real, place-attachable entity (the `treks`
 // table, migration 0024) - this flat list is kept independent on purpose,
@@ -56,14 +56,16 @@ export default function Home() {
   const [regionMenuOpen, setRegionMenuOpen] = useState(false)
   const [trekSubmenuOpen, setTrekSubmenuOpen] = useState(false)
   const [trekDropdownOpen, setTrekDropdownOpen] = useState(false)
-  const [offlinePacks, setOfflinePacks] = useState<OfflineRegionPack[]>([])
+  const [offlineStatuses, setOfflineStatuses] = useState<OfflinePackStatus[]>([])
+  const offlinePacks = offlineStatuses.map(({ pack }) => pack)
+  const hasOfflineUpdate = offlineStatuses.some(({ updateAvailable }) => updateAvailable)
   const [online, setOnline] = useState(navigator.onLine)
   const requestedOfflineSlug = new URLSearchParams(location.search).get('offline')
   const offlineMapRequested = isOfflineRegionSlug(requestedOfflineSlug) ? requestedOfflineSlug : null
   const activeOfflinePack = offlinePacks.find((pack) => pack.slug === offlineMapRequested) ?? (!online ? offlinePacks[0] : null)
 
   useEffect(() => {
-    const refreshPack = () => getOfflinePacks().then(setOfflinePacks).catch(() => setOfflinePacks([]))
+    const refreshPack = () => getOfflinePackStatuses().then(setOfflineStatuses).catch(() => setOfflineStatuses([]))
     const connectionChanged = () => { setOnline(navigator.onLine); refreshPack() }
     refreshPack()
     window.addEventListener('online', connectionChanged)
@@ -491,7 +493,9 @@ export default function Home() {
             <path d="M12 8v5m0 0-2-2m2 2 2-2" />
           </svg>
           <span className="text-xs font-semibold text-ink">Offline</span>
-          {offlinePacks.length > 0 && <span className="absolute right-0 top-0 h-2.5 w-2.5 rounded-full border-2 border-surface bg-accent" />}
+          {offlinePacks.length > 0 && (
+            <span className={`absolute right-0 top-0 h-2.5 w-2.5 rounded-full border-2 border-surface ${hasOfflineUpdate ? 'bg-danger' : 'bg-accent'}`} />
+          )}
         </button>
         <button
           onClick={() => openOverlay('/add')}

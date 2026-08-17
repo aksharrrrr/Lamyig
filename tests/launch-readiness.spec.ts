@@ -43,9 +43,11 @@ test('direct region links keep the map behind the consistent overlay', async ({ 
 })
 
 test('Spiti pack persists and renders its saved places without network', async ({ page, context }, testInfo) => {
+  let serverRevision = 1
   const region = {
     id: '11111111-1111-4111-8111-111111111111', slug: 'spiti', name: 'Spiti', state: 'Himachal Pradesh',
     description: 'High-altitude valley', featured: true, center_lat: 32.246, center_lng: 78.034, default_zoom: 8,
+    offline_revision: serverRevision,
   }
   const place = {
     id: '22222222-2222-4222-8222-222222222222', name: 'Test Spiti Homestay', category: 'homestay',
@@ -66,8 +68,9 @@ test('Spiti pack persists and renders its saved places without network', async (
   ]
 
   await page.route('**/rest/v1/regions**', async (route) => {
+    const currentRegion = { ...region, offline_revision: serverRevision }
     const isSingle = route.request().url().includes('slug=eq.spiti')
-    await route.fulfill({ json: isSingle ? region : [region] })
+    await route.fulfill({ json: isSingle ? currentRegion : [currentRegion] })
   })
   await page.route('**/rest/v1/places**', (route) => route.fulfill({ json: [{ ...place, place_photos: photos }] }))
   await page.route('**/rest/v1/place_photos**', (route) => route.fulfill({ json: photos }))
@@ -93,9 +96,13 @@ test('Spiti pack persists and renders its saved places without network', async (
   await expect(page.getByText('Ready for the road', { exact: false })).toBeVisible({ timeout: 60_000 })
   await expect(page.getByText('Place guide').locator('..')).toContainText('1')
 
+  serverRevision = 2
   await page.getByRole('button', { name: 'Open map' }).click()
   await expect(page).toHaveURL(/offline=spiti/)
   await expect(page.locator('.maplibregl-canvas')).toBeVisible()
+  await page.getByTitle('Offline maps').click()
+  await expect(page.getByRole('button', { name: /Spiti.*Update available/ })).toBeVisible()
+  await page.getByTitle('Close').click()
   await context.setOffline(true)
   const marker = page.locator('.maplibregl-marker')
   await expect(marker).toHaveCount(1, { timeout: 20_000 })

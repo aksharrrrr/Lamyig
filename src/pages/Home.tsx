@@ -10,7 +10,7 @@ import { CATEGORY_ICONS } from '../lib/categoryIcons'
 import { geocodeSearch, type GeocodeResult } from '../lib/geocode'
 import { MAP_STYLES, MAP_STYLE_LABELS, ZOOM_VILLAGE } from '../lib/constants'
 import type { Region, Village } from '../lib/types'
-import { getOfflinePackStatuses, isOfflineRegionSlug, type OfflinePackStatus } from '../lib/offlinePack'
+import { getLastOfflineRegion, getOfflinePackStatuses, isOfflineRegionSlug, OFFLINE_REGION_CONFIG, type OfflinePackStatus } from '../lib/offlinePack'
 
 // Treks now also exist as a real, place-attachable entity (the `treks`
 // table, migration 0024) - this flat list is kept independent on purpose,
@@ -62,7 +62,9 @@ export default function Home() {
   const [online, setOnline] = useState(navigator.onLine)
   const requestedOfflineSlug = new URLSearchParams(location.search).get('offline')
   const offlineMapRequested = isOfflineRegionSlug(requestedOfflineSlug) ? requestedOfflineSlug : null
-  const activeOfflinePack = offlinePacks.find((pack) => pack.slug === offlineMapRequested) ?? (!online ? offlinePacks[0] : null)
+  const lastOfflineSlug = getLastOfflineRegion()
+  const activeOfflinePack = offlinePacks.find((pack) => pack.slug === offlineMapRequested)
+    ?? (!online ? offlinePacks.find((pack) => pack.slug === lastOfflineSlug) ?? offlinePacks[0] : null)
 
   useEffect(() => {
     const refreshPack = () => getOfflinePackStatuses().then(setOfflineStatuses).catch(() => setOfflineStatuses([]))
@@ -88,6 +90,13 @@ export default function Home() {
       mapRef.current?.flyTo(region.center_lat, region.center_lng, region.default_zoom)
     }
   }, [location.pathname, location.search, regions])
+
+  const activeOfflineRegion = activeOfflinePack?.region
+  useEffect(() => {
+    if (!activeOfflineRegion) return
+    const { center_lat, center_lng, default_zoom } = activeOfflineRegion
+    if (center_lat != null && center_lng != null) mapRef.current?.flyTo(center_lat, center_lng, default_zoom)
+  }, [activeOfflineRegion])
 
   useEffect(() => {
     if (!supabase) return
@@ -492,7 +501,11 @@ export default function Home() {
             <path d="M4 6.5 9 4l6 2.5L20 4v13.5L15 20l-6-2.5L4 20z" /><path d="M9 4v13.5M15 6.5V20" />
             <path d="M12 8v5m0 0-2-2m2 2 2-2" />
           </svg>
-          <span className="text-xs font-semibold text-ink">Offline</span>
+          <span className="text-xs font-semibold text-ink">
+            {activeOfflinePack && isOfflineRegionSlug(activeOfflinePack.slug)
+              ? `${OFFLINE_REGION_CONFIG[activeOfflinePack.slug].name} offline`
+              : 'Offline'}
+          </span>
           {offlinePacks.length > 0 && (
             <span className={`absolute right-0 top-0 h-2.5 w-2.5 rounded-full border-2 border-surface ${hasOfflineUpdate ? 'bg-danger' : 'bg-accent'}`} />
           )}

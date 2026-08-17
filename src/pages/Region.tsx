@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import {
-  downloadOfflinePack, formatPackDate, getOfflinePack, isOfflineRegionSlug,
-  OFFLINE_REGION_CONFIG, offlinePackNeedsUpdate, removeOfflinePack, type OfflineRegionPack,
+  downloadOfflinePack, forgetOfflineRegion, formatPackDate, getOfflinePack, isOfflineRegionSlug,
+  OFFLINE_REGION_CONFIG, offlinePackNeedsUpdate, rememberOfflineRegion, removeOfflinePack, type OfflineRegionPack,
 } from '../lib/offlinePack'
 
 export default function Region() {
@@ -83,7 +83,10 @@ export default function Region() {
         {pack && (
           <button
             type="button"
-            onClick={() => navigate(`/?region=${regionSlug}&offline=${regionSlug}`)}
+            onClick={() => {
+              rememberOfflineRegion(regionSlug)
+              navigate(`/?region=${regionSlug}&offline=${regionSlug}`)
+            }}
             className="rounded-[11px] border border-ink/10 bg-surface px-4 py-2.5 text-sm font-semibold text-ink hover:bg-ink/5"
           >Open map</button>
         )}
@@ -91,7 +94,12 @@ export default function Region() {
           <button
             type="button"
             disabled={Boolean(progress)}
-            onClick={async () => { await removeOfflinePack(regionSlug); setPack(null); window.dispatchEvent(new CustomEvent('lamyig:offline-pack-updated')) }}
+            onClick={async () => {
+              await removeOfflinePack(regionSlug)
+              forgetOfflineRegion(regionSlug)
+              setPack(null)
+              window.dispatchEvent(new CustomEvent('lamyig:offline-pack-updated'))
+            }}
             className="ml-auto px-2 py-2.5 text-sm font-semibold text-danger hover:underline"
           >Remove</button>
         )}

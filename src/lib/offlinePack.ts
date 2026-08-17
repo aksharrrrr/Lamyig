@@ -4,6 +4,7 @@ import type { CommunityNote, Place, PlacePhoto, Region } from './types'
 const DB_NAME = 'lamyig-offline'
 const DB_VERSION = 1
 const STORE_NAME = 'region-packs'
+const LAST_OFFLINE_REGION_KEY = 'lamyig:lastOfflineRegion'
 
 export const OFFLINE_REGION_CONFIG = {
   spiti: { name: 'Spiti', mapUrl: '/offline/spiti.pmtiles', mapBytes: 15_380_620, bounds: { west: 77.3, south: 31.55, east: 78.75, north: 33.2 } },
@@ -31,6 +32,25 @@ export interface OfflineRegionPack {
   places: Place[]
   photos: OfflinePhoto[]
   notes: CommunityNote[]
+}
+
+export function getLastOfflineRegion(): OfflineRegionSlug | null {
+  try {
+    const value = localStorage.getItem(LAST_OFFLINE_REGION_KEY)
+    return isOfflineRegionSlug(value) ? value : null
+  } catch {
+    return null
+  }
+}
+
+export function rememberOfflineRegion(slug: OfflineRegionSlug): void {
+  try { localStorage.setItem(LAST_OFFLINE_REGION_KEY, slug) } catch { /* storage can be unavailable */ }
+}
+
+export function forgetOfflineRegion(slug: OfflineRegionSlug): void {
+  try {
+    if (localStorage.getItem(LAST_OFFLINE_REGION_KEY) === slug) localStorage.removeItem(LAST_OFFLINE_REGION_KEY)
+  } catch { /* storage can be unavailable */ }
 }
 
 export interface OfflinePackStatus {

@@ -391,10 +391,10 @@ export default function AddEditPlace() {
         />
       </div>
 
-      {/* Region and Village fields are hidden for now, not removed - both
-          only matter for the Region/Village pages and offline download
-          packs (D-005), neither of which is built yet, so requiring them
-          was pure friction with no current payoff. regionId/villageName
+      {/* Region and Village fields are hidden for now, not removed. Region
+          packs can still include unclassified pins by coordinates (D-005),
+          so requiring these fields would add friction to contributing.
+          regionId/villageName
           state and the submit-time village lookup/creation logic are left
           intact below; bring these two fields back once that work starts. */}
 

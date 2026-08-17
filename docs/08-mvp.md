@@ -3,7 +3,7 @@
 ## Screens
 
 1. **Home** - live India map, search bar, popular destinations, category filters. See [`07-information-architecture.md`](07-information-architecture.md).
-2. **Region page** - Spiti has an offline download and "Open Map" flow. Other Region pages are placeholders in the current beta.
+2. **Region page** - Spiti, Ladakh, and Zanskar share the offline download and "Open Map" flow. Other Region pages are lightweight placeholders in the current beta.
 3. **Village page** - placeholder in the current beta.
 4. **Place popup** - map-pin tap, essential info, "More Details."
 5. **Place detail page** - full Place record: all fields, photos, Community Notes, "Report," "Edit."
@@ -72,7 +72,7 @@ Email/password via Supabase Auth. Google OAuth and phone/OTP are not in the curr
 
 ## Offline
 
-Users can download **Spiti** from its Region page. The opt-in browser-stored package contains a 15.4 MB vector basemap plus a dated snapshot of every Spiti place, its structured details, photographs, and Community Notes. It can be updated or removed by the user. Other regions still require connectivity. See D-005, D-017, and D-021 in [`14-decision-log.md`](14-decision-log.md).
+Users can download **Spiti, Ladakh, and Zanskar** from the shared Offline Maps panel. Each opt-in browser-stored package contains its regional vector basemap plus a dated snapshot of every matching place, its structured details, photographs, and Community Notes. Packs can be opened while online, used without signal, updated independently, or removed by the user. See D-005, D-017, and D-021 in [`14-decision-log.md`](14-decision-log.md).
 
 **Not yet implemented:** offline contributions do not queue or sync. Adding, editing, reporting, and refreshing a region pack require connectivity. This is stated explicitly so offline browsing is not confused with offline writing.
 

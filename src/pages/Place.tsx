@@ -5,7 +5,7 @@ import { useAuth } from '../lib/useAuth'
 import { categoryDef } from '../lib/categories'
 import type { CommunityNote, Place as PlaceT, PlacePhoto } from '../lib/types'
 import { REPORT_REASONS } from '../lib/constants'
-import { getOfflinePack } from '../lib/offlinePack'
+import { getOfflinePacks } from '../lib/offlinePack'
 
 const pillButtonClass = 'rounded-full border border-ink/10 bg-surface px-3.5 py-1.5 text-[13px] font-medium text-ink disabled:opacity-50'
 const noteIconButtonClass = 'flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-muted-light hover:bg-ink/5'
@@ -45,7 +45,7 @@ export default function Place() {
   const load = useCallback(async () => {
     if (!supabase || !placeId) return
     if (!navigator.onLine) {
-      const pack = await getOfflinePack()
+      const pack = (await getOfflinePacks()).find((candidate) => candidate.places.some((place) => place.id === placeId))
       const offlinePlace = pack?.places.find((candidate) => candidate.id === placeId)
       if (offlinePlace) {
         setPlace(offlinePlace)
@@ -63,7 +63,7 @@ export default function Place() {
     ])
     if (placeData) setPlace(placeData as PlaceT)
     else {
-      const pack = await getOfflinePack()
+      const pack = (await getOfflinePacks()).find((candidate) => candidate.places.some((place) => place.id === placeId))
       const offlinePlace = pack?.places.find((candidate) => candidate.id === placeId)
       if (offlinePlace) setPlace(offlinePlace)
     }

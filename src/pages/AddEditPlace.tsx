@@ -229,26 +229,56 @@ export default function AddEditPlace() {
       }
 
       let id = placeId
+      const uploadedPaths: string[] = []
       if (isEdit) {
         const { error: updateError } = await supabase.from('places').update(payload).eq('id', placeId)
         if (updateError) throw updateError
       } else {
-        const { data, error: insertError } = await supabase
-          .from('places')
-          .insert({ ...payload, added_by: session.user.id, last_edited_by: session.user.id })
-          .select('id')
-          .single()
-        if (insertError) throw insertError
-        id = data.id
+        id = crypto.randomUUID()
       }
 
-      for (const [index, file] of photos.entries()) {
-        setUploadProgress(`Adding photo ${index + 1} of ${photos.length}…`)
-        const compressed = await compressImage(file)
-        const path = `${id}/${crypto.randomUUID()}.webp`
-        const { error: uploadError } = await supabase.storage.from('place-photos').upload(path, compressed)
-        if (uploadError) throw uploadError
-        await supabase.from('place_photos').insert({ place_id: id, storage_path: path, uploaded_by: session.user.id })
+      try {
+        for (const [index, file] of photos.entries()) {
+          setUploadProgress(`Adding photo ${index + 1} of ${photos.length}…`)
+          const compressed = await compressImage(file)
+          const path = `${id}/${crypto.randomUUID()}.webp`
+          const { error: uploadError } = await supabase.storage.from('place-photos').upload(path, compressed)
+          if (uploadError) throw uploadError
+          uploadedPaths.push(path)
+
+          if (isEdit) {
+            const { error: photoError } = await supabase
+              .from('place_photos')
+              .insert({ place_id: id, storage_path: path, uploaded_by: session.user.id })
+            if (photoError) throw photoError
+          }
+        }
+
+        if (!isEdit) {
+          setUploadProgress('Publishing place…')
+          const { error: publishError } = await supabase.rpc('publish_place_with_photos', {
+            p_id: id,
+            p_name: payload.name,
+            p_category: payload.category,
+            p_lat: payload.lat,
+            p_lng: payload.lng,
+            p_region_id: payload.region_id,
+            p_village_id: payload.village_id,
+            p_trek_id: payload.trek_id,
+            p_description: payload.description,
+            p_phone: payload.phone,
+            p_whatsapp: payload.whatsapp,
+            p_price_range: payload.price_range,
+            p_attributes: payload.attributes,
+            p_photo_paths: uploadedPaths,
+          })
+          if (publishError) throw publishError
+        }
+      } catch (publishError) {
+        if (uploadedPaths.length > 0) {
+          await supabase.storage.from('place-photos').remove(uploadedPaths)
+        }
+        throw publishError
       }
       setUploadProgress(null)
 

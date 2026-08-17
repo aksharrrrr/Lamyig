@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router'
 import { useState } from 'react'
 import { supabase, BACKEND_NOT_CONFIGURED_MESSAGE } from '../lib/supabase'
 import { useAuth } from '../lib/useAuth'
+import { OFFLINE_ACCOUNT_MESSAGE } from '../lib/connectivity'
 
 export default function Profile() {
   const { session, configured } = useAuth()
@@ -54,6 +55,10 @@ export default function Profile() {
                 type="button"
                 disabled={deleting}
                 onClick={async () => {
+                  if (!navigator.onLine) {
+                    setError(OFFLINE_ACCOUNT_MESSAGE)
+                    return
+                  }
                   setDeleting(true)
                   setError(null)
                   const { error: deleteError } = await supabase!.rpc('delete_own_account')

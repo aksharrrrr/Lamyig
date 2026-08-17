@@ -11,6 +11,7 @@ import LocationPicker from '../components/LocationPicker'
 import HoursInput from '../components/HoursInput'
 import type { Region, Village, Trek } from '../lib/types'
 import { MAX_PHOTOS, PHONE_PATTERN } from '../lib/constants'
+import { connectionAwareError, OFFLINE_CONTRIBUTION_MESSAGE } from '../lib/connectivity'
 
 const inputClass = 'rounded-[10px] border border-ink/[0.14] bg-surface px-3.5 py-2.5 text-sm outline-none focus:border-accent focus:ring-3 focus:ring-accent-light'
 const labelClass = 'text-[11.5px] font-semibold uppercase tracking-wide text-muted'
@@ -126,6 +127,11 @@ export default function AddEditPlace() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
+
+    if (!navigator.onLine) {
+      setError(OFFLINE_CONTRIBUTION_MESSAGE)
+      return
+    }
 
     if (!supabase || !session || !def) return
     const minPhotos = def.minPhotos
@@ -294,10 +300,7 @@ export default function AddEditPlace() {
       // Supabase throws plain PostgrestError objects, not real Error
       // instances, so `instanceof Error` alone was swallowing the real
       // message and always showing "Something went wrong."
-      const message = err instanceof Error
-        ? err.message
-        : (typeof err === 'object' && err && 'message' in err ? String(err.message) : "Couldn't save that. Try again.")
-      setError(message)
+      setError(connectionAwareError(err, "Couldn't save that. Try again."))
     } finally {
       setSubmitting(false)
       setUploadProgress(null)

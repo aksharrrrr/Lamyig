@@ -11,6 +11,7 @@ import { geocodeSearch, type GeocodeResult } from '../lib/geocode'
 import { MAP_STYLES, MAP_STYLE_LABELS, ZOOM_VILLAGE } from '../lib/constants'
 import type { Region, Village } from '../lib/types'
 import { getLastOfflineRegion, getOfflinePackStatuses, isOfflineRegionSlug, OFFLINE_REGION_CONFIG, type OfflinePackStatus } from '../lib/offlinePack'
+import { OFFLINE_CONTRIBUTION_MESSAGE } from '../lib/connectivity'
 
 // Treks now also exist as a real, place-attachable entity (the `treks`
 // table, migration 0024) - this flat list is kept independent on purpose,
@@ -539,7 +540,10 @@ export default function Home() {
           )}
         </button>
         <button
-          onClick={() => openOverlay('/add')}
+          onClick={() => {
+            if (!navigator.onLine) return showToast(OFFLINE_CONTRIBUTION_MESSAGE)
+            openOverlay('/add')
+          }}
           title="Add a place"
           className="flex h-[52px] w-[52px] items-center justify-center rounded-full border border-ink/[0.08] bg-accent-light shadow-xl hover:scale-105"
         >

@@ -76,12 +76,14 @@ export default function Home() {
 
   useEffect(() => {
     const params = new URLSearchParams(location.search)
-    if (params.get('region') !== 'spiti') return
-    const spiti = regions.find((region) => region.slug === 'spiti')
-    if (spiti?.center_lat != null && spiti.center_lng != null) {
-      mapRef.current?.flyTo(spiti.center_lat, spiti.center_lng, spiti.default_zoom)
+    const pathRegion = location.pathname.startsWith('/region/') ? location.pathname.split('/')[2] : null
+    const requestedRegion = pathRegion ?? params.get('region')
+    if (!requestedRegion) return
+    const region = regions.find((candidate) => candidate.slug === requestedRegion)
+    if (region?.center_lat != null && region.center_lng != null) {
+      mapRef.current?.flyTo(region.center_lat, region.center_lng, region.default_zoom)
     }
-  }, [location.search, regions])
+  }, [location.pathname, location.search, regions])
 
   useEffect(() => {
     if (!supabase) return

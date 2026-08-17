@@ -58,6 +58,7 @@ export default function Home() {
   const [trekDropdownOpen, setTrekDropdownOpen] = useState(false)
   const [offlinePack, setOfflinePack] = useState<OfflineRegionPack | null>(null)
   const [online, setOnline] = useState(navigator.onLine)
+  const offlineMapRequested = new URLSearchParams(location.search).get('offline') === 'spiti'
 
   useEffect(() => {
     const refreshPack = () => getOfflinePack().then(setOfflinePack).catch(() => setOfflinePack(null))
@@ -126,6 +127,11 @@ export default function Home() {
     }
     mapRef.current?.flyTo(region.center_lat, region.center_lng, region.default_zoom)
     setSearchQuery('')
+  }
+
+  function openRegion(region: Region) {
+    flyToRegion(region)
+    openOverlay(`/region/${region.slug}`)
   }
 
   function flyToVillage(village: Village) {
@@ -221,7 +227,8 @@ export default function Home() {
       <Map
         ref={mapRef}
         places={visiblePlaces}
-        offlineMapFile={!online ? offlinePack?.mapFile : null}
+        offlineMapFile={(!online || offlineMapRequested) ? offlinePack?.mapFile : null}
+        mapStyle={mapStyle}
         onSelectPlace={(id) => openOverlay(`/place/${id}`)}
         onLocateError={() => showToast("Couldn't get your location. Check permissions and try again.")}
       />
@@ -367,7 +374,7 @@ export default function Home() {
           {featuredRegions.map((r) => (
             <button
               key={r.id}
-              onClick={() => navigate(`/region/${r.slug}`)}
+              onClick={() => openRegion(r)}
               className="flex-none whitespace-nowrap rounded-full px-3.5 py-1.5 text-[13px] font-medium text-ink hover:bg-ink/5"
             >
               {r.name}
@@ -419,7 +426,7 @@ export default function Home() {
                 {featuredRegions.map((r) => (
                   <button
                     key={r.id}
-                    onClick={() => { navigate(`/region/${r.slug}`); setRegionMenuOpen(false) }}
+                    onClick={() => { openRegion(r); setRegionMenuOpen(false) }}
                     className="flex w-full items-center px-4 py-2.5 text-left text-[14px] hover:bg-ink/5"
                   >
                     {r.name}
@@ -470,6 +477,18 @@ export default function Home() {
 
       {/* Utility stack */}
       <div className="absolute bottom-[30px] right-[14px] z-10 flex flex-col items-center gap-2.5">
+        <button
+          onClick={() => openOverlay('/region/spiti')}
+          title="Offline maps"
+          className="relative flex h-11 items-center justify-center gap-1.5 rounded-full border border-ink/[0.08] bg-surface px-3 shadow-lg hover:scale-105"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#55525c" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 6.5 9 4l6 2.5L20 4v13.5L15 20l-6-2.5L4 20z" /><path d="M9 4v13.5M15 6.5V20" />
+            <path d="M12 8v5m0 0-2-2m2 2 2-2" />
+          </svg>
+          <span className="text-xs font-semibold text-ink">Offline</span>
+          {offlinePack && <span className="absolute right-0 top-0 h-2.5 w-2.5 rounded-full border-2 border-surface bg-accent" />}
+        </button>
         <button
           onClick={() => openOverlay('/add')}
           title="Add a place"

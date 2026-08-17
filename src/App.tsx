@@ -78,6 +78,7 @@ export default function App() {
             <Route path="/add" element={<Overlay title="Add a place"><AddEditPlace /></Overlay>} />
             <Route path="/place/:placeId/edit" element={<Overlay title="Edit place"><AddEditPlace /></Overlay>} />
             <Route path="/profile" element={<Overlay title="Profile"><Profile /></Overlay>} />
+            <Route path="/region/:regionSlug" element={<Overlay title="Offline map"><Region embedded /></Overlay>} />
             <Route path="*" element={null} />
           </Routes>
         )}

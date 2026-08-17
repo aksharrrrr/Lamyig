@@ -16,7 +16,7 @@ Raw ideas from live testing (2026-07-04), explicitly not locked in yet. Captured
 - **Light gamification** - deliberately deferred until after core MVP ships, and even then framed as "light" - this doesn't reopen D-011 (no points/badges/leaderboards for V1), it's a note for a possible post-MVP phase.
 - **Roles (e.g. admin/approver)** - not needed yet at zero/low volume. Once there are active users, introduce a role that can approve places; today nothing is gated behind approval (matches D-012 - auto-publish, no review queue).
 - **Spam handling** - will need real handling as volume grows, beyond today's manual "Report" review (D-012). No mechanism designed yet.
-- **Itinerary + best-time-to-visit per region** - idea floated 2026-07-05, explicitly "in future," not this sprint. Would live on the (still-unbuilt) Region page rather than the map itself. No design yet.
+- **Itinerary + best-time-to-visit per region** - idea floated 2026-07-05, explicitly "in future." Spiti now has the first functional Region page for offline download, but this editorial content still has no design.
 - ~~Search beyond regions~~ - regions and villages are both wired now (D-014's later work), plus a free OpenStreetMap geocoding fallback for anything not in our own data. Matching individual Places by name is still unbuilt.
 - ~~Map style toggle~~ - done: Liberty/Positron/Dark cycle via the utility-stack "layers" button, matching the original design reference's voyager/light/dark toggle.
 - **Region dropdown on hover** - floated 2026-07-05 alongside the region fly-to work, explicitly deferred: for now clicking a region chip just flies the map there, no hover dropdown with sub-content (villages, stats, etc.). Revisit once there's a concrete idea of what belongs in it.
@@ -36,7 +36,7 @@ Repo is going public as the user's first open-source project - treat "don't expo
 
 ## Other open questions (pre-existing)
 
-- ~~Code licensing~~ - resolved, MIT (see D-015 in `14-decision-log.md`). Data license (ODbL-compatibility with OpenStreetMap) is still open - separate question.
+- ~~Code and data licensing~~ - code is MIT; factual database contributions are ODbL 1.0 and original contributed text/photos are CC BY 4.0 (D-021).
 - **Governance:** who can merge data changes once contributors arrive?
 - **Verification mechanics:** what exactly counts as "verified," and by whom?
 - **Top bar contents:** exact contents of the top navigation bar (beyond featuring Spiti/Ladakh/treks) still to be decided.

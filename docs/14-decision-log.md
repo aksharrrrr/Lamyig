@@ -205,7 +205,7 @@ On first open, the app shows a live map of India with no forced setup; if locati
 
 ---
 
-## D-017 - PWA basics via vite-plugin-pwa; offline map data is still a separate, unbuilt feature
+## D-017 - PWA basics via vite-plugin-pwa; superseded for Spiti offline data by D-021
 
 **Date:** 2026-07-06 · **Status:** Final
 
@@ -255,7 +255,21 @@ On first open, the app shows a live map of India with no forced setup; if locati
 
 ## Open questions
 
-- **Data license:** should Lamyig's place/region/village data be ODbL-compatible so it can flow back into OpenStreetMap? Separate from D-015's code license.
+- **Data license:** resolved by D-021: factual database contributions use ODbL 1.0; original text/photos use CC BY 4.0.
+
+---
+
+## D-021 - Spiti is the first downloadable offline region; privacy and open-data terms ship before broader launch
+
+**Date:** 2026-08-17 · **Status:** Final
+
+**Decision:** Offline support launches region-by-region, beginning with Spiti. A user explicitly downloads a self-hosted 15.4 MB Protomaps/OSM PMTiles extract plus a current snapshot of Spiti places, structured details, photos, and Community Notes into browser storage. Offline browsing uses that snapshot and shows its date; updating, contributing, editing, and reporting still require connectivity. The archive is served with the existing static app, introducing no paid map provider or new recurring service.
+
+Place publishing is finalized transactionally after every selected photo uploads, preventing partially public places. Signup includes explicit age/terms/privacy consent. Users can delete their own account; personal activity is erased while factual place/photo contributions remain with attribution anonymized. Factual database contributions are licensed under ODbL 1.0, while original contributed text and photos are CC BY 4.0.
+
+**Reasoning:** A single real offline region validates D-005 against the founding Spiti use case without pretending every region is ready or bulk-downloading from a public tile service. PMTiles is a compact static artifact designed for regional extraction and client-side MapLibre rendering. The privacy and deletion work makes contributor expectations clear before broader public promotion and anticipates India's staged DPDP framework.
+
+**Alternatives considered:** caching OpenStreetMap/OpenFreeMap public tiles in bulk (rejected: provider policies do not permit this); online-only Spiti with an installable shell (rejected: does not serve the no-signal use case); downloading all India immediately (rejected: unnecessary size and unvalidated complexity); deleting factual places with an account (rejected: destroys community knowledge when anonymization satisfies the account-erasure purpose).
 - **Governance:** who can merge data changes once contributors arrive?
 - **Verification mechanics:** what exactly counts as "verified," and by whom?
 - **Top bar contents:** exact contents of the top navigation bar (beyond featuring Spiti/Ladakh/treks) still to be decided.

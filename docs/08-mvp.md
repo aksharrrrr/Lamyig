@@ -3,14 +3,14 @@
 ## Screens
 
 1. **Home** - live India map, search bar, popular destinations, category filters. See [`07-information-architecture.md`](07-information-architecture.md).
-2. **Region page** - description, offline download, popular villages, community stats, "Open Map."
-3. **Village page** - village info, available categories, community updates, "Open Map."
+2. **Region page** - Spiti has an offline download and "Open Map" flow. Other Region pages are placeholders in the current beta.
+3. **Village page** - placeholder in the current beta.
 4. **Place popup** - map-pin tap, essential info, "More Details."
-5. **Place detail page** - full Place record: all fields, photos, Community Notes, "Still accurate" verify button, "Report," "Edit."
+5. **Place detail page** - full Place record: all fields, photos, Community Notes, "Report," "Edit."
 6. **Add Place** - "+" → select category → fill form → upload photos → submit.
 7. **Edit Place** - same form as Add Place, pre-filled with current values. Any logged-in user can open it from a Place detail page.
-8. **Sign in / sign up** - email+password or Google OAuth. Triggered the first time a browsing user taps "+," "Edit," "Still accurate," or "Report."
-9. **Profile** - minimal: name, contributed-places count, "downloaded regions" list, sign out.
+8. **Sign in / sign up** - email+password. Triggered when a browsing user tries to contribute, edit, or report.
+9. **Profile** - account email, privacy/terms links, sign out, and permanent account deletion.
 
 Nothing beyond this list is in V1 - see Out of scope below.
 
@@ -24,9 +24,9 @@ Browsing requires no account. Contributing does.
 4. Upload photos - minimum depends on category (see below), max 6, compressed client-side before upload
 5. Submit → **goes live immediately**, no review queue
 
-See D-012 in [`14-decision-log.md`](14-decision-log.md) for why publish is instant rather than queued, and how editing, verification, and reporting work on top of that.
+See D-012 and D-020 in [`14-decision-log.md`](14-decision-log.md) for why publish is instant and how editing and reporting work.
 
-Region and Village are both required, but the Village picker isn't limited to a pre-seeded list - "+ Add a village not on this list…" lets a contributor add one inline (same auto-publish trust model as places). Regions stay centrally curated for now - the top-level geography is a bigger structural call than adding one more village.
+Region and Village are currently optional and hidden in the contribution form. Coordinates drive map visibility; geographic classification returns when Region/Village pages expand beyond the current beta. Regions remain centrally curated.
 
 ## Data model
 
@@ -62,20 +62,19 @@ Free-text factual observations, replacing reviews - see D-004 in [`14-decision-l
 ## Trust mechanics
 
 - **Editing** - any logged-in user can edit any Place. "Last updated"/"added by" reflect the latest editor.
-- **Verification** - one-tap "Still accurate" button updates the last-verified date and increments verifier count (e.g. "verified May 2026 by 14 riders"). Adding a Place counts as verifying it - you just personally confirmed it exists - so a new Place starts at "verified today by 1 rider" instead of "not yet verified." One verification per person per Place; the button reads "You verified this" and disables once you've used it.
 - **Reporting** - "Report" on a Place (reason: spam / incorrect / closed / duplicate) logs a record for manual review. No automated hide in V1.
 
 See D-012 in [`14-decision-log.md`](14-decision-log.md).
 
 ## Authentication
 
-Email/password or Google OAuth via Supabase Auth. No phone/OTP in V1 - see D-013 in [`14-decision-log.md`](14-decision-log.md). Sign-in is only prompted at the point a browsing user tries to contribute, edit, verify, or report - never on entry.
+Email/password via Supabase Auth. Google OAuth and phone/OTP are not in the current beta. Sign-in is only prompted when a browsing user tries to contribute, edit, or report - never on entry.
 
 ## Offline
 
-Users download a **region** (e.g. "Download Spiti") from that region's page - not the whole country. The package includes the region's map tiles, places, photographs, and community information. Opt-in, not a gate on first use - the app is usable online (map, search, browsing) the moment it's opened. See D-005 and D-009 in [`14-decision-log.md`](14-decision-log.md).
+Users can download **Spiti** from its Region page. The opt-in browser-stored package contains a 15.4 MB vector basemap plus a dated snapshot of every Spiti place, its structured details, photographs, and Community Notes. It can be updated or removed by the user. Other regions still require connectivity. See D-005, D-017, and D-021 in [`14-decision-log.md`](14-decision-log.md).
 
-**Offline contribution:** if a user adds, edits, or verifies a Place while offline, the action queues locally and syncs automatically once connectivity returns - it does not silently fail. This matters directly for Lamyig's core scenario (see the puncture story in [`01-founder-story.md`](01-founder-story.md)): the traveller most likely to have something to report is the one with no signal right now.
+**Not yet implemented:** offline contributions do not queue or sync. Adding, editing, reporting, and refreshing a region pack require connectivity. This is stated explicitly so offline browsing is not confused with offline writing.
 
 Built on OpenStreetMap + MapLibre, not a proprietary stack - see D-006 and [`12-architecture.md`](12-architecture.md).
 

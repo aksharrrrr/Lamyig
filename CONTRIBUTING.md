@@ -4,10 +4,9 @@ Two very different ways to contribute, and both matter equally - most won't be c
 
 ## Contribute data (no code required)
 
-The map only works if travellers and locals actually add and verify places. This is the main way most people will contribute.
+The map only works if travellers and locals actually add and improve places. This is the main way most people will contribute.
 
 - **Add a place** - sign in at [www.lamyig.in](https://www.lamyig.in) and use **+ Add a place**.
-- **Verify something's still accurate** - tap "Still accurate" on any place you can personally confirm.
 - **Fix something wrong** - any signed-in user can edit any place (wiki-style - see D-012 in [`docs/14-decision-log.md`](docs/14-decision-log.md)). Just fix it directly.
 - **Flag spam or bad content** - use "Report." It's reviewed manually for now; there's no automated takedown.
 

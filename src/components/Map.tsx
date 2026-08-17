@@ -54,6 +54,7 @@ export interface MapHandle {
 interface MapProps {
   places?: PlaceMarker[]
   offlineMapFile?: File | null
+  mapStyle?: MapStyleName
   onSelectPlace?: (id: string) => void
   onLocateError?: () => void
 }
@@ -80,7 +81,7 @@ function offlineStyle(file: File): maplibregl.StyleSpecification {
   }
 }
 
-const Map = forwardRef<MapHandle, MapProps>(function Map({ places = [], offlineMapFile, onSelectPlace, onLocateError }, ref) {
+const Map = forwardRef<MapHandle, MapProps>(function Map({ places = [], offlineMapFile, mapStyle = 'liberty', onSelectPlace, onLocateError }, ref) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
   const markersRef = useRef<maplibregl.Marker[]>([])
@@ -143,8 +144,10 @@ const Map = forwardRef<MapHandle, MapProps>(function Map({ places = [], offlineM
   }, [])
 
   useEffect(() => {
-    if (offlineMapFile && mapRef.current) mapRef.current.setStyle(offlineStyle(offlineMapFile))
-  }, [offlineMapFile])
+    const map = mapRef.current
+    if (!map) return
+    map.setStyle(offlineMapFile ? offlineStyle(offlineMapFile) : `https://tiles.openfreemap.org/styles/${mapStyle}`)
+  }, [offlineMapFile, mapStyle])
 
   // Map-pin tap -> essential info popup -> "More Details" (docs/08-mvp.md
   // screen 4). The popup is a plain DOM node since MapLibre popups live

@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/useAuth'
 import { usePlacesStore } from '../lib/usePlacesStore'
 import { useToast } from '../lib/useToast'
-import { CATEGORIES } from '../lib/categories'
+import { CATEGORIES, categoryDef } from '../lib/categories'
 import { CATEGORY_ICONS } from '../lib/categoryIcons'
 import { geocodeSearch, type GeocodeResult } from '../lib/geocode'
 import { MAP_STYLES, MAP_STYLE_LABELS, ZOOM_VILLAGE } from '../lib/constants'
@@ -65,6 +65,14 @@ export default function Home() {
   const lastOfflineSlug = getLastOfflineRegion()
   const activeOfflinePack = offlinePacks.find((pack) => pack.slug === offlineMapRequested)
     ?? (!online ? offlinePacks.find((pack) => pack.slug === lastOfflineSlug) ?? offlinePacks[0] : null)
+  const searchableRegions = [...new globalThis.Map([
+    ...regions,
+    ...offlinePacks.map((pack) => pack.region),
+  ].map((region) => [region.id, region])).values()]
+  const searchableVillages = [...new globalThis.Map([
+    ...villages,
+    ...offlinePacks.flatMap((pack) => pack.villages ?? []),
+  ].map((village) => [village.id, village])).values()]
 
   useEffect(() => {
     const refreshPack = () => getOfflinePackStatuses().then(setOfflineStatuses).catch(() => setOfflineStatuses([]))
@@ -162,19 +170,27 @@ export default function Home() {
     mapRef.current?.flyTo(trek.lat, trek.lng, ZOOM_VILLAGE)
   }
 
-  // Search matches regions and villages first (real Lamyig content). If
-  // nothing local matches, it falls back to free OSM geocoding (Photon then
+  // Search matches downloaded and live Lamyig content first. Downloaded
+  // packs carry their villages and places, so this path needs no signal.
+  // If nothing local matches while online, it falls back to free OSM
+  // geocoding (Photon then
   // Nominatim, see lib/geocode.ts) so you can still fly to any place name -
   // clearly labeled "via OpenStreetMap" since Lamyig has no curated content
-  // there. Matching individual Places is still separate, later scope.
+  // there.
   const query = searchQuery.trim().toLowerCase()
-  const matchingRegions = query ? regions.filter((r) => r.name.toLowerCase().includes(query)) : []
-  const matchingVillages = query ? villages.filter((v) => v.name.toLowerCase().includes(query)) : []
-  const localResultCount = matchingRegions.length + matchingVillages.length
+  const matchingRegions = query ? searchableRegions.filter((r) => r.name.toLowerCase().includes(query)) : []
+  const matchingVillages = query ? searchableVillages.filter((v) => v.name.toLowerCase().includes(query)) : []
+  const matchingPlaces = query ? places.filter((place) => {
+    const category = categoryDef(place.category)
+    return place.name.toLowerCase().includes(query)
+      || place.category.toLowerCase().includes(query)
+      || Boolean(category?.label.toLowerCase().includes(query))
+  }) : []
+  const localResultCount = matchingRegions.length + matchingVillages.length + matchingPlaces.length
 
   useEffect(() => {
     const q = searchQuery.trim()
-    if (q.length < 3 || localResultCount > 0) {
+    if (!online || q.length < 3 || localResultCount > 0) {
       setOsmResults([])
       return
     }
@@ -186,17 +202,19 @@ export default function Home() {
       geocodeSearch(q).then(setOsmResults).finally(() => setGeocoding(false))
     }, 450)
     return () => { clearTimeout(timer); setGeocoding(false) }
-  }, [searchQuery, localResultCount])
+  }, [searchQuery, localResultCount, online])
 
   type SearchResult =
     | { kind: 'region'; key: string; item: Region }
     | { kind: 'village'; key: string; item: Village }
+    | { kind: 'place'; key: string; item: (typeof places)[number] }
     | { kind: 'osm'; key: string; item: GeocodeResult }
 
   const searchResults: SearchResult[] = query
     ? [
         ...matchingRegions.map((r): SearchResult => ({ kind: 'region', key: `region-${r.id}`, item: r })),
         ...matchingVillages.map((v): SearchResult => ({ kind: 'village', key: `village-${v.id}`, item: v })),
+        ...matchingPlaces.map((p): SearchResult => ({ kind: 'place', key: `place-${p.id}`, item: p })),
         ...osmResults.map((o, i): SearchResult => ({ kind: 'osm', key: `osm-${i}`, item: o })),
       ].slice(0, 6)
     : []
@@ -204,6 +222,10 @@ export default function Home() {
   function selectSearchResult(result: SearchResult) {
     if (result.kind === 'region') flyToRegion(result.item)
     else if (result.kind === 'village') flyToVillage(result.item)
+    else if (result.kind === 'place') {
+      mapRef.current?.flyTo(result.item.lat, result.item.lng, 15)
+      setSearchQuery('')
+    }
     else {
       mapRef.current?.flyTo(result.item.lat, result.item.lng, 11)
       setSearchQuery('')
@@ -322,7 +344,13 @@ export default function Home() {
                 </svg>
                 <span className="min-w-0 flex-1 truncate">{result.item.name}</span>
                 <span className="shrink-0 text-[12px] text-muted-light">
-                  {result.kind === 'region' ? 'Region' : result.kind === 'village' ? 'Village' : 'via OpenStreetMap'}
+                  {result.kind === 'region'
+                    ? 'Region'
+                    : result.kind === 'village'
+                      ? 'Village'
+                      : result.kind === 'place'
+                        ? categoryDef(result.item.category)?.label ?? 'Place'
+                        : 'via OpenStreetMap'}
                 </span>
               </button>
             ))}

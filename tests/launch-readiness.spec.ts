@@ -56,6 +56,10 @@ test('Spiti pack persists and renders its saved places without network', async (
     attributes: { host_name: 'Tashi' }, added_by: null, last_edited_by: null,
     last_verified_at: null, verified_count: 0, created_at: '2026-08-17T00:00:00Z', updated_at: '2026-08-17T00:00:00Z',
   }
+  const village = {
+    id: '55555555-5555-4555-8555-555555555555', slug: 'test-kaza', name: 'Test Kaza', region_id: region.id,
+    center_lat: 32.2265, center_lng: 78.0569, created_at: '2026-08-17T00:00:00Z',
+  }
   const photos = [
     {
       id: '33333333-3333-4333-8333-333333333333', place_id: place.id, storage_path: 'spiti/first.png',
@@ -83,7 +87,7 @@ test('Spiti pack persists and renders its saved places without network', async (
     })
   })
   await page.route('**/rest/v1/community_notes**', (route) => route.fulfill({ json: [] }))
-  await page.route('**/rest/v1/villages**', (route) => route.fulfill({ json: [] }))
+  await page.route('**/rest/v1/villages**', (route) => route.fulfill({ json: [village] }))
   await page.route('**/rest/v1/repo_stats**', (route) => route.fulfill({ json: [] }))
   await blockExternalMapTraffic(page)
 
@@ -110,6 +114,13 @@ test('Spiti pack persists and renders its saved places without network', async (
   await expect(page.getByRole('button', { name: /Spiti.*Update available/ })).toBeVisible()
   await page.getByTitle('Close').click()
   await context.setOffline(true)
+  const search = page.getByRole('searchbox')
+  await search.fill('Test Kaza')
+  await expect(page.getByRole('button', { name: /Test Kaza.*Village/ })).toBeVisible()
+  await page.getByRole('button', { name: /Test Kaza.*Village/ }).click()
+  await search.fill('Homestay')
+  await expect(page.getByRole('button', { name: /Test Spiti Homestay.*Homestay/ })).toBeVisible()
+  await search.fill('')
   const marker = page.locator('.maplibregl-marker')
   await expect(marker).toHaveCount(1, { timeout: 20_000 })
   if (testInfo.project.name === 'desktop') await marker.hover()

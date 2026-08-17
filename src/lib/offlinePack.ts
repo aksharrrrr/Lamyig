@@ -1,10 +1,11 @@
 import { supabase } from './supabase'
-import type { CommunityNote, Place, PlacePhoto, Region } from './types'
+import type { CommunityNote, Place, PlacePhoto, Region, Village } from './types'
 
 const DB_NAME = 'lamyig-offline'
 const DB_VERSION = 1
 const STORE_NAME = 'region-packs'
 const LAST_OFFLINE_REGION_KEY = 'lamyig:lastOfflineRegion'
+const CURRENT_PACK_VERSION = 2
 
 export const OFFLINE_REGION_CONFIG = {
   spiti: { name: 'Spiti', mapUrl: '/offline/spiti.pmtiles', mapBytes: 15_380_620, bounds: { west: 77.3, south: 31.55, east: 78.75, north: 33.2 } },
@@ -24,11 +25,13 @@ export interface OfflinePhoto extends PlacePhoto {
 
 export interface OfflineRegionPack {
   slug: string
+  packVersion?: number
   revision?: number
   missingPhotoCount?: number
   downloadedAt: string
   region: Region
   mapFile: File
+  villages?: Village[]
   places: Place[]
   photos: OfflinePhoto[]
   notes: CommunityNote[]
@@ -100,11 +103,13 @@ export async function getOfflinePackStatuses(): Promise<OfflinePackStatus[]> {
     pack,
     // Packs downloaded before revision tracking deliberately get one update
     // prompt so their future freshness can be compared authoritatively.
-    updateAvailable: revisions.has(pack.slug) && pack.revision !== revisions.get(pack.slug),
+    updateAvailable: pack.packVersion !== CURRENT_PACK_VERSION
+      || (revisions.has(pack.slug) && pack.revision !== revisions.get(pack.slug)),
   }))
 }
 
 export async function offlinePackNeedsUpdate(pack: OfflineRegionPack): Promise<boolean> {
+  if (pack.packVersion !== CURRENT_PACK_VERSION) return true
   if (!supabase || !navigator.onLine) return false
   const { data, error } = await supabase
     .from('regions')
@@ -148,6 +153,15 @@ export async function downloadOfflinePack(slug: OfflineRegionSlug, onProgress: (
   const { data: regionData, error: regionError } = await supabase.from('regions').select('*').eq('slug', slug).single()
   if (regionError) throw regionError
   const region = regionData as Region
+
+  onProgress(`Gathering ${config.name}'s villages…`)
+  const { data: villageData, error: villageError } = await supabase
+    .from('villages')
+    .select('*')
+    .eq('region_id', region.id)
+    .order('name')
+  if (villageError) throw villageError
+  const villages = (villageData ?? []) as Village[]
 
   onProgress(`Gathering the latest places in ${config.name}…`)
   const { data: placeData, error: placeError } = await supabase
@@ -199,11 +213,13 @@ export async function downloadOfflinePack(slug: OfflineRegionSlug, onProgress: (
   onProgress(`Saving ${config.name} for the road…`)
   const pack: OfflineRegionPack = {
     slug,
+    packVersion: CURRENT_PACK_VERSION,
     revision: Number(region.offline_revision ?? 0),
     missingPhotoCount,
     downloadedAt: new Date().toISOString(),
     region,
     mapFile,
+    villages,
     places,
     photos,
     notes,

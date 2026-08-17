@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useLocation, useNavigate, useSearchParams } from 'react-router'
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router'
 import { supabase, BACKEND_NOT_CONFIGURED_MESSAGE } from '../lib/supabase'
 import { useAuth } from '../lib/useAuth'
 import { useToast } from '../lib/useToast'
@@ -55,6 +55,7 @@ export default function Auth() {
   const [recovering, setRecovering] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showNewPassword, setShowNewPassword] = useState(false)
+  const [acceptedTerms, setAcceptedTerms] = useState(false)
 
   useEffect(() => {
     if (!supabase) return
@@ -253,6 +254,20 @@ export default function Auth() {
           >
             Forgot password?
           </button>
+        )}
+        {mode === 'sign-up' && (
+          <label className="flex items-start gap-2 text-xs leading-relaxed text-muted">
+            <input
+              type="checkbox"
+              required
+              checked={acceptedTerms}
+              onChange={(e) => setAcceptedTerms(e.target.checked)}
+              className="mt-0.5"
+            />
+            <span>
+              I am 18 or older and agree to the <Link to="/terms" target="_blank" className="font-semibold text-accent-text underline">contribution terms</Link> and <Link to="/privacy" target="_blank" className="font-semibold text-accent-text underline">privacy notice</Link>.
+            </span>
+          </label>
         )}
         {error && <p className="text-sm text-danger">{error}</p>}
         <button

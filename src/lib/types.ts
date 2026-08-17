@@ -41,8 +41,8 @@ export interface Place {
   whatsapp: string | null
   price_range: string | null
   attributes: Record<string, unknown>
-  added_by: string
-  last_edited_by: string
+  added_by: string | null
+  last_edited_by: string | null
   last_verified_at: string | null
   verified_count: number
   created_at: string
@@ -53,7 +53,7 @@ export interface PlacePhoto {
   id: string
   place_id: string
   storage_path: string
-  uploaded_by: string
+  uploaded_by: string | null
   created_at: string
 }
 

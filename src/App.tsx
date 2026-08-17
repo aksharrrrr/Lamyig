@@ -1,4 +1,4 @@
-import { Routes, Route, useLocation, useNavigate, type Location } from 'react-router'
+import { Routes, Route, useLocation, useNavigate, useParams, type Location } from 'react-router'
 import Home from './pages/Home'
 import Region from './pages/Region'
 import Village from './pages/Village'
@@ -10,9 +10,11 @@ import Feedback from './pages/Feedback'
 import Vision from './pages/Vision'
 import NotFound from './pages/NotFound'
 import Legal from './pages/Legal'
+import OfflineMaps from './pages/OfflineMaps'
 import Overlay from './components/Overlay'
 import { ToastProvider } from './lib/useToast'
 import { PlacesProvider } from './lib/usePlacesStore'
+import { isOfflineRegionSlug, OFFLINE_REGION_CONFIG } from './lib/offlinePack'
 
 // Home (the map) stays mounted underneath at all times. Regions always use
 // the same map-backed overlay, including direct/shared URLs. Add Place, Profile
@@ -52,6 +54,7 @@ export default function App() {
           <Route path="/auth" element={<Home />} />
           <Route path="/feedback" element={<Home />} />
           <Route path="/vision" element={<Home />} />
+          <Route path="/offline-maps" element={<Home />} />
           <Route path="/privacy" element={<Legal />} />
           <Route path="/terms" element={<Legal />} />
           {/* Fallback full-page versions when there's no background to overlay onto */}
@@ -66,7 +69,8 @@ export default function App() {
           <Route path="/auth" element={<Overlay title={authTitle} onClose={closeToHome}><Auth /></Overlay>} />
           <Route path="/feedback" element={<Overlay title="Feedback" onClose={closeToHome}><Feedback /></Overlay>} />
           <Route path="/vision" element={<Overlay title="Welcome to Lamyig" onClose={closeToHome}><Vision onClose={closeToHome} /></Overlay>} />
-          <Route path="/region/:regionSlug" element={<Overlay title="Region" onClose={closeToHome}><Region embedded /></Overlay>} />
+          <Route path="/region/:regionSlug" element={<RegionOverlay onClose={closeToHome} />} />
+          <Route path="/offline-maps" element={<Overlay title="Offline maps" onClose={closeToHome}><OfflineMaps /></Overlay>} />
           {/* Every other path lands here otherwise - without it react-router
               logs a "No routes matched" console warning on every load/nav
               (this Routes block uses the real location, not the background
@@ -86,4 +90,12 @@ export default function App() {
       </PlacesProvider>
     </ToastProvider>
   )
+}
+
+function RegionOverlay({ onClose }: { onClose?: () => void }) {
+  const { regionSlug } = useParams()
+  const title = isOfflineRegionSlug(regionSlug)
+    ? OFFLINE_REGION_CONFIG[regionSlug].name
+    : (regionSlug ?? 'Region').replaceAll('-', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase())
+  return <Overlay title={title} onClose={onClose}><Region /></Overlay>
 }

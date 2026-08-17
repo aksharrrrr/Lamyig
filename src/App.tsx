@@ -14,7 +14,8 @@ import Overlay from './components/Overlay'
 import { ToastProvider } from './lib/useToast'
 import { PlacesProvider } from './lib/usePlacesStore'
 
-// Home (the map) stays mounted underneath at all times. Add Place, Profile
+// Home (the map) stays mounted underneath at all times. Regions always use
+// the same map-backed overlay, including direct/shared URLs. Add Place, Profile
 // and Place detail render as an overlay on top of whatever page was showing
 // when they were opened, via React Router's "background location" pattern - 
 // navigate(path, { state: { background: location } }) opens them as an
@@ -46,7 +47,7 @@ export default function App() {
       <PlacesProvider>
         <Routes location={background || location}>
           <Route path="/" element={<Home />} />
-          <Route path="/region/:regionSlug" element={<Region />} />
+          <Route path="/region/:regionSlug" element={<Home />} />
           <Route path="/village/:villageSlug" element={<Village />} />
           <Route path="/auth" element={<Home />} />
           <Route path="/feedback" element={<Home />} />
@@ -65,6 +66,7 @@ export default function App() {
           <Route path="/auth" element={<Overlay title={authTitle} onClose={closeToHome}><Auth /></Overlay>} />
           <Route path="/feedback" element={<Overlay title="Feedback" onClose={closeToHome}><Feedback /></Overlay>} />
           <Route path="/vision" element={<Overlay title="Welcome to Lamyig" onClose={closeToHome}><Vision onClose={closeToHome} /></Overlay>} />
+          <Route path="/region/:regionSlug" element={<Overlay title="Region" onClose={closeToHome}><Region embedded /></Overlay>} />
           {/* Every other path lands here otherwise - without it react-router
               logs a "No routes matched" console warning on every load/nav
               (this Routes block uses the real location, not the background
@@ -78,7 +80,6 @@ export default function App() {
             <Route path="/add" element={<Overlay title="Add a place"><AddEditPlace /></Overlay>} />
             <Route path="/place/:placeId/edit" element={<Overlay title="Edit place"><AddEditPlace /></Overlay>} />
             <Route path="/profile" element={<Overlay title="Profile"><Profile /></Overlay>} />
-            <Route path="/region/:regionSlug" element={<Overlay title="Offline map"><Region embedded /></Overlay>} />
             <Route path="*" element={null} />
           </Routes>
         )}

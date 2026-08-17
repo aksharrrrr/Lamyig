@@ -25,6 +25,24 @@ test('sign-up requires age, terms, and privacy consent', async ({ page }) => {
   await expect(page.getByRole('link', { name: 'privacy notice' })).toHaveAttribute('href', '/privacy')
 })
 
+test('direct region links keep the map behind the consistent overlay', async ({ page }) => {
+  await page.route('**/rest/v1/regions**', (route) => route.fulfill({ json: [{
+    id: '55555555-5555-4555-8555-555555555555', slug: 'ladakh', name: 'Ladakh', state: 'Ladakh',
+    description: null, featured: true, center_lat: 34.15, center_lng: 77.58, default_zoom: 7,
+  }] }))
+  await page.route('**/rest/v1/places**', (route) => route.fulfill({ json: [] }))
+  await page.route('**/rest/v1/villages**', (route) => route.fulfill({ json: [] }))
+  await page.route('**/rest/v1/repo_stats**', (route) => route.fulfill({ json: [] }))
+  await blockExternalMapTraffic(page)
+
+  await page.goto('/region/ladakh')
+  await expect(page.locator('.maplibregl-canvas')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Region' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'ladakh', exact: true })).toBeVisible()
+  await page.getByTitle('Close').click()
+  await expect(page).toHaveURL('/')
+})
+
 test('Spiti pack persists and renders its saved places without network', async ({ page, context }, testInfo) => {
   const region = {
     id: '11111111-1111-4111-8111-111111111111', slug: 'spiti', name: 'Spiti', state: 'Himachal Pradesh',
@@ -66,7 +84,7 @@ test('Spiti pack persists and renders its saved places without network', async (
 
   await page.goto('/')
   await page.getByTitle('Offline maps').click()
-  await expect(page.getByRole('heading', { name: 'Offline map' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Region' })).toBeVisible()
   await expect(page.locator('.maplibregl-canvas')).toBeVisible()
   await page.getByRole('button', { name: 'Download Spiti' }).click()
   await expect(page.getByText('Stored on this device', { exact: false })).toBeVisible({ timeout: 60_000 })

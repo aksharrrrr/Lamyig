@@ -2,7 +2,7 @@
 
 **The open road-book for remote India.**
 
-Lamyig is an open-source, community-maintained travel knowledge map for remote India, starting with the Himalaya (Spiti, Ladakh, Zanskar, Sikkim) and Dharamkot. Spiti can be downloaded for offline browsing; other regions currently require connectivity.
+Lamyig is an open-source, community-maintained travel knowledge map for remote India, starting with the Himalaya (Spiti, Ladakh, Zanskar, Sikkim) and Dharamkot. Spiti, Ladakh, and Zanskar can be carried offline.
 
 **Live at [www.lamyig.in](https://www.lamyig.in).**
 
@@ -18,13 +18,13 @@ This project is the community's lamyig, rebuilt for travellers who cannot assume
 
 ## Status
 
-**Public beta.** Browse, search, add, edit, report, and download Spiti for offline browsing at [www.lamyig.in](https://www.lamyig.in). Everything in `/docs` is the source of truth for what Lamyig is and why - start with [`docs/14-decision-log.md`](docs/14-decision-log.md) if you're wondering why something works the way it does.
+**Public beta.** Browse, search, add, edit, report, and carry Spiti, Ladakh, or Zanskar offline at [www.lamyig.in](https://www.lamyig.in). Everything in `/docs` is the source of truth for what Lamyig is and why - start with [`docs/14-decision-log.md`](docs/14-decision-log.md) if you're wondering why something works the way it does.
 
 ## What Lamyig believes
 
 - Knowledge over listings. We collect facts, not advertisements.
 - Facts over ratings. Structured, verifiable information instead of star reviews.
-- Offline where it matters. Spiti is the first downloadable region; the same model can expand after field validation.
+- Offline where it matters. Spiti, Ladakh, and Zanskar each have a downloadable map and community guide.
 - Quality over coverage. 400 verified places beat 40,000 poor listings.
 - Community-owned. The data, the code, and the decisions are open.
 

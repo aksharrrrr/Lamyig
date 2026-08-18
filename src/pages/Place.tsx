@@ -6,6 +6,7 @@ import { categoryDef } from '../lib/categories'
 import type { CommunityNote, Place as PlaceT, PlacePhoto } from '../lib/types'
 import { REPORT_REASONS } from '../lib/constants'
 import { getOfflinePacks } from '../lib/offlinePack'
+import { mergeOfflinePackContent } from '../lib/offlineMerge'
 import { connectionAwareError, OFFLINE_CONTRIBUTION_MESSAGE } from '../lib/connectivity'
 import { useToast } from '../lib/useToast'
 
@@ -48,13 +49,13 @@ export default function Place() {
   const load = useCallback(async () => {
     if (!supabase || !placeId) return
     if (!navigator.onLine) {
-      const pack = (await getOfflinePacks()).find((candidate) => candidate.places.some((place) => place.id === placeId))
-      const offlinePlace = pack?.places.find((candidate) => candidate.id === placeId)
+      const content = mergeOfflinePackContent(await getOfflinePacks())
+      const offlinePlace = content.places.find((candidate) => candidate.id === placeId)
       if (offlinePlace) {
         setPlace(offlinePlace)
-        const offlinePhotos = pack!.photos.filter((photo) => photo.place_id === placeId)
+        const offlinePhotos = content.photos.filter((photo) => photo.place_id === placeId)
         setPhotos(offlinePhotos)
-        setNotes(pack!.notes.filter((note) => note.place_id === placeId).sort((a, b) => b.created_at.localeCompare(a.created_at)))
+        setNotes(content.notes.filter((note) => note.place_id === placeId).sort((a, b) => b.created_at.localeCompare(a.created_at)))
         setOfflinePhotoUrls(Object.fromEntries(offlinePhotos.map((photo) => [photo.storage_path, URL.createObjectURL(photo.blob)])))
       }
       return
@@ -66,8 +67,8 @@ export default function Place() {
     ])
     if (placeData) setPlace(placeData as PlaceT)
     else {
-      const pack = (await getOfflinePacks()).find((candidate) => candidate.places.some((place) => place.id === placeId))
-      const offlinePlace = pack?.places.find((candidate) => candidate.id === placeId)
+      const content = mergeOfflinePackContent(await getOfflinePacks())
+      const offlinePlace = content.places.find((candidate) => candidate.id === placeId)
       if (offlinePlace) setPlace(offlinePlace)
     }
     if (photoData) setPhotos(photoData as PlacePhoto[])

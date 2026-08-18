@@ -13,15 +13,26 @@ export default function Region() {
   const [progress, setProgress] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [updateAvailable, setUpdateAvailable] = useState(false)
+  const [online, setOnline] = useState(navigator.onLine)
   const [confirmingRemove, setConfirmingRemove] = useState(false)
 
   useEffect(() => {
-    getOfflinePack(regionSlug)
-      .then(async (savedPack) => {
-        setPack(savedPack)
-        setUpdateAvailable(savedPack ? await offlinePackNeedsUpdate(savedPack) : false)
-      })
-      .catch(() => { setPack(null); setUpdateAvailable(false) })
+    const refresh = () => {
+      setOnline(navigator.onLine)
+      getOfflinePack(regionSlug)
+        .then(async (savedPack) => {
+          setPack(savedPack)
+          setUpdateAvailable(savedPack ? await offlinePackNeedsUpdate(savedPack) : false)
+        })
+        .catch(() => { setPack(null); setUpdateAvailable(false) })
+    }
+    refresh()
+    window.addEventListener('online', refresh)
+    window.addEventListener('offline', refresh)
+    return () => {
+      window.removeEventListener('online', refresh)
+      window.removeEventListener('offline', refresh)
+    }
   }, [regionSlug])
 
   if (!config || !isOfflineRegionSlug(regionSlug)) {
@@ -62,25 +73,32 @@ export default function Region() {
       {error && <p className="mt-4 text-sm text-danger">{error}</p>}
 
       <div className="mt-5 flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          disabled={Boolean(progress)}
-          onClick={async () => {
-            setError(null)
-            try {
-              setPack(await downloadOfflinePack(regionSlug, setProgress))
-              setUpdateAvailable(false)
-            } catch (downloadError) {
-              const message = downloadError instanceof Error ? downloadError.message : `Could not download ${config.name}.`
-              setError(pack ? `${message} Your saved copy is still ready.` : message)
-            } finally {
-              setProgress(null)
-            }
-          }}
-          className="rounded-[11px] bg-accent px-4 py-2.5 text-sm font-semibold text-surface disabled:opacity-50"
-        >
-          {pack ? 'Update' : `Download ${config.name}`}
-        </button>
+        {(!pack || updateAvailable) && (
+          <button
+            type="button"
+            disabled={Boolean(progress) || !online}
+            onClick={async () => {
+              setError(null)
+              try {
+                setPack(await downloadOfflinePack(regionSlug, setProgress))
+                setUpdateAvailable(false)
+              } catch (downloadError) {
+                const message = downloadError instanceof Error ? downloadError.message : `Could not download ${config.name}.`
+                setError(pack ? `${message} Your saved copy is still ready.` : message)
+              } finally {
+                setProgress(null)
+              }
+            }}
+            className="rounded-[11px] bg-accent px-4 py-2.5 text-sm font-semibold text-surface disabled:opacity-50"
+          >
+            {pack ? `Update ${config.name}` : `Download ${config.name}`}
+          </button>
+        )}
+        {pack && !updateAvailable && (
+          <span className="rounded-[11px] bg-accent-light px-4 py-2.5 text-sm font-semibold text-accent-text">
+            {online ? 'Up to date' : 'Saved offline'}
+          </span>
+        )}
         {pack && (
           <button
             type="button"

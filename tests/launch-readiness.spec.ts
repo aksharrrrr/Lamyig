@@ -5,14 +5,24 @@ async function blockExternalMapTraffic(page: Page) {
 }
 
 test('privacy and contribution terms are directly reachable', async ({ page }) => {
+  await page.route('**/rest/v1/regions**', (route) => route.fulfill({ json: [] }))
+  await page.route('**/rest/v1/places**', (route) => route.fulfill({ json: [] }))
+  await page.route('**/rest/v1/villages**', (route) => route.fulfill({ json: [] }))
+  await page.route('**/rest/v1/repo_stats**', (route) => route.fulfill({ json: [] }))
   await blockExternalMapTraffic(page)
   await page.goto('/privacy')
+  await expect(page.locator('.maplibregl-canvas')).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Privacy notice' })).toBeVisible()
   await expect(page.getByText('You can permanently delete your account from Profile')).toBeVisible()
+  await page.getByTitle('Close').click()
+  await expect(page).toHaveURL('/')
 
   await page.goto('/terms')
+  await expect(page.locator('.maplibregl-canvas')).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Contribution terms' })).toBeVisible()
   await expect(page.getByText('Open Database License 1.0')).toBeVisible()
+  await page.getByTitle('Close').click()
+  await expect(page).toHaveURL('/')
 })
 
 test('sign-up requires age, terms, and privacy consent', async ({ page }) => {
@@ -153,10 +163,19 @@ test('Spiti pack persists and renders its saved places without network', async (
   await page.getByTitle('Close').click()
   const marker = page.locator('.maplibregl-marker')
   await expect(marker).toHaveCount(1, { timeout: 20_000 })
-  if (testInfo.project.name === 'desktop') await marker.hover()
-  else await marker.click()
-  const popup = page.locator('.maplibregl-popup-content')
-  await expect(popup.getByText('Test Spiti Homestay')).toBeVisible()
-  await expect(popup.locator('img')).toHaveCount(1)
-  await expect(popup.getByRole('button', { name: 'More details' })).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
+  if (testInfo.project.name.startsWith('desktop')) {
+    await marker.hover()
+    const popup = page.locator('.maplibregl-popup-content')
+    await expect(popup.getByText('Test Spiti Homestay')).toBeVisible()
+    await expect(popup.locator('img')).toHaveCount(1)
+    const moreDetails = popup.getByRole('button', { name: 'More details' })
+    await expect(moreDetails).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
+    await moreDetails.click()
+    await expect(page).toHaveURL(new RegExp(`/place/${place.id}`))
+    await page.getByTitle('Close').click()
+  }
+
+  await marker.click()
+  await expect(page).toHaveURL(new RegExp(`/place/${place.id}`))
+  await expect(page.getByRole('heading', { name: 'Test Spiti Homestay' })).toBeVisible()
 })

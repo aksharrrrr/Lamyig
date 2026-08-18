@@ -2,22 +2,18 @@ import { Link, useLocation } from 'react-router'
 
 const sectionClass = 'space-y-2'
 
-function PageShell({ title, children }: { title: string; children: React.ReactNode }) {
+function LegalContent({ children }: { children: React.ReactNode }) {
   return (
-    <main className="min-h-full bg-bg px-5 py-8 text-ink">
-      <article className="mx-auto max-w-2xl rounded-2xl border border-ink/10 bg-surface p-6 shadow-lg sm:p-8">
-        <Link to="/" className="text-sm font-semibold text-accent-text underline underline-offset-2">← Back to map</Link>
-        <h1 className="mt-5 text-3xl font-bold tracking-tight">{title}</h1>
-        <p className="mt-1 text-xs text-muted">Effective 17 August 2026</p>
-        <div className="mt-6 space-y-6 text-sm leading-relaxed text-muted">{children}</div>
-      </article>
-    </main>
+    <article className="text-ink">
+      <p className="text-xs text-muted">Effective 17 August 2026</p>
+      <div className="mt-5 space-y-6 text-sm leading-relaxed text-muted">{children}</div>
+    </article>
   )
 }
 
 function Privacy() {
   return (
-    <PageShell title="Privacy notice">
+    <LegalContent>
       <section className={sectionClass}>
         <h2 className="text-base font-bold text-ink">The short version</h2>
         <p>Lamyig collects only what it needs to run an open community travel guide. Browsing does not require an account. Contributions are public. We do not sell personal data or use advertising trackers.</p>
@@ -53,13 +49,13 @@ function Privacy() {
         <p>Accounts are for people aged 18 or older. Lamyig uses Supabase row-level security, restricted storage uploads, and encrypted HTTPS connections, but no internet service can promise absolute security.</p>
       </section>
       <p>This notice is designed around India’s Digital Personal Data Protection framework. It is operational product information, not legal advice.</p>
-    </PageShell>
+    </LegalContent>
   )
 }
 
 function Terms() {
   return (
-    <PageShell title="Contribution terms">
+    <LegalContent>
       <section className={sectionClass}>
         <h2 className="text-base font-bold text-ink">Keep it factual</h2>
         <p>Lamyig is a community knowledge base, not an advertising or booking platform. Contributions must be honest, useful to travellers, and free from spam, impersonation, unlawful content, and undisclosed promotion.</p>
@@ -80,7 +76,7 @@ function Terms() {
         <h2 className="text-base font-bold text-ink">Accounts</h2>
         <p>You must be at least 18, keep your account secure, and use one truthful account. You may delete your account from Profile. Public factual contributions can remain after deletion with attribution anonymized, as described in the <Link to="/privacy" className="font-semibold text-accent-text underline">privacy notice</Link>.</p>
       </section>
-    </PageShell>
+    </LegalContent>
   )
 }
 

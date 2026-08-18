@@ -80,6 +80,12 @@ Exception: trivial fixes (typos, broken links, obvious docs corrections) can go 
 
 Force-pushes and branch deletion are disabled on `main` at the repo level - that's not a suggestion, GitHub blocks it outright.
 
+For a maintainer-directed continuous development session, the maintainer may instead use the persistent `dev` branch for the entire batch. In that workflow, changes remain uncommitted and unpushed until the maintainer requests the handoff; they are then split into logical commits and merged through one PR. The `dev` branch is retained after merge for the next session.
+
+### Product UI consistency
+
+The home map is Lamyig's persistent canvas. Supporting screens and panel-like routes—including authentication, Profile, Feedback, Vision/Info, regions, offline maps, Privacy, and Terms—use the shared desktop-modal/mobile-bottom-sheet overlay with the map behind them, even for direct URLs. Do not add a standalone card over a blank page for this kind of content. Reuse the existing design tokens, typography, spacing, copy voice, and interaction patterns, and verify every new visible state on desktop and mobile.
+
 ## Have a question or an idea that isn't a PR yet?
 
 Open a GitHub issue. Use the `limitation` label for free-tier constraints of a service we depend on, `vision` for long-term direction, or no label if neither fits.

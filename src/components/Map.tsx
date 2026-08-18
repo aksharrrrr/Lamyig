@@ -203,6 +203,24 @@ const Map = forwardRef<MapHandle, MapProps>(function Map({ places = [], offlineM
       popupNode.appendChild(summary)
 
       const markerElement = createMarkerElement(place.category)
+      markerElement.setAttribute('role', 'button')
+      markerElement.setAttribute('tabindex', '0')
+      markerElement.setAttribute('aria-label', `Open ${place.name}`)
+      markerElement.title = `Open ${place.name}`
+      const openDetails = () => onSelectPlace?.(place.id)
+      // setPopup installs its own click-to-toggle behavior. Capture the click
+      // first so a deliberate pin click goes straight to the full place page;
+      // the compact popup remains a hover preview on pointer devices.
+      markerElement.addEventListener('click', (event) => {
+        event.preventDefault()
+        event.stopImmediatePropagation()
+        openDetails()
+      }, true)
+      markerElement.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return
+        event.preventDefault()
+        openDetails()
+      })
       const popup = new maplibregl.Popup({ offset: 24 }).setDOMContent(popupNode)
       const marker = new maplibregl.Marker({ element: markerElement })
         .setLngLat([place.lng, place.lat])

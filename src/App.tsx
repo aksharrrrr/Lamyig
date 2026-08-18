@@ -55,8 +55,8 @@ export default function App() {
           <Route path="/feedback" element={<Home />} />
           <Route path="/vision" element={<Home />} />
           <Route path="/offline-maps" element={<Home />} />
-          <Route path="/privacy" element={<Legal />} />
-          <Route path="/terms" element={<Legal />} />
+          <Route path="/privacy" element={<Home />} />
+          <Route path="/terms" element={<Home />} />
           {/* Fallback full-page versions when there's no background to overlay onto */}
           <Route path="/place/:placeId" element={<div className="mx-auto max-w-lg p-6"><Place /></div>} />
           <Route path="/add" element={<div className="mx-auto max-w-lg p-6"><h1 className="mb-4 text-2xl font-bold">Add a place</h1><AddEditPlace /></div>} />
@@ -71,6 +71,8 @@ export default function App() {
           <Route path="/vision" element={<Overlay title="Welcome to Lamyig" onClose={closeToHome}><Vision onClose={closeToHome} /></Overlay>} />
           <Route path="/region/:regionSlug" element={<RegionOverlay onClose={closeToHome} />} />
           <Route path="/offline-maps" element={<Overlay title="Offline maps" onClose={closeToHome}><OfflineMaps /></Overlay>} />
+          <Route path="/privacy" element={<Overlay title="Privacy notice" onClose={closeToHome}><Legal /></Overlay>} />
+          <Route path="/terms" element={<Overlay title="Contribution terms" onClose={closeToHome}><Legal /></Overlay>} />
           {/* Every other path lands here otherwise - without it react-router
               logs a "No routes matched" console warning on every load/nav
               (this Routes block uses the real location, not the background

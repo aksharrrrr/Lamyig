@@ -47,7 +47,7 @@ export function PlacesProvider({ children }: { children: ReactNode }) {
     const client = supabase
     if (!client) return
     if (!navigator.onLine) return void loadOfflinePack()
-    client.from('places').select('id, name, category, lat, lng, place_photos(storage_path)').then(({ data, error }) => {
+    client.from('places').select('id, name, category, lat, lng, region_id, village_id, place_photos(storage_path)').then(({ data, error }) => {
       if (data) {
         replacePlaces(data.map((place) => {
           const storagePath = place.place_photos?.[0]?.storage_path

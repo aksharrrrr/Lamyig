@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router'
 import Map, { type MapHandle, type MapStyleName } from '../components/Map'
 import { supabase } from '../lib/supabase'
@@ -12,6 +12,7 @@ import { MAP_STYLES, MAP_STYLE_LABELS, ZOOM_VILLAGE } from '../lib/constants'
 import type { Region, Village } from '../lib/types'
 import { getLastOfflineRegion, getOfflinePackStatuses, isOfflineRegionSlug, type OfflinePackStatus } from '../lib/offlinePack'
 import { OFFLINE_CONTRIBUTION_MESSAGE } from '../lib/connectivity'
+import { matchesJourneySearch } from '../lib/search'
 
 // Treks now also exist as a real, place-attachable entity (the `treks`
 // table, migration 0024) - this flat list is kept independent on purpose,
@@ -58,7 +59,7 @@ export default function Home() {
   const [trekSubmenuOpen, setTrekSubmenuOpen] = useState(false)
   const [trekDropdownOpen, setTrekDropdownOpen] = useState(false)
   const [offlineStatuses, setOfflineStatuses] = useState<OfflinePackStatus[]>([])
-  const offlinePacks = offlineStatuses.map(({ pack }) => pack)
+  const offlinePacks = useMemo(() => offlineStatuses.map(({ pack }) => pack), [offlineStatuses])
   const hasOfflineUpdate = offlineStatuses.some(({ updateAvailable }) => updateAvailable)
   const [online, setOnline] = useState(navigator.onLine)
   const requestedOfflineSlug = new URLSearchParams(location.search).get('offline')
@@ -66,14 +67,14 @@ export default function Home() {
   const lastOfflineSlug = getLastOfflineRegion()
   const activeOfflinePack = offlinePacks.find((pack) => pack.slug === offlineMapRequested)
     ?? (!online ? offlinePacks.find((pack) => pack.slug === lastOfflineSlug) ?? offlinePacks[0] : null)
-  const searchableRegions = [...new globalThis.Map([
+  const searchableRegions = useMemo(() => [...new globalThis.Map([
     ...regions,
     ...offlinePacks.map((pack) => pack.region),
-  ].map((region) => [region.id, region])).values()]
-  const searchableVillages = [...new globalThis.Map([
+  ].map((region) => [region.id, region])).values()], [regions, offlinePacks])
+  const searchableVillages = useMemo(() => [...new globalThis.Map([
     ...villages,
     ...offlinePacks.flatMap((pack) => pack.villages ?? []),
-  ].map((village) => [village.id, village])).values()]
+  ].map((village) => [village.id, village])).values()], [villages, offlinePacks])
 
   useEffect(() => {
     const refreshPack = () => getOfflinePackStatuses().then(setOfflineStatuses).catch(() => setOfflineStatuses([]))
@@ -94,11 +95,11 @@ export default function Home() {
     const pathRegion = location.pathname.startsWith('/region/') ? location.pathname.split('/')[2] : null
     const requestedRegion = pathRegion ?? params.get('region')
     if (!requestedRegion) return
-    const region = regions.find((candidate) => candidate.slug === requestedRegion)
+    const region = searchableRegions.find((candidate) => candidate.slug === requestedRegion)
     if (region?.center_lat != null && region.center_lng != null) {
       mapRef.current?.flyTo(region.center_lat, region.center_lng, region.default_zoom)
     }
-  }, [location.pathname, location.search, regions])
+  }, [location.pathname, location.search, searchableRegions])
 
   const activeOfflineRegion = activeOfflinePack?.region
   useEffect(() => {
@@ -186,13 +187,20 @@ export default function Home() {
   // clearly labeled "via OpenStreetMap" since Lamyig has no curated content
   // there.
   const query = searchQuery.trim().toLowerCase()
-  const matchingRegions = query ? searchableRegions.filter((r) => r.name.toLowerCase().includes(query)) : []
-  const matchingVillages = query ? searchableVillages.filter((v) => v.name.toLowerCase().includes(query)) : []
+  const regionsById = useMemo(() => new globalThis.Map(searchableRegions.map((region) => [region.id, region])), [searchableRegions])
+  const villagesById = useMemo(() => new globalThis.Map(searchableVillages.map((village) => [village.id, village])), [searchableVillages])
+  const matchingRegions = query ? searchableRegions.filter((region) => (
+    matchesJourneySearch(`${region.name} ${region.state} region`, query)
+  )) : []
+  const matchingVillages = query ? searchableVillages.filter((village) => {
+    const region = regionsById.get(village.region_id)
+    return matchesJourneySearch(`${village.name} ${region?.name ?? ''} village`, query)
+  }) : []
   const matchingPlaces = query ? places.filter((place) => {
     const category = categoryDef(place.category)
-    return place.name.toLowerCase().includes(query)
-      || place.category.toLowerCase().includes(query)
-      || Boolean(category?.label.toLowerCase().includes(query))
+    const village = place.village_id ? villagesById.get(place.village_id) : null
+    const region = place.region_id ? regionsById.get(place.region_id) : null
+    return matchesJourneySearch(`${place.name} ${place.category} ${category?.label ?? ''} ${village?.name ?? ''} ${region?.name ?? ''} place`, query)
   }) : []
   const localResultCount = matchingRegions.length + matchingVillages.length + matchingPlaces.length
 
@@ -367,11 +375,15 @@ export default function Home() {
             )}
             {searchResults.length === 0 && !geocoding && query.length >= 3 && (
               <div className="px-4 py-2.5 text-[13px] text-muted-light">
-                No place found for "{searchQuery.trim()}". Think this is a mistake?{' '}
-                <button type="button" onClick={() => openOverlay('/feedback')} className="font-semibold text-accent underline">
-                  Tell us
-                </button>
-                .
+                {!online
+                  ? `“${searchQuery.trim()}” isn't in your downloaded guides. Try again when you're online.`
+                  : <>
+                      No place found for "{searchQuery.trim()}". Think this is a mistake?{' '}
+                      <button type="button" onClick={() => openOverlay('/feedback')} className="font-semibold text-accent underline">
+                        Tell us
+                      </button>
+                      .
+                    </>}
               </div>
             )}
           </div>

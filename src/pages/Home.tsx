@@ -5,12 +5,13 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/useAuth'
 import { usePlacesStore } from '../lib/usePlacesStore'
 import { useToast } from '../lib/useToast'
-import { CATEGORIES } from '../lib/categories'
+import { CATEGORIES, categoryDef } from '../lib/categories'
 import { CATEGORY_ICONS } from '../lib/categoryIcons'
 import { geocodeSearch, type GeocodeResult } from '../lib/geocode'
 import { MAP_STYLES, MAP_STYLE_LABELS, ZOOM_VILLAGE } from '../lib/constants'
 import type { Region, Village } from '../lib/types'
-import { getOfflinePacks, isOfflineRegionSlug, type OfflineRegionPack } from '../lib/offlinePack'
+import { getLastOfflineRegion, getOfflinePackStatuses, isOfflineRegionSlug, OFFLINE_REGION_CONFIG, type OfflinePackStatus } from '../lib/offlinePack'
+import { OFFLINE_CONTRIBUTION_MESSAGE } from '../lib/connectivity'
 
 // Treks now also exist as a real, place-attachable entity (the `treks`
 // table, migration 0024) - this flat list is kept independent on purpose,
@@ -56,14 +57,26 @@ export default function Home() {
   const [regionMenuOpen, setRegionMenuOpen] = useState(false)
   const [trekSubmenuOpen, setTrekSubmenuOpen] = useState(false)
   const [trekDropdownOpen, setTrekDropdownOpen] = useState(false)
-  const [offlinePacks, setOfflinePacks] = useState<OfflineRegionPack[]>([])
+  const [offlineStatuses, setOfflineStatuses] = useState<OfflinePackStatus[]>([])
+  const offlinePacks = offlineStatuses.map(({ pack }) => pack)
+  const hasOfflineUpdate = offlineStatuses.some(({ updateAvailable }) => updateAvailable)
   const [online, setOnline] = useState(navigator.onLine)
   const requestedOfflineSlug = new URLSearchParams(location.search).get('offline')
   const offlineMapRequested = isOfflineRegionSlug(requestedOfflineSlug) ? requestedOfflineSlug : null
-  const activeOfflinePack = offlinePacks.find((pack) => pack.slug === offlineMapRequested) ?? (!online ? offlinePacks[0] : null)
+  const lastOfflineSlug = getLastOfflineRegion()
+  const activeOfflinePack = offlinePacks.find((pack) => pack.slug === offlineMapRequested)
+    ?? (!online ? offlinePacks.find((pack) => pack.slug === lastOfflineSlug) ?? offlinePacks[0] : null)
+  const searchableRegions = [...new globalThis.Map([
+    ...regions,
+    ...offlinePacks.map((pack) => pack.region),
+  ].map((region) => [region.id, region])).values()]
+  const searchableVillages = [...new globalThis.Map([
+    ...villages,
+    ...offlinePacks.flatMap((pack) => pack.villages ?? []),
+  ].map((village) => [village.id, village])).values()]
 
   useEffect(() => {
-    const refreshPack = () => getOfflinePacks().then(setOfflinePacks).catch(() => setOfflinePacks([]))
+    const refreshPack = () => getOfflinePackStatuses().then(setOfflineStatuses).catch(() => setOfflineStatuses([]))
     const connectionChanged = () => { setOnline(navigator.onLine); refreshPack() }
     refreshPack()
     window.addEventListener('online', connectionChanged)
@@ -86,6 +99,13 @@ export default function Home() {
       mapRef.current?.flyTo(region.center_lat, region.center_lng, region.default_zoom)
     }
   }, [location.pathname, location.search, regions])
+
+  const activeOfflineRegion = activeOfflinePack?.region
+  useEffect(() => {
+    if (!activeOfflineRegion) return
+    const { center_lat, center_lng, default_zoom } = activeOfflineRegion
+    if (center_lat != null && center_lng != null) mapRef.current?.flyTo(center_lat, center_lng, default_zoom)
+  }, [activeOfflineRegion])
 
   useEffect(() => {
     if (!supabase) return
@@ -113,6 +133,13 @@ export default function Home() {
 
   // No categories selected = no pins - selection is opt-in, not opt-out.
   const visiblePlaces = places.filter((p) => selectedCategories.has(p.category))
+  const filtersHidePlaces = visiblePlaces.length < places.length
+
+  function showAllPlaces() {
+    const next = new Set(places.map((place) => place.category))
+    setSelectedCategories(next)
+    localStorage.setItem(CATEGORY_FILTER_KEY, JSON.stringify([...next]))
+  }
 
   // The quick-nav chip row is for D-009's headline destinations only
   // (Spiti/Ladakh/Zanskar/Sikkim/Treks) - `regions` itself stays unfiltered
@@ -151,19 +178,27 @@ export default function Home() {
     mapRef.current?.flyTo(trek.lat, trek.lng, ZOOM_VILLAGE)
   }
 
-  // Search matches regions and villages first (real Lamyig content). If
-  // nothing local matches, it falls back to free OSM geocoding (Photon then
+  // Search matches downloaded and live Lamyig content first. Downloaded
+  // packs carry their villages and places, so this path needs no signal.
+  // If nothing local matches while online, it falls back to free OSM
+  // geocoding (Photon then
   // Nominatim, see lib/geocode.ts) so you can still fly to any place name -
   // clearly labeled "via OpenStreetMap" since Lamyig has no curated content
-  // there. Matching individual Places is still separate, later scope.
+  // there.
   const query = searchQuery.trim().toLowerCase()
-  const matchingRegions = query ? regions.filter((r) => r.name.toLowerCase().includes(query)) : []
-  const matchingVillages = query ? villages.filter((v) => v.name.toLowerCase().includes(query)) : []
-  const localResultCount = matchingRegions.length + matchingVillages.length
+  const matchingRegions = query ? searchableRegions.filter((r) => r.name.toLowerCase().includes(query)) : []
+  const matchingVillages = query ? searchableVillages.filter((v) => v.name.toLowerCase().includes(query)) : []
+  const matchingPlaces = query ? places.filter((place) => {
+    const category = categoryDef(place.category)
+    return place.name.toLowerCase().includes(query)
+      || place.category.toLowerCase().includes(query)
+      || Boolean(category?.label.toLowerCase().includes(query))
+  }) : []
+  const localResultCount = matchingRegions.length + matchingVillages.length + matchingPlaces.length
 
   useEffect(() => {
     const q = searchQuery.trim()
-    if (q.length < 3 || localResultCount > 0) {
+    if (!online || q.length < 3 || localResultCount > 0) {
       setOsmResults([])
       return
     }
@@ -175,17 +210,19 @@ export default function Home() {
       geocodeSearch(q).then(setOsmResults).finally(() => setGeocoding(false))
     }, 450)
     return () => { clearTimeout(timer); setGeocoding(false) }
-  }, [searchQuery, localResultCount])
+  }, [searchQuery, localResultCount, online])
 
   type SearchResult =
     | { kind: 'region'; key: string; item: Region }
     | { kind: 'village'; key: string; item: Village }
+    | { kind: 'place'; key: string; item: (typeof places)[number] }
     | { kind: 'osm'; key: string; item: GeocodeResult }
 
   const searchResults: SearchResult[] = query
     ? [
         ...matchingRegions.map((r): SearchResult => ({ kind: 'region', key: `region-${r.id}`, item: r })),
         ...matchingVillages.map((v): SearchResult => ({ kind: 'village', key: `village-${v.id}`, item: v })),
+        ...matchingPlaces.map((p): SearchResult => ({ kind: 'place', key: `place-${p.id}`, item: p })),
         ...osmResults.map((o, i): SearchResult => ({ kind: 'osm', key: `osm-${i}`, item: o })),
       ].slice(0, 6)
     : []
@@ -193,6 +230,10 @@ export default function Home() {
   function selectSearchResult(result: SearchResult) {
     if (result.kind === 'region') flyToRegion(result.item)
     else if (result.kind === 'village') flyToVillage(result.item)
+    else if (result.kind === 'place') {
+      mapRef.current?.flyTo(result.item.lat, result.item.lng, 15)
+      setSearchQuery('')
+    }
     else {
       mapRef.current?.flyTo(result.item.lat, result.item.lng, 11)
       setSearchQuery('')
@@ -311,7 +352,13 @@ export default function Home() {
                 </svg>
                 <span className="min-w-0 flex-1 truncate">{result.item.name}</span>
                 <span className="shrink-0 text-[12px] text-muted-light">
-                  {result.kind === 'region' ? 'Region' : result.kind === 'village' ? 'Village' : 'via OpenStreetMap'}
+                  {result.kind === 'region'
+                    ? 'Region'
+                    : result.kind === 'village'
+                      ? 'Village'
+                      : result.kind === 'place'
+                        ? categoryDef(result.item.category)?.label ?? 'Place'
+                        : 'via OpenStreetMap'}
                 </span>
               </button>
             ))}
@@ -366,6 +413,17 @@ export default function Home() {
               )
             })}
           </div>
+          {filtersHidePlaces && (
+            <div className="mt-1 flex justify-center">
+              <div className="flex items-center gap-1.5 rounded-full border border-ink/[0.06] bg-surface/95 px-3 py-1.5 text-[12px] text-muted shadow-md backdrop-blur-sm">
+                <span>Showing {visiblePlaces.length} of {places.length} places</span>
+                <span aria-hidden="true">·</span>
+                <button type="button" onClick={showAllPlaces} className="font-semibold text-accent underline underline-offset-2">
+                  Show all
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -490,11 +548,20 @@ export default function Home() {
             <path d="M4 6.5 9 4l6 2.5L20 4v13.5L15 20l-6-2.5L4 20z" /><path d="M9 4v13.5M15 6.5V20" />
             <path d="M12 8v5m0 0-2-2m2 2 2-2" />
           </svg>
-          <span className="text-xs font-semibold text-ink">Offline</span>
-          {offlinePacks.length > 0 && <span className="absolute right-0 top-0 h-2.5 w-2.5 rounded-full border-2 border-surface bg-accent" />}
+          <span className="text-xs font-semibold text-ink">
+            {activeOfflinePack && isOfflineRegionSlug(activeOfflinePack.slug)
+              ? `${OFFLINE_REGION_CONFIG[activeOfflinePack.slug].name} offline`
+              : 'Offline'}
+          </span>
+          {offlinePacks.length > 0 && (
+            <span className={`absolute right-0 top-0 h-2.5 w-2.5 rounded-full border-2 border-surface ${hasOfflineUpdate ? 'bg-danger' : 'bg-accent'}`} />
+          )}
         </button>
         <button
-          onClick={() => openOverlay('/add')}
+          onClick={() => {
+            if (!navigator.onLine) return showToast(OFFLINE_CONTRIBUTION_MESSAGE)
+            openOverlay('/add')
+          }}
           title="Add a place"
           className="flex h-[52px] w-[52px] items-center justify-center rounded-full border border-ink/[0.08] bg-accent-light shadow-xl hover:scale-105"
         >

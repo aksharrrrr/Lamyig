@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState, ty
 import { supabase } from './supabase'
 import type { PlaceMarker } from '../components/Map'
 import { getOfflinePacks } from './offlinePack'
+import { mergeOfflinePackContent } from './offlineMerge'
 
 interface PlacesContextValue {
   places: PlaceMarker[]
@@ -35,10 +36,11 @@ export function PlacesProvider({ children }: { children: ReactNode }) {
   const loadOfflinePack = useCallback(async () => {
     const packs = await getOfflinePacks()
     if (packs.length === 0) return
-    replacePlaces(packs.flatMap((pack) => pack.places.map((place) => {
-      const photo = pack.photos.find((candidate) => candidate.place_id === place.id)
+    const content = mergeOfflinePackContent(packs)
+    replacePlaces(content.places.map((place) => {
+      const photo = content.photos.find((candidate) => candidate.place_id === place.id)
       return { ...place, photoUrl: photo ? URL.createObjectURL(photo.blob) : undefined }
-    })))
+    }))
   }, [replacePlaces])
 
   const refetch = useCallback(() => {

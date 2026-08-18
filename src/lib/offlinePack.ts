@@ -1,9 +1,11 @@
 import { supabase } from './supabase'
-import type { CommunityNote, Place, PlacePhoto, Region } from './types'
+import type { CommunityNote, Place, PlacePhoto, Region, Village } from './types'
 
 const DB_NAME = 'lamyig-offline'
 const DB_VERSION = 1
 const STORE_NAME = 'region-packs'
+const LAST_OFFLINE_REGION_KEY = 'lamyig:lastOfflineRegion'
+const CURRENT_PACK_VERSION = 2
 
 export const OFFLINE_REGION_CONFIG = {
   spiti: { name: 'Spiti', mapUrl: '/offline/spiti.pmtiles', mapBytes: 15_380_620, bounds: { west: 77.3, south: 31.55, east: 78.75, north: 33.2 } },
@@ -23,12 +25,40 @@ export interface OfflinePhoto extends PlacePhoto {
 
 export interface OfflineRegionPack {
   slug: string
+  packVersion?: number
+  revision?: number
+  missingPhotoCount?: number
   downloadedAt: string
   region: Region
   mapFile: File
+  villages?: Village[]
   places: Place[]
   photos: OfflinePhoto[]
   notes: CommunityNote[]
+}
+
+export function getLastOfflineRegion(): OfflineRegionSlug | null {
+  try {
+    const value = localStorage.getItem(LAST_OFFLINE_REGION_KEY)
+    return isOfflineRegionSlug(value) ? value : null
+  } catch {
+    return null
+  }
+}
+
+export function rememberOfflineRegion(slug: OfflineRegionSlug): void {
+  try { localStorage.setItem(LAST_OFFLINE_REGION_KEY, slug) } catch { /* storage can be unavailable */ }
+}
+
+export function forgetOfflineRegion(slug: OfflineRegionSlug): void {
+  try {
+    if (localStorage.getItem(LAST_OFFLINE_REGION_KEY) === slug) localStorage.removeItem(LAST_OFFLINE_REGION_KEY)
+  } catch { /* storage can be unavailable */ }
+}
+
+export interface OfflinePackStatus {
+  pack: OfflineRegionPack
+  updateAvailable: boolean
 }
 
 function openDatabase(): Promise<IDBDatabase> {
@@ -55,6 +85,39 @@ export async function getOfflinePack(slug: string = DEFAULT_OFFLINE_REGION): Pro
 export async function getOfflinePacks(): Promise<OfflineRegionPack[]> {
   const packs = await Promise.all(Object.keys(OFFLINE_REGION_CONFIG).map((slug) => getOfflinePack(slug)))
   return packs.filter((pack): pack is OfflineRegionPack => Boolean(pack))
+}
+
+export async function getOfflinePackStatuses(): Promise<OfflinePackStatus[]> {
+  const packs = await getOfflinePacks()
+  if (packs.length === 0) return []
+  if (!supabase || !navigator.onLine) return packs.map((pack) => ({ pack, updateAvailable: false }))
+
+  const { data, error } = await supabase
+    .from('regions')
+    .select('slug, offline_revision')
+    .in('slug', packs.map((pack) => pack.slug))
+  if (error || !data) return packs.map((pack) => ({ pack, updateAvailable: false }))
+
+  const revisions = new Map(data.map((region) => [region.slug, Number(region.offline_revision)]))
+  return packs.map((pack) => ({
+    pack,
+    // Packs downloaded before revision tracking deliberately get one update
+    // prompt so their future freshness can be compared authoritatively.
+    updateAvailable: pack.packVersion !== CURRENT_PACK_VERSION
+      || (revisions.has(pack.slug) && pack.revision !== revisions.get(pack.slug)),
+  }))
+}
+
+export async function offlinePackNeedsUpdate(pack: OfflineRegionPack): Promise<boolean> {
+  if (pack.packVersion !== CURRENT_PACK_VERSION) return true
+  if (!supabase || !navigator.onLine) return false
+  const { data, error } = await supabase
+    .from('regions')
+    .select('offline_revision')
+    .eq('slug', pack.slug)
+    .maybeSingle()
+  if (error || !data) return false
+  return pack.revision !== Number(data.offline_revision)
 }
 
 async function saveOfflinePack(pack: OfflineRegionPack): Promise<void> {
@@ -91,6 +154,15 @@ export async function downloadOfflinePack(slug: OfflineRegionSlug, onProgress: (
   if (regionError) throw regionError
   const region = regionData as Region
 
+  onProgress(`Gathering ${config.name}'s villages…`)
+  const { data: villageData, error: villageError } = await supabase
+    .from('villages')
+    .select('*')
+    .eq('region_id', region.id)
+    .order('name')
+  if (villageError) throw villageError
+  const villages = (villageData ?? []) as Village[]
+
   onProgress(`Gathering the latest places in ${config.name}…`)
   const { data: placeData, error: placeError } = await supabase
     .from('places')
@@ -113,26 +185,97 @@ export async function downloadOfflinePack(slug: OfflineRegionSlug, onProgress: (
     notes = (noteData ?? []) as CommunityNote[]
   }
 
+  onProgress(`Bringing the ${config.name} road map…`)
+  const mapBlob = await downloadBlobWithProgress(config.mapUrl, config.mapBytes, (received, total) => {
+    onProgress(`Bringing the ${config.name} road map · ${formatMegabytes(received)} of ${formatMegabytes(total)}`)
+  })
+  const mapFile = new File([mapBlob], `${slug}.pmtiles`, { type: 'application/octet-stream' })
+
   const photos: OfflinePhoto[] = []
+  let missingPhotoCount = 0
   for (const [index, photo] of photoRows.entries()) {
     onProgress(`Packing photo ${index + 1} of ${photoRows.length}…`)
     const url = supabase.storage.from('place-photos').getPublicUrl(photo.storage_path).data.publicUrl
-    const response = await fetch(url)
-    if (!response.ok) throw new Error(`A place photo could not be downloaded (${response.status}).`)
-    photos.push({ ...photo, blob: await response.blob() })
+    const blob = await downloadOptionalPhoto(url)
+    if (blob) photos.push({ ...photo, blob })
+    else missingPhotoCount += 1
   }
 
-  onProgress(`Bringing the ${config.name} road map (${Math.ceil(config.mapBytes / 1_000_000)} MB)…`)
-  const mapResponse = await fetch(config.mapUrl)
-  if (!mapResponse.ok) throw new Error(`The ${config.name} map could not be downloaded (${mapResponse.status}).`)
-  const mapFile = new File([await mapResponse.blob()], `${slug}.pmtiles`, { type: 'application/octet-stream' })
+  const exactPackBytes = mapFile.size + photos.reduce((total, photo) => total + photo.blob.size, 0)
+  const finalEstimate = await navigator.storage?.estimate()
+  const finalAvailable = finalEstimate?.quota != null && finalEstimate?.usage != null
+    ? finalEstimate.quota - finalEstimate.usage
+    : null
+  if (finalAvailable != null && finalAvailable < exactPackBytes) {
+    throw new Error(`There is not enough room to save ${config.name}. Free some device storage and try again.`)
+  }
 
   onProgress(`Saving ${config.name} for the road…`)
-  const pack: OfflineRegionPack = { slug, downloadedAt: new Date().toISOString(), region, mapFile, places, photos, notes }
+  const pack: OfflineRegionPack = {
+    slug,
+    packVersion: CURRENT_PACK_VERSION,
+    revision: Number(region.offline_revision ?? 0),
+    missingPhotoCount,
+    downloadedAt: new Date().toISOString(),
+    region,
+    mapFile,
+    villages,
+    places,
+    photos,
+    notes,
+  }
   await saveOfflinePack(pack)
   await navigator.storage?.persist?.()
   window.dispatchEvent(new CustomEvent('lamyig:offline-pack-updated'))
   return pack
+}
+
+async function downloadOptionalPhoto(url: string): Promise<Blob | null> {
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      const response = await fetch(url)
+      if (response.ok) return await response.blob()
+    } catch {
+      // A second attempt handles brief signal drops without blocking the
+      // essential map and place guide if the photo remains unavailable.
+    }
+  }
+  return null
+}
+
+async function downloadBlobWithProgress(
+  url: string,
+  expectedBytes: number,
+  onBytes: (received: number, total: number) => void,
+): Promise<Blob> {
+  let lastError: unknown
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      const response = await fetch(url)
+      if (!response.ok) throw new Error(`The map server returned ${response.status}.`)
+      const total = Number(response.headers.get('content-length')) || expectedBytes
+      if (!response.body) return await response.blob()
+
+      const reader = response.body.getReader()
+      const chunks: BlobPart[] = []
+      let received = 0
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        chunks.push(value.slice().buffer as ArrayBuffer)
+        received += value.byteLength
+        onBytes(received, total)
+      }
+      return new Blob(chunks, { type: 'application/octet-stream' })
+    } catch (error) {
+      lastError = error
+    }
+  }
+  throw new Error(`The road map could not be downloaded. Check your connection and try again.${lastError instanceof Error ? ` ${lastError.message}` : ''}`)
+}
+
+function formatMegabytes(bytes: number): string {
+  return `${(bytes / 1_000_000).toFixed(1)} MB`
 }
 
 export function formatPackDate(iso: string): string {

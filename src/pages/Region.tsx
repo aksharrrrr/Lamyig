@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import {
-  downloadOfflinePack, formatPackDate, getOfflinePack, isOfflineRegionSlug,
-  OFFLINE_REGION_CONFIG, removeOfflinePack, type OfflineRegionPack,
+  downloadOfflinePack, forgetOfflineRegion, formatPackDate, getOfflinePack, isOfflineRegionSlug,
+  OFFLINE_REGION_CONFIG, offlinePackNeedsUpdate, rememberOfflineRegion, removeOfflinePack, type OfflineRegionPack,
 } from '../lib/offlinePack'
 
 export default function Region() {
@@ -12,8 +12,17 @@ export default function Region() {
   const [pack, setPack] = useState<OfflineRegionPack | null>(null)
   const [progress, setProgress] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [updateAvailable, setUpdateAvailable] = useState(false)
+  const [confirmingRemove, setConfirmingRemove] = useState(false)
 
-  useEffect(() => { getOfflinePack(regionSlug).then(setPack).catch(() => setPack(null)) }, [regionSlug])
+  useEffect(() => {
+    getOfflinePack(regionSlug)
+      .then(async (savedPack) => {
+        setPack(savedPack)
+        setUpdateAvailable(savedPack ? await offlinePackNeedsUpdate(savedPack) : false)
+      })
+      .catch(() => { setPack(null); setUpdateAvailable(false) })
+  }, [regionSlug])
 
   if (!config || !isOfflineRegionSlug(regionSlug)) {
     return <p className="text-sm leading-relaxed text-muted">Offline access is not available for this region yet.</p>
@@ -39,6 +48,16 @@ export default function Region() {
           Ready for the road · updated {formatPackDate(pack.downloadedAt)}
         </div>
       )}
+      {pack && updateAvailable && (
+        <p className="mt-3 rounded-xl bg-accent-light px-3 py-2 text-sm font-medium text-accent-text">
+          New community knowledge is ready. Update before your next stretch without signal.
+        </p>
+      )}
+      {pack && Boolean(pack.missingPhotoCount) && (
+        <p className="mt-3 rounded-xl bg-bg px-3 py-2 text-sm text-muted">
+          {pack.missingPhotoCount} {pack.missingPhotoCount === 1 ? 'photo was' : 'photos were'} unavailable. Your map and place guide are ready; update later to try again.
+        </p>
+      )}
       {progress && <p className="mt-4 text-sm font-medium text-accent-text">{progress}</p>}
       {error && <p className="mt-4 text-sm text-danger">{error}</p>}
 
@@ -50,8 +69,10 @@ export default function Region() {
             setError(null)
             try {
               setPack(await downloadOfflinePack(regionSlug, setProgress))
+              setUpdateAvailable(false)
             } catch (downloadError) {
-              setError(downloadError instanceof Error ? downloadError.message : `Could not download ${config.name}.`)
+              const message = downloadError instanceof Error ? downloadError.message : `Could not download ${config.name}.`
+              setError(pack ? `${message} Your saved copy is still ready.` : message)
             } finally {
               setProgress(null)
             }
@@ -63,19 +84,52 @@ export default function Region() {
         {pack && (
           <button
             type="button"
-            onClick={() => navigate(`/?region=${regionSlug}&offline=${regionSlug}`)}
+            onClick={() => {
+              rememberOfflineRegion(regionSlug)
+              navigate(`/?region=${regionSlug}&offline=${regionSlug}`)
+            }}
             className="rounded-[11px] border border-ink/10 bg-surface px-4 py-2.5 text-sm font-semibold text-ink hover:bg-ink/5"
           >Open map</button>
         )}
-        {pack && (
+        {pack && !confirmingRemove && (
           <button
             type="button"
             disabled={Boolean(progress)}
-            onClick={async () => { await removeOfflinePack(regionSlug); setPack(null); window.dispatchEvent(new CustomEvent('lamyig:offline-pack-updated')) }}
+            onClick={() => setConfirmingRemove(true)}
             className="ml-auto px-2 py-2.5 text-sm font-semibold text-danger hover:underline"
           >Remove</button>
         )}
       </div>
+      {pack && confirmingRemove && (
+        <div className="mt-3 rounded-xl border border-danger/15 bg-bg px-3 py-3">
+          <p className="text-sm font-medium text-ink">Leave {config.name} on this device?</p>
+          <p className="mt-1 text-xs leading-relaxed text-muted">Its road map and saved guide will go. You can always bring it back before another trip.</p>
+          <div className="mt-3 flex gap-2">
+            <button
+              type="button"
+              onClick={() => setConfirmingRemove(false)}
+              className="rounded-[10px] border border-ink/10 bg-surface px-3 py-2 text-xs font-semibold text-ink"
+            >Keep it</button>
+            <button
+              type="button"
+              onClick={async () => {
+                setError(null)
+                try {
+                  await removeOfflinePack(regionSlug)
+                  forgetOfflineRegion(regionSlug)
+                  setPack(null)
+                  setUpdateAvailable(false)
+                  setConfirmingRemove(false)
+                  window.dispatchEvent(new CustomEvent('lamyig:offline-pack-updated'))
+                } catch {
+                  setError(`Could not remove ${config.name}. Your saved copy is still here.`)
+                }
+              }}
+              className="rounded-[10px] bg-danger px-3 py-2 text-xs font-semibold text-white"
+            >Remove download</button>
+          </div>
+        </div>
+      )}
       <p className="mt-4 text-xs leading-relaxed text-muted-light">This copy stays on this device. Refresh it before your next trip to pick up newer community knowledge.</p>
     </div>
   )

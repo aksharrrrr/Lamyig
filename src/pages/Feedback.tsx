@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router'
 import { supabase, BACKEND_NOT_CONFIGURED_MESSAGE } from '../lib/supabase'
 import { useAuth } from '../lib/useAuth'
 import { useToast } from '../lib/useToast'
+import { connectionAwareError, OFFLINE_CONTRIBUTION_MESSAGE } from '../lib/connectivity'
 
 const inputClass = 'rounded-[10px] border border-ink/[0.14] bg-surface px-3.5 py-2.5 text-sm outline-none focus:border-accent focus:ring-3 focus:ring-accent-light'
 
@@ -22,6 +23,10 @@ export default function Feedback() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
+    if (!navigator.onLine) {
+      setError(OFFLINE_CONTRIBUTION_MESSAGE)
+      return
+    }
     setSubmitting(true)
     const { error } = await supabase!.from('feedback').insert({
       message,
@@ -30,7 +35,7 @@ export default function Feedback() {
     })
     setSubmitting(false)
     if (error) {
-      setError(error.message)
+      setError(connectionAwareError(error, "Couldn't send that. Try again."))
       return
     }
     showToast('Thanks for the feedback.')

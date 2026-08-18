@@ -1,19 +1,20 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router'
-import { getOfflinePacks, OFFLINE_REGION_CONFIG, type OfflineRegionPack } from '../lib/offlinePack'
+import { getOfflinePackStatuses, OFFLINE_REGION_CONFIG, type OfflinePackStatus } from '../lib/offlinePack'
 
 export default function OfflineMaps() {
   const navigate = useNavigate()
   const location = useLocation()
-  const [packs, setPacks] = useState<OfflineRegionPack[]>([])
+  const [statuses, setStatuses] = useState<OfflinePackStatus[]>([])
 
-  useEffect(() => { getOfflinePacks().then(setPacks).catch(() => setPacks([])) }, [])
+  useEffect(() => { getOfflinePackStatuses().then(setStatuses).catch(() => setStatuses([])) }, [])
 
   return (
     <div className="space-y-2">
       <p className="pb-2 text-sm leading-relaxed text-muted">Pick a region to carry with you when the road runs out of signal.</p>
       {Object.entries(OFFLINE_REGION_CONFIG).map(([slug, config]) => {
-        const saved = packs.some((pack) => pack.slug === slug)
+        const status = statuses.find(({ pack }) => pack.slug === slug)
+        const saved = Boolean(status)
         return (
           <button
             key={slug}
@@ -32,7 +33,9 @@ export default function OfflineMaps() {
                 <span className="mt-0.5 block text-xs text-muted-light">{(config.mapBytes / 1_000_000).toFixed(1)} MB</span>
               </span>
             </span>
-            <span className={`text-xs font-semibold ${saved ? 'text-accent-text' : 'text-muted-light'}`}>{saved ? 'On this device' : 'Download'} →</span>
+            <span className={`text-xs font-semibold ${status?.updateAvailable || status?.pack.missingPhotoCount ? 'text-danger' : saved ? 'text-accent-text' : 'text-muted-light'}`}>
+              {status?.updateAvailable ? 'Update available' : status?.pack.missingPhotoCount ? 'Photos incomplete' : saved ? 'On this device' : 'Download'} →
+            </span>
           </button>
         )
       })}

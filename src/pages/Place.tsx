@@ -6,6 +6,9 @@ import { categoryDef } from '../lib/categories'
 import type { CommunityNote, Place as PlaceT, PlacePhoto } from '../lib/types'
 import { REPORT_REASONS } from '../lib/constants'
 import { getOfflinePacks } from '../lib/offlinePack'
+import { mergeOfflinePackContent } from '../lib/offlineMerge'
+import { connectionAwareError, OFFLINE_CONTRIBUTION_MESSAGE } from '../lib/connectivity'
+import { useToast } from '../lib/useToast'
 
 const pillButtonClass = 'rounded-full border border-ink/10 bg-surface px-3.5 py-1.5 text-[13px] font-medium text-ink disabled:opacity-50'
 const noteIconButtonClass = 'flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-muted-light hover:bg-ink/5'
@@ -28,6 +31,7 @@ export default function Place() {
   const { session, configured } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
+  const { showToast } = useToast()
   // If we're already rendered as an overlay (opened from Home), our own
   // background is Home's location - reuse that for Edit instead of nesting
   // an overlay on top of this one, which would unmount Home underneath it.
@@ -45,13 +49,13 @@ export default function Place() {
   const load = useCallback(async () => {
     if (!supabase || !placeId) return
     if (!navigator.onLine) {
-      const pack = (await getOfflinePacks()).find((candidate) => candidate.places.some((place) => place.id === placeId))
-      const offlinePlace = pack?.places.find((candidate) => candidate.id === placeId)
+      const content = mergeOfflinePackContent(await getOfflinePacks())
+      const offlinePlace = content.places.find((candidate) => candidate.id === placeId)
       if (offlinePlace) {
         setPlace(offlinePlace)
-        const offlinePhotos = pack!.photos.filter((photo) => photo.place_id === placeId)
+        const offlinePhotos = content.photos.filter((photo) => photo.place_id === placeId)
         setPhotos(offlinePhotos)
-        setNotes(pack!.notes.filter((note) => note.place_id === placeId).sort((a, b) => b.created_at.localeCompare(a.created_at)))
+        setNotes(content.notes.filter((note) => note.place_id === placeId).sort((a, b) => b.created_at.localeCompare(a.created_at)))
         setOfflinePhotoUrls(Object.fromEntries(offlinePhotos.map((photo) => [photo.storage_path, URL.createObjectURL(photo.blob)])))
       }
       return
@@ -63,8 +67,8 @@ export default function Place() {
     ])
     if (placeData) setPlace(placeData as PlaceT)
     else {
-      const pack = (await getOfflinePacks()).find((candidate) => candidate.places.some((place) => place.id === placeId))
-      const offlinePlace = pack?.places.find((candidate) => candidate.id === placeId)
+      const content = mergeOfflinePackContent(await getOfflinePacks())
+      const offlinePlace = content.places.find((candidate) => candidate.id === placeId)
       if (offlinePlace) setPlace(offlinePlace)
     }
     if (photoData) setPhotos(photoData as PlacePhoto[])
@@ -75,29 +79,33 @@ export default function Place() {
 
   async function report() {
     if (!supabase || !session || !placeId) return
+    if (!navigator.onLine) return setStatus(OFFLINE_CONTRIBUTION_MESSAGE)
     const { error } = await supabase.from('place_reports').insert({ place_id: placeId, reporter_id: session.user.id, reason: reportReason })
-    setStatus(error ? error.message : "Thanks for the heads up - we'll take a look.")
+    setStatus(error ? connectionAwareError(error, "Couldn't send that report. Try again.") : "Thanks for the heads up - we'll take a look.")
   }
 
   async function reportNote(noteId: string) {
     if (!supabase || !session || !placeId) return
+    if (!navigator.onLine) return setNoteStatus(OFFLINE_CONTRIBUTION_MESSAGE)
     const { error } = await supabase.from('place_reports').insert({ place_id: placeId, reporter_id: session.user.id, reason: 'spam', note_id: noteId })
-    setNoteStatus(error ? error.message : "Thanks for the heads up - we'll take a look.")
+    setNoteStatus(error ? connectionAwareError(error, "Couldn't send that report. Try again.") : "Thanks for the heads up - we'll take a look.")
   }
 
   async function deleteNote(noteId: string) {
     if (!supabase || !session) return
+    if (!navigator.onLine) return setNoteStatus(OFFLINE_CONTRIBUTION_MESSAGE)
     const { error } = await supabase.from('community_notes').delete().eq('id', noteId)
-    setNoteStatus(error ? error.message : 'Note removed.')
+    setNoteStatus(error ? connectionAwareError(error, "Couldn't remove that note. Try again.") : 'Note removed.')
     load()
   }
 
   async function submitNote() {
     if (!supabase || !session || !placeId || !newNote.trim()) return
     setNoteStatus(null)
+    if (!navigator.onLine) return setNoteStatus(OFFLINE_CONTRIBUTION_MESSAGE)
     const { error } = await supabase.from('community_notes').insert({ place_id: placeId, author_id: session.user.id, body: newNote.trim() })
     if (error) {
-      setNoteStatus(error.message)
+      setNoteStatus(connectionAwareError(error, "Couldn't post that note. Try again."))
       return
     }
     setNoteStatus('Your note is up - future travellers will see it.')
@@ -122,7 +130,10 @@ export default function Place() {
           <p className="text-sm text-muted">{def?.label ?? place.category}</p>
         </div>
         <button
-          onClick={() => navigate(`/place/${place.id}/edit`, { state: { background } })}
+          onClick={() => {
+            if (!navigator.onLine) return showToast(OFFLINE_CONTRIBUTION_MESSAGE)
+            navigate(`/place/${place.id}/edit`, { state: { background } })
+          }}
           className="text-sm font-medium text-accent underline"
         >
           Edit

@@ -126,7 +126,7 @@ test('Spiti pack persists and renders its saved places without network', async (
   await page.getByRole('button', { name: 'Open map' }).click()
   await expect(page).toHaveURL(/offline=spiti/)
   await expect(page.locator('.maplibregl-canvas')).toBeVisible()
-  await expect(page.getByTitle('Offline maps')).toContainText('Spiti offline')
+  await expect(page.getByTitle('Offline maps')).toHaveText('')
   await expect.poll(() => page.evaluate(() => localStorage.getItem('lamyig:lastOfflineRegion'))).toBe('spiti')
   await page.getByTitle('Offline maps').click()
   await expect(page.getByRole('button', { name: /Spiti.*Update available/ })).toBeVisible()

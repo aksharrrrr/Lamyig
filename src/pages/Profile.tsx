@@ -63,7 +63,7 @@ export default function Profile() {
                   setError(null)
                   const { error: deleteError } = await supabase!.rpc('delete_own_account')
                   if (deleteError) {
-                    setError(deleteError.message)
+                    setError("Couldn't delete your account. Nothing was removed. Try again, or send feedback if this keeps happening.")
                     setDeleting(false)
                     return
                   }

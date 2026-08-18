@@ -7,12 +7,18 @@ async function blockExternalMapTraffic(page: Page) {
 test('privacy and contribution terms are directly reachable', async ({ page }) => {
   await blockExternalMapTraffic(page)
   await page.goto('/privacy')
+  await expect(page.locator('.maplibregl-canvas')).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Privacy notice' })).toBeVisible()
   await expect(page.getByText('You can permanently delete your account from Profile')).toBeVisible()
+  await page.getByTitle('Close').click()
+  await expect(page).toHaveURL('/')
 
   await page.goto('/terms')
+  await expect(page.locator('.maplibregl-canvas')).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Contribution terms' })).toBeVisible()
   await expect(page.getByText('Open Database License 1.0')).toBeVisible()
+  await page.getByTitle('Close').click()
+  await expect(page).toHaveURL('/')
 })
 
 test('sign-up requires age, terms, and privacy consent', async ({ page }) => {

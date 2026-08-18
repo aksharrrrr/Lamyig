@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 import type { OfflineRegionPack } from '../src/lib/offlinePack'
 import { mergeOfflinePackContent } from '../src/lib/offlineMerge'
+import { matchesJourneySearch } from '../src/lib/search'
 import type { Place } from '../src/lib/types'
 
 const basePlace: Place = {
@@ -47,4 +48,11 @@ test('overlapping packs show one newest place without losing independent notes o
   const afterZanskarRemoval = mergeOfflinePackContent([ladakh])
   expect(afterZanskarRemoval.places).toHaveLength(1)
   expect(afterZanskarRemoval.places[0].name).toBe('Old name')
+})
+
+test('offline journey search matches downloaded context and plural village queries', () => {
+  expect(matchesJourneySearch('Padum Zanskar village', 'Zanskar villages')).toBe(true)
+  expect(matchesJourneySearch('Karsha Zanskar village', 'karsha')).toBe(true)
+  expect(matchesJourneySearch('Mountain View Homestay Padum Zanskar place', 'zanskar homestays')).toBe(true)
+  expect(matchesJourneySearch('Padum Zanskar village', 'Rajkot')).toBe(false)
 })

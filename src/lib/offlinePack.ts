@@ -109,8 +109,8 @@ export async function getOfflinePackStatuses(): Promise<OfflinePackStatus[]> {
 }
 
 export async function offlinePackNeedsUpdate(pack: OfflineRegionPack): Promise<boolean> {
-  if (pack.packVersion !== CURRENT_PACK_VERSION) return true
   if (!supabase || !navigator.onLine) return false
+  if (pack.packVersion !== CURRENT_PACK_VERSION) return true
   const { data, error } = await supabase
     .from('regions')
     .select('offline_revision')

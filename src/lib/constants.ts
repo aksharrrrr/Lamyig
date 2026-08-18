@@ -26,7 +26,10 @@ export const PHONE_PATTERN = '^[0-9+][0-9+\\-\\s\\(\\)]{6,19}$'
 // coordinate used to be independently hardcoded in both Map.tsx and
 // LocationPicker.tsx - same value, two copies.
 export const INDIA_CENTER = { lat: 22.9734, lng: 78.6569 }
-export const ZOOM_INDIA = 4.2
+// OpenFreeMap's national road network begins at zoom 5. Starting below it
+// produced a clean India silhouette but no roads, which made the product's
+// main map look empty or broken before location/region navigation kicked in.
+export const ZOOM_INDIA = 5
 export const ZOOM_REGION = 13
 export const ZOOM_VILLAGE = 12
 // "Zoomed in on one exact point" - used for a picked/located/searched

@@ -24,6 +24,9 @@ begin
 end;
 $$;
 
+-- Safe when the SQL editor retries or the migration is run manually twice.
+drop trigger if exists villages_bump_offline_revision on villages;
+
 create trigger villages_bump_offline_revision
   after insert or update or delete on villages
   for each row execute function bump_offline_revision_from_village();

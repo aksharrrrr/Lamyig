@@ -56,6 +56,12 @@ test('Spiti pack persists and renders its saved places without network', async (
     attributes: { host_name: 'Tashi' }, added_by: null, last_edited_by: null,
     last_verified_at: null, verified_count: 0, created_at: '2026-08-17T00:00:00Z', updated_at: '2026-08-17T00:00:00Z',
   }
+  const campsite = {
+    ...place,
+    id: '66666666-6666-4666-8666-666666666666', name: 'Test Spiti Campsite', category: 'camping',
+    description: 'A second category for filter testing', attributes: { tent_allowed: true },
+    updated_at: '2026-08-17T00:00:01Z',
+  }
   const village = {
     id: '55555555-5555-4555-8555-555555555555', slug: 'test-kaza', name: 'Test Kaza', region_id: region.id,
     center_lat: 32.2265, center_lng: 78.0569, created_at: '2026-08-17T00:00:00Z',
@@ -76,7 +82,9 @@ test('Spiti pack persists and renders its saved places without network', async (
     const isSingle = route.request().url().includes('slug=eq.spiti')
     await route.fulfill({ json: isSingle ? currentRegion : [currentRegion] })
   })
-  await page.route('**/rest/v1/places**', (route) => route.fulfill({ json: [{ ...place, place_photos: photos }] }))
+  await page.route('**/rest/v1/places**', (route) => route.fulfill({
+    json: [{ ...place, place_photos: photos }, { ...campsite, place_photos: [] }],
+  }))
   await page.route('**/rest/v1/place_photos**', (route) => route.fulfill({ json: photos }))
   await page.route('**/storage/v1/object/public/place-photos/**', (route) => {
     if (route.request().url().endsWith('/second.png')) return route.fulfill({ status: 503 })
@@ -101,7 +109,7 @@ test('Spiti pack persists and renders its saved places without network', async (
   await expect(page.locator('.maplibregl-canvas')).toBeVisible()
   await page.getByRole('button', { name: 'Download Spiti' }).click()
   await expect(page.getByText('Ready for the road', { exact: false })).toBeVisible({ timeout: 60_000 })
-  await expect(page.getByText('Place guide', { exact: true }).locator('..')).toContainText('1')
+  await expect(page.getByText('Place guide', { exact: true }).locator('..')).toContainText('2')
   await expect(page.getByText('1 photo was unavailable', { exact: false })).toBeVisible()
 
   serverRevision = 2
@@ -114,6 +122,11 @@ test('Spiti pack persists and renders its saved places without network', async (
   await expect(page.getByRole('button', { name: /Spiti.*Update available/ })).toBeVisible()
   await page.getByTitle('Close').click()
   await context.setOffline(true)
+  await expect(page.getByText('Showing 1 of 2 places')).toBeVisible()
+  await page.getByRole('button', { name: 'Show all' }).click()
+  await expect(page.locator('.maplibregl-marker')).toHaveCount(2)
+  await page.getByRole('button', { name: /Camping site 1/ }).click()
+  await expect(page.locator('.maplibregl-marker')).toHaveCount(1)
   const search = page.getByRole('searchbox')
   await search.fill('Test Kaza')
   await expect(page.getByRole('button', { name: /Test Kaza.*Village/ })).toBeVisible()

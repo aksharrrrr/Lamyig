@@ -133,6 +133,13 @@ export default function Home() {
 
   // No categories selected = no pins - selection is opt-in, not opt-out.
   const visiblePlaces = places.filter((p) => selectedCategories.has(p.category))
+  const filtersHidePlaces = visiblePlaces.length < places.length
+
+  function showAllPlaces() {
+    const next = new Set(places.map((place) => place.category))
+    setSelectedCategories(next)
+    localStorage.setItem(CATEGORY_FILTER_KEY, JSON.stringify([...next]))
+  }
 
   // The quick-nav chip row is for D-009's headline destinations only
   // (Spiti/Ladakh/Zanskar/Sikkim/Treks) - `regions` itself stays unfiltered
@@ -406,6 +413,17 @@ export default function Home() {
               )
             })}
           </div>
+          {filtersHidePlaces && (
+            <div className="mt-1 flex justify-center">
+              <div className="flex items-center gap-1.5 rounded-full border border-ink/[0.06] bg-surface/95 px-3 py-1.5 text-[12px] text-muted shadow-md backdrop-blur-sm">
+                <span>Showing {visiblePlaces.length} of {places.length} places</span>
+                <span aria-hidden="true">·</span>
+                <button type="button" onClick={showAllPlaces} className="font-semibold text-accent underline underline-offset-2">
+                  Show all
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

@@ -45,6 +45,10 @@ html, body, #root {
   padding: 12px 16px !important;
   font-family: var(--font-sans) !important;
 }
+.maplibregl-popup {
+  /* Hover previews must remain interactive above the category/filter chrome. */
+  z-index: 20;
+}
 .maplibregl-popup-close-button {
   color: var(--color-muted) !important;
   font-size: 16px !important;

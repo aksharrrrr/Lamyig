@@ -15,7 +15,7 @@ export default defineConfig({
       // installability, not the offline-map effort, which is a separate,
       // much larger, still-unbuilt feature.
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,ico,pbf}'],
       },
       manifest: {
         name: 'Lamyig: the open road-book for remote India',
@@ -26,8 +26,11 @@ export default defineConfig({
         background_color: '#e9e7e2',
         theme_color: '#B39F85',
         icons: [
-          { src: '/pwa-192x192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
-          { src: '/pwa-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          // Use the same warm, opaque canvas as the manifest background for
+          // launch surfaces. Some Android versions render transparent icon
+          // pixels as black on the generated PWA splash screen.
+          { src: '/pwa-192x192-maskable.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: '/pwa-512x512-maskable.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
           { src: '/pwa-192x192-maskable.png', sizes: '192x192', type: 'image/png', purpose: 'maskable' },
           { src: '/pwa-512x512-maskable.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],

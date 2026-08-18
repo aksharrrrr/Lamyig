@@ -1,6 +1,6 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
 import maplibregl from 'maplibre-gl'
-import { layers, namedFlavor } from '@protomaps/basemaps'
+import { layers, namedFlavor, type Flavor } from '@protomaps/basemaps'
 import { FileSource, PMTiles, Protocol } from 'pmtiles'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { categoryDef } from '../lib/categories'
@@ -42,6 +42,8 @@ export interface PlaceMarker {
   category: string
   lat: number
   lng: number
+  region_id?: string | null
+  village_id?: string | null
   photoUrl?: string
 }
 
@@ -65,6 +67,37 @@ maplibregl.addProtocol('pmtiles', pmtilesProtocol.tile)
 function offlineStyle(file: File): maplibregl.StyleSpecification {
   const archive = new PMTiles(new FileSource(file))
   pmtilesProtocol.add(archive)
+  const flavor: Flavor = {
+    ...namedFlavor('light'),
+    // The stock light flavor deliberately makes roads very quiet. Lamyig is
+    // a road-book, so give the hierarchy enough contrast to remain legible
+    // against Himalayan terrain without competing with community pins.
+    other: '#ded8cf',
+    minor_service: '#e7e1d8',
+    minor_a: '#ded7cc',
+    minor_b: '#f8f5ef',
+    link: '#f2eadf',
+    major: '#ead6bd',
+    highway: '#d8b48b',
+    minor_casing: '#cfc7bc',
+    major_casing_early: '#c8b49e',
+    major_casing_late: '#c8b49e',
+    highway_casing_early: '#b99b7d',
+    highway_casing_late: '#b99b7d',
+    roads_label_minor: '#6f6965',
+    roads_label_major: '#554d47',
+  }
+  const baseLayers = layers('protomaps', flavor, { lang: 'en' })
+    // These layers require sprite icons. Road names, settlements, rivers,
+    // and our restrained POI treatment below remain fully local without a
+    // second binary sprite dependency.
+    .filter((layer) => !['roads_oneway', 'roads_shields', 'pois'].includes(layer.id))
+    .map((layer) => {
+      if (layer.type !== 'symbol' || !layer.layout || !('icon-image' in layer.layout)) return layer
+      const { 'icon-image': _iconImage, ...textOnlyLayout } = layer.layout
+      return { ...layer, layout: textOnlyLayout }
+    })
+  const usefulPoiKinds = ['aerodrome', 'station', 'bus_stop', 'ferry_terminal', 'toilets', 'drinking_water', 'restaurant', 'fast_food', 'cafe', 'supermarket', 'convenience', 'hospital', 'clinic', 'pharmacy', 'fuel']
   return {
     version: 8,
     sources: {
@@ -74,10 +107,46 @@ function offlineStyle(file: File): maplibregl.StyleSpecification {
         attribution: 'Protomaps © OpenStreetMap contributors',
       },
     },
-    // Labels require separate glyph/font downloads. The offline pack keeps
-    // the terrain, roads, water, and Lamyig's own labelled place pins fully
-    // local instead of pretending remote labels are available without signal.
-    layers: layers('protomaps', namedFlavor('light')),
+    glyphs: '/map-fonts/{fontstack}/{range}.pbf',
+    layers: [
+      ...baseLayers,
+      {
+        id: 'osm-useful-pois',
+        type: 'circle',
+        source: 'protomaps',
+        'source-layer': 'pois',
+        minzoom: 13,
+        filter: ['in', ['get', 'kind'], ['literal', usefulPoiKinds]],
+        paint: {
+          'circle-radius': ['interpolate', ['linear'], ['zoom'], 13, 2, 17, 3.5],
+          'circle-color': '#82766c',
+          'circle-stroke-color': '#f8f5ef',
+          'circle-stroke-width': 1,
+          'circle-opacity': 0.72,
+        },
+      },
+      {
+        id: 'osm-useful-poi-labels',
+        type: 'symbol',
+        source: 'protomaps',
+        'source-layer': 'pois',
+        minzoom: 14,
+        filter: ['in', ['get', 'kind'], ['literal', usefulPoiKinds]],
+        layout: {
+          'text-field': ['coalesce', ['get', 'name:en'], ['get', 'name']],
+          'text-font': ['Noto Sans Regular'],
+          'text-size': 10.5,
+          'text-offset': [0, 0.85],
+          'text-anchor': 'top',
+          'text-max-width': 8,
+        },
+        paint: {
+          'text-color': '#706861',
+          'text-halo-color': '#f8f5ef',
+          'text-halo-width': 1.25,
+        },
+      },
+    ],
   }
 }
 

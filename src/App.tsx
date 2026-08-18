@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { Routes, Route, useLocation, useNavigate, useParams, type Location } from 'react-router'
 import Home from './pages/Home'
 import Region from './pages/Region'
@@ -15,6 +16,8 @@ import Overlay from './components/Overlay'
 import { ToastProvider } from './lib/useToast'
 import { PlacesProvider } from './lib/usePlacesStore'
 import { isOfflineRegionSlug, OFFLINE_REGION_CONFIG } from './lib/offlinePack'
+
+const INTRO_SEEN_KEY = 'lamyig:introductionSeen'
 
 // Home (the map) stays mounted underneath at all times. Regions always use
 // the same map-backed overlay, including direct/shared URLs. Add Place, Profile
@@ -47,6 +50,7 @@ export default function App() {
   return (
     <ToastProvider>
       <PlacesProvider>
+        <FirstVisitIntroduction />
         <Routes location={background || location}>
           <Route path="/" element={<Home />} />
           <Route path="/region/:regionSlug" element={<Home />} />
@@ -92,6 +96,30 @@ export default function App() {
       </PlacesProvider>
     </ToastProvider>
   )
+}
+
+function FirstVisitIntroduction() {
+  const location = useLocation()
+  const navigate = useNavigate()
+  const shouldOfferIntroduction = useRef(location.pathname === '/')
+
+  useEffect(() => {
+    // Only a cold launch at the homepage is eligible. Someone who followed a
+    // shared place/region/legal link should not be interrupted later when they
+    // close it and arrive at the map.
+    if (!shouldOfferIntroduction.current || location.pathname !== '/') return
+    shouldOfferIntroduction.current = false
+    try {
+      if (localStorage.getItem(INTRO_SEEN_KEY)) return
+      localStorage.setItem(INTRO_SEEN_KEY, '1')
+    } catch {
+      // Storage can be disabled. In that case, show the introduction for this
+      // page load without preventing the app from starting.
+    }
+    navigate('/vision', { state: { background: location } })
+  }, [location, navigate])
+
+  return null
 }
 
 function RegionOverlay({ onClose }: { onClose?: () => void }) {

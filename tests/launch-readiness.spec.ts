@@ -4,6 +4,25 @@ async function blockExternalMapTraffic(page: Page) {
   await page.route(/tiles\.openfreemap\.org|fonts\.googleapis\.com|fonts\.gstatic\.com/, (route) => route.abort())
 }
 
+async function markIntroductionSeen(page: Page) {
+  await page.addInitScript(() => localStorage.setItem('lamyig:introductionSeen', '1'))
+}
+
+test('new homepage visitors see the introduction once', async ({ page }) => {
+  await page.route('**/rest/v1/regions**', (route) => route.fulfill({ json: [] }))
+  await page.route('**/rest/v1/places**', (route) => route.fulfill({ json: [] }))
+  await page.route('**/rest/v1/villages**', (route) => route.fulfill({ json: [] }))
+  await page.route('**/rest/v1/repo_stats**', (route) => route.fulfill({ json: [] }))
+  await blockExternalMapTraffic(page)
+
+  await page.goto('/')
+  await expect(page.getByRole('heading', { name: 'Welcome to Lamyig' })).toBeVisible()
+  await page.getByRole('button', { name: 'Continue Exploring' }).click()
+  await expect(page).toHaveURL('/')
+  await page.reload()
+  await expect(page.getByRole('heading', { name: 'Welcome to Lamyig' })).not.toBeVisible()
+})
+
 test('privacy and contribution terms are directly reachable', async ({ page }) => {
   await page.route('**/rest/v1/regions**', (route) => route.fulfill({ json: [] }))
   await page.route('**/rest/v1/places**', (route) => route.fulfill({ json: [] }))
@@ -53,6 +72,7 @@ test('direct region links keep the map behind the consistent overlay', async ({ 
 })
 
 test('Spiti pack persists and renders its saved places without network', async ({ page, context }, testInfo) => {
+  await markIntroductionSeen(page)
   let serverRevision = 1
   const region = {
     id: '11111111-1111-4111-8111-111111111111', slug: 'spiti', name: 'Spiti', state: 'Himachal Pradesh',

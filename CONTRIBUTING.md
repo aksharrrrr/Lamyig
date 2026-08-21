@@ -28,16 +28,26 @@ If you get stuck at any step, open an issue describing what you were trying to d
 
 ### Local setup
 
-You'll need your own free Supabase project - Lamyig never shares production credentials with contributors. Your local copy talks to your own test project; production (`www.lamyig.in`) stays on the maintainer's account and only gets updated when a PR is merged to `main`.
+You'll need your own fork and free Supabase project. Lamyig never shares production credentials with contributors. Your local copy talks to your own test project; production (`www.lamyig.in`) stays on the maintainer's account and only gets updated when a PR is merged to `main`.
 
-1. Create a free project at [supabase.com](https://supabase.com).
-2. In the Supabase SQL Editor, run every file in [`supabase/migrations/`](supabase/migrations) **in filename order** (`0001_...` through the latest), then run [`supabase/seed.sql`](supabase/seed.sql). This gives you the same schema, RLS policies, and starter regions as production.
-3. Get a free [LocationIQ](https://locationiq.com) token (used for map search/geocoding).
-4. Clone and configure:
+1. On [Lamyig's GitHub page](https://github.com/aksharrrrr/Lamyig), click **Fork** to create a copy under your own GitHub account.
+2. Clone your fork, then add the official repository as `upstream` (replace `YOUR-USERNAME`):
 
    ```bash
-   git clone https://github.com/aksharrrrr/Lamyig.git
+   git clone https://github.com/YOUR-USERNAME/Lamyig.git
    cd Lamyig
+   git remote add upstream https://github.com/aksharrrrr/Lamyig.git
+   git remote -v
+   ```
+
+   `origin` should point to your fork; `upstream` should point to the official Lamyig repository. You push work to `origin` and open pull requests back to `upstream/main`.
+
+3. Create a free project at [supabase.com](https://supabase.com).
+4. In the Supabase SQL Editor, run every file in [`supabase/migrations/`](supabase/migrations) **in filename order** (`0001_...` through the latest), then run [`supabase/seed.sql`](supabase/seed.sql). This gives you the same schema, RLS policies, and starter regions as production.
+5. Get a free [LocationIQ](https://locationiq.com) token (used for map search/geocoding).
+6. Install and configure:
+
+   ```bash
    npm install
    cp .env.example .env   # fill in your own Supabase project's URL + anon key, and your LocationIQ token
    npm run dev
@@ -65,18 +75,36 @@ Exception: trivial fixes (typos, broken links, obvious docs corrections) can go 
 `main` is protected and auto-deploys straight to production (www.lamyig.in) on every push, so it isn't a free-for-all:
 
 1. Open an issue describing the bug or proposed change, if you haven't already (see above).
-2. Branch off `main`, named `<type>/short-description` (kebab-case description):
+2. Sync your fork's `main` with the official repository before starting:
+
+   ```bash
+   git switch main
+   git fetch upstream
+   git merge --ff-only upstream/main
+   git push origin main
+   ```
+
+3. Create a branch from that updated `main`, named `<type>/short-description` (kebab-case description):
    - `feat/` - new functionality
    - `fix/` - bug fix
    - `docs/` - documentation only
    - `chore/` - tooling, deps, cleanup, no user-facing change
    - `daily/YYYY-MM-DD` - reserved for the maintainer's own end-of-day batches, not for external contributions
 
-   e.g. `git checkout -b fix/geolocate-button-overlap`
-3. Open a pull request against `main` instead of pushing directly, linking the issue from step 1. GitHub branch protection enforces the no-direct-push part for anyone without admin rights on the repo.
-4. Describe what changed and why in the PR body - link the relevant `docs/14-decision-log.md` entry if the change touches something already decided.
-5. Get it reviewed before merging. Right now that's the maintainer signing off; as more regular contributors join, this moves to requiring at least one approval from someone other than the author.
-6. Squash-merge once approved. Delete the branch after.
+   ```bash
+   git switch -c fix/geolocate-button-overlap
+   ```
+
+4. Make and test a focused change, then push the branch to your fork:
+
+   ```bash
+   git push -u origin fix/geolocate-button-overlap
+   ```
+
+5. On GitHub, open a pull request from `YOUR-USERNAME/Lamyig:fix/geolocate-button-overlap` into `aksharrrrr/Lamyig:main`, linking the issue from step 1. Check the displayed base and head repositories before submitting so the PR does not target your fork's own `main` by mistake.
+6. Describe what changed and why in the PR body - link the relevant `docs/14-decision-log.md` entry if the change touches something already decided.
+7. Respond to review on the same branch and push follow-up commits to your fork; the pull request updates automatically.
+8. The maintainer reviews and squash-merges approved work. After merge, you can delete the feature branch from your fork and sync your fork's `main` again before starting something new.
 
 Force-pushes and branch deletion are disabled on `main` at the repo level - that's not a suggestion, GitHub blocks it outright.
 

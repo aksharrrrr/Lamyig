@@ -51,7 +51,7 @@ export default function Home() {
   const [villages, setVillages] = useState<Village[]>([])
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(loadStoredCategories)
   const [searchQuery, setSearchQuery] = useState('')
-  const [mapStyle, setMapStyleState] = useState<MapStyleName>('liberty')
+  const [mapStyle, setMapStyleState] = useState<MapStyleName>('bright')
   const [osmResults, setOsmResults] = useState<GeocodeResult[]>([])
   const [geocoding, setGeocoding] = useState(false)
   const [listening, setListening] = useState(false)

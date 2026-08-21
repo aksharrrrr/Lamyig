@@ -1,24 +1,26 @@
 import { supabase } from './supabase'
 import type { CommunityNote, Place, PlacePhoto, Region, Village } from './types'
+import {
+  CURRENT_OFFLINE_PACK_VERSION,
+  DEFAULT_OFFLINE_REGION,
+  isOfflineRegionSlug,
+  OFFLINE_REGION_CONFIG,
+  offlinePackHasLocalUpdate,
+  type OfflineRegionSlug,
+} from './offlineConfig'
+
+export {
+  DEFAULT_OFFLINE_REGION,
+  isOfflineRegionSlug,
+  OFFLINE_REGION_CONFIG,
+  offlinePackHasLocalUpdate,
+  type OfflineRegionSlug,
+} from './offlineConfig'
 
 const DB_NAME = 'lamyig-offline'
 const DB_VERSION = 1
 const STORE_NAME = 'region-packs'
 const LAST_OFFLINE_REGION_KEY = 'lamyig:lastOfflineRegion'
-const CURRENT_PACK_VERSION = 2
-
-export const OFFLINE_REGION_CONFIG = {
-  spiti: { name: 'Spiti', mapUrl: '/offline/spiti.pmtiles', mapBytes: 15_380_620, bounds: { west: 77.3, south: 31.55, east: 78.75, north: 33.2 } },
-  ladakh: { name: 'Ladakh', mapUrl: '/offline/ladakh.pmtiles', mapBytes: 35_947_110, bounds: { west: 75.6, south: 32.2, east: 80, north: 35.8 } },
-  zanskar: { name: 'Zanskar', mapUrl: '/offline/zanskar.pmtiles', mapBytes: 6_579_260, bounds: { west: 76.2, south: 32.6, east: 77.8, north: 34.2 } },
-} as const
-export type OfflineRegionSlug = keyof typeof OFFLINE_REGION_CONFIG
-export const DEFAULT_OFFLINE_REGION: OfflineRegionSlug = 'spiti'
-
-export function isOfflineRegionSlug(value: string | undefined | null): value is OfflineRegionSlug {
-  return Boolean(value && value in OFFLINE_REGION_CONFIG)
-}
-
 export interface OfflinePhoto extends PlacePhoto {
   blob: Blob
 }
@@ -27,6 +29,7 @@ export interface OfflineRegionPack {
   slug: string
   packVersion?: number
   revision?: number
+  mapVersion?: number
   missingPhotoCount?: number
   downloadedAt: string
   region: Region
@@ -103,14 +106,14 @@ export async function getOfflinePackStatuses(): Promise<OfflinePackStatus[]> {
     pack,
     // Packs downloaded before revision tracking deliberately get one update
     // prompt so their future freshness can be compared authoritatively.
-    updateAvailable: pack.packVersion !== CURRENT_PACK_VERSION
+    updateAvailable: offlinePackHasLocalUpdate(pack)
       || (revisions.has(pack.slug) && pack.revision !== revisions.get(pack.slug)),
   }))
 }
 
 export async function offlinePackNeedsUpdate(pack: OfflineRegionPack): Promise<boolean> {
+  if (offlinePackHasLocalUpdate(pack)) return true
   if (!supabase || !navigator.onLine) return false
-  if (pack.packVersion !== CURRENT_PACK_VERSION) return true
   const { data, error } = await supabase
     .from('regions')
     .select('offline_revision')
@@ -213,8 +216,9 @@ export async function downloadOfflinePack(slug: OfflineRegionSlug, onProgress: (
   onProgress(`Saving ${config.name} for the road…`)
   const pack: OfflineRegionPack = {
     slug,
-    packVersion: CURRENT_PACK_VERSION,
+    packVersion: CURRENT_OFFLINE_PACK_VERSION,
     revision: Number(region.offline_revision ?? 0),
+    mapVersion: config.mapVersion,
     missingPhotoCount,
     downloadedAt: new Date().toISOString(),
     region,
@@ -274,7 +278,7 @@ async function downloadBlobWithProgress(
   throw new Error(`The road map could not be downloaded. Check your connection and try again.${lastError instanceof Error ? ` ${lastError.message}` : ''}`)
 }
 
-function formatMegabytes(bytes: number): string {
+export function formatMegabytes(bytes: number): string {
   return `${(bytes / 1_000_000).toFixed(1)} MB`
 }
 

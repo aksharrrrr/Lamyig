@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router'
-import { getOfflinePackStatuses, OFFLINE_REGION_CONFIG, type OfflinePackStatus } from '../lib/offlinePack'
+import { formatMegabytes, getOfflinePackStatuses, OFFLINE_REGION_CONFIG, type OfflinePackStatus } from '../lib/offlinePack'
 
 export default function OfflineMaps() {
   const navigate = useNavigate()
@@ -30,7 +30,7 @@ export default function OfflineMaps() {
               </span>
               <span>
                 <span className="block text-sm font-semibold text-ink">{config.name}</span>
-                <span className="mt-0.5 block text-xs text-muted-light">{(config.mapBytes / 1_000_000).toFixed(1)} MB</span>
+                <span className="mt-0.5 block text-xs text-muted-light">{formatMegabytes(config.mapBytes)}</span>
               </span>
             </span>
             <span className={`text-xs font-semibold ${status?.updateAvailable || status?.pack.missingPhotoCount ? 'text-danger' : saved ? 'text-accent-text' : 'text-muted-light'}`}>

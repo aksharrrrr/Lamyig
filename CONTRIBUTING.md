@@ -114,6 +114,13 @@ For a maintainer-directed continuous development session, the maintainer may ins
 
 The home map is Lamyig's persistent canvas. Supporting screens and panel-like routes—including authentication, Profile, Feedback, Vision/Info, regions, offline maps, Privacy, and Terms—use the shared desktop-modal/mobile-bottom-sheet overlay with the map behind them, even for direct URLs. Do not add a standalone card over a blank page for this kind of content. Reuse the existing design tokens, typography, spacing, copy voice, and interaction patterns, and verify every new visible state on desktop and mobile.
 
+### Map and offline changes
+
+- Keep shared map style names, labels, URLs, and defaults in `src/lib/constants.ts`; do not repeat them in individual components.
+- A cartography change in `src/components/Map.tsx` must work with both the online style and downloaded PMTiles sources.
+- Keep regional bounds, archive sizes, and artifact versions in `src/lib/offlineConfig.ts`. When replacing a `.pmtiles` archive, increment that region's `mapVersion` and update `mapBytes` so existing downloads are offered the new map.
+- The service worker updates the application shell; IndexedDB stores and versions each regional map pack separately. Test both a fresh download and an older stored pack before merging offline changes.
+
 ## Have a question or an idea that isn't a PR yet?
 
 Open a GitHub issue. Use the `limitation` label for free-tier constraints of a service we depend on, `vision` for long-term direction, or no label if neither fits.

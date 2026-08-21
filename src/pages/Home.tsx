@@ -8,7 +8,7 @@ import { useToast } from '../lib/useToast'
 import { CATEGORIES, categoryDef } from '../lib/categories'
 import { CATEGORY_ICONS } from '../lib/categoryIcons'
 import { geocodeSearch, type GeocodeResult } from '../lib/geocode'
-import { MAP_STYLES, MAP_STYLE_LABELS, ZOOM_VILLAGE } from '../lib/constants'
+import { DEFAULT_MAP_STYLE, MAP_STYLES, MAP_STYLE_LABELS, ZOOM_VILLAGE } from '../lib/constants'
 import type { Region, Village } from '../lib/types'
 import { getLastOfflineRegion, getOfflinePackStatuses, isOfflineRegionSlug, type OfflinePackStatus } from '../lib/offlinePack'
 import { OFFLINE_CONTRIBUTION_MESSAGE } from '../lib/connectivity'
@@ -51,7 +51,7 @@ export default function Home() {
   const [villages, setVillages] = useState<Village[]>([])
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(loadStoredCategories)
   const [searchQuery, setSearchQuery] = useState('')
-  const [mapStyle, setMapStyleState] = useState<MapStyleName>('bright')
+  const [mapStyle, setMapStyleState] = useState<MapStyleName>(DEFAULT_MAP_STYLE)
   const [osmResults, setOsmResults] = useState<GeocodeResult[]>([])
   const [geocoding, setGeocoding] = useState(false)
   const [listening, setListening] = useState(false)
@@ -599,10 +599,9 @@ export default function Home() {
           onClick={() => {
             const next = MAP_STYLES[(MAP_STYLES.indexOf(mapStyle) + 1) % MAP_STYLES.length]
             setMapStyleState(next)
-            mapRef.current?.setMapStyle(next)
             showToast(`Map style: ${MAP_STYLE_LABELS[next]}`)
           }}
-          title="Map style"
+          title={`Map style: ${MAP_STYLE_LABELS[mapStyle]}`}
           className="flex h-11 w-11 items-center justify-center rounded-full border border-ink/[0.08] bg-surface shadow-lg hover:scale-105"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#55525c" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">

@@ -3,7 +3,7 @@ import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { createMarkerElement } from './Map'
 import { geocodeSearch, type GeocodeResult } from '../lib/geocode'
-import { INDIA_CENTER, ZOOM_INDIA, ZOOM_REGION, ZOOM_PRECISE } from '../lib/constants'
+import { INDIA_CENTER, openFreeMapStyleUrl, ZOOM_INDIA, ZOOM_REGION, ZOOM_PRECISE } from '../lib/constants'
 
 const SEARCH_DEBOUNCE_MS = 450
 const MIN_QUERY_LENGTH = 3
@@ -57,7 +57,7 @@ export default function LocationPicker({ lat, lng, category, initialCenter, onCh
 
     const map = new maplibregl.Map({
       container: containerRef.current,
-      style: 'https://tiles.openfreemap.org/styles/liberty',
+      style: openFreeMapStyleUrl(),
       center: [start.lng, start.lat],
       zoom: startZoom,
       attributionControl: false,

@@ -1,5 +1,10 @@
 import { expect, test } from '@playwright/test'
 import type { OfflineRegionPack } from '../src/lib/offlinePack'
+import {
+  OFFLINE_REGION_CONFIG,
+  offlinePackHasLocalUpdate,
+  type OfflineRegionSlug,
+} from '../src/lib/offlineConfig'
 import { mergeOfflinePackContent } from '../src/lib/offlineMerge'
 import { matchesJourneySearch } from '../src/lib/search'
 import type { Place } from '../src/lib/types'
@@ -12,9 +17,11 @@ const basePlace: Place = {
   created_at: '2026-08-01T00:00:00Z', updated_at: '2026-08-10T00:00:00Z',
 }
 
-function pack(slug: string, downloadedAt: string, places: Place[], childSuffix: string): OfflineRegionPack {
+function pack(slug: OfflineRegionSlug, downloadedAt: string, places: Place[], childSuffix: string): OfflineRegionPack {
   return {
-    slug, downloadedAt, places, revision: 1, packVersion: 2, villages: [], mapFile: new File([], `${slug}.pmtiles`),
+    slug, downloadedAt, places, revision: 1, packVersion: 2,
+    mapVersion: OFFLINE_REGION_CONFIG[slug].mapVersion,
+    villages: [], mapFile: new File([], `${slug}.pmtiles`),
     region: {
       id: slug, slug, name: slug, state: 'Ladakh', description: null, featured: true,
       center_lat: 33.4, center_lng: 76.8, default_zoom: 8,
@@ -29,6 +36,15 @@ function pack(slug: string, downloadedAt: string, places: Place[], childSuffix: 
     }],
   }
 }
+
+test('offline packs detect app-schema and map-artifact updates independently', () => {
+  const current = pack('spiti', '2026-08-21T00:00:00Z', [basePlace], 'current')
+
+  expect(offlinePackHasLocalUpdate(current)).toBe(false)
+  expect(offlinePackHasLocalUpdate({ ...current, mapVersion: undefined })).toBe(true)
+  expect(offlinePackHasLocalUpdate({ ...current, mapVersion: current.mapVersion! - 1 })).toBe(true)
+  expect(offlinePackHasLocalUpdate({ ...current, packVersion: current.packVersion - 1 })).toBe(true)
+})
 
 test('overlapping packs show one newest place without losing independent notes or photos', () => {
   const ladakh = pack('ladakh', '2026-08-11T00:00:00Z', [basePlace], 'ladakh')

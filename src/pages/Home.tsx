@@ -8,7 +8,7 @@ import { useToast } from '../lib/useToast'
 import { CATEGORIES, categoryDef } from '../lib/categories'
 import { CATEGORY_ICONS } from '../lib/categoryIcons'
 import { geocodeSearch, type GeocodeResult } from '../lib/geocode'
-import { MAP_STYLES, MAP_STYLE_LABELS, ZOOM_VILLAGE } from '../lib/constants'
+import { DEFAULT_MAP_STYLE, MAP_STYLES, MAP_STYLE_LABELS, ZOOM_VILLAGE } from '../lib/constants'
 import type { Region, Village } from '../lib/types'
 import { getLastOfflineRegion, getOfflinePackStatuses, isOfflineRegionSlug, type OfflinePackStatus } from '../lib/offlinePack'
 import { OFFLINE_CONTRIBUTION_MESSAGE } from '../lib/connectivity'
@@ -51,7 +51,7 @@ export default function Home() {
   const [villages, setVillages] = useState<Village[]>([])
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(loadStoredCategories)
   const [searchQuery, setSearchQuery] = useState('')
-  const [mapStyle, setMapStyleState] = useState<MapStyleName>('bright')
+  const [mapStyle, setMapStyleState] = useState<MapStyleName>(DEFAULT_MAP_STYLE)
   const [osmResults, setOsmResults] = useState<GeocodeResult[]>([])
   const [geocoding, setGeocoding] = useState(false)
   const [listening, setListening] = useState(false)

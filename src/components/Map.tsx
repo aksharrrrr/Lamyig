@@ -4,7 +4,7 @@ import { layers, namedFlavor, type Flavor } from '@protomaps/basemaps'
 import { FileSource, PMTiles, Protocol } from 'pmtiles'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { categoryDef } from '../lib/categories'
-import { INDIA_CENTER, ZOOM_INDIA, ZOOM_PRECISE, type MapStyleName } from '../lib/constants'
+import { DEFAULT_MAP_STYLE, INDIA_CENTER, openFreeMapStyleUrl, ZOOM_INDIA, ZOOM_PRECISE, type MapStyleName } from '../lib/constants'
 
 export type { MapStyleName }
 
@@ -373,7 +373,7 @@ function offlineStyle(file: File): maplibregl.StyleSpecification {
   }
 }
 
-const Map = forwardRef<MapHandle, MapProps>(function Map({ places = [], offlineMapFile, mapStyle = 'bright', onSelectPlace, onLocateError }, ref) {
+const Map = forwardRef<MapHandle, MapProps>(function Map({ places = [], offlineMapFile, mapStyle = DEFAULT_MAP_STYLE, onSelectPlace, onLocateError }, ref) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
   const markersRef = useRef<maplibregl.Marker[]>([])
@@ -399,7 +399,7 @@ const Map = forwardRef<MapHandle, MapProps>(function Map({ places = [], offlineM
     flyTo: (lat, lng, zoom) => mapRef.current?.flyTo({ center: [lng, lat], zoom, duration: 1500 }),
     // Markers/controls aren't part of the style, so they survive a
     // setStyle() call - MapLibre re-attaches them once the new style loads.
-    setMapStyle: (style) => mapRef.current?.setStyle(`https://tiles.openfreemap.org/styles/${style}`),
+    setMapStyle: (style) => mapRef.current?.setStyle(openFreeMapStyleUrl(style)),
   }), [])
 
   useEffect(() => {
@@ -407,7 +407,7 @@ const Map = forwardRef<MapHandle, MapProps>(function Map({ places = [], offlineM
 
     const map = new maplibregl.Map({
       container: containerRef.current,
-      style: initialOfflineFileRef.current ? offlineStyle(initialOfflineFileRef.current) : 'https://tiles.openfreemap.org/styles/bright',
+      style: initialOfflineFileRef.current ? offlineStyle(initialOfflineFileRef.current) : openFreeMapStyleUrl(),
       center: [INDIA_CENTER.lng, INDIA_CENTER.lat],
       zoom: ZOOM_INDIA,
       attributionControl: false,
@@ -439,7 +439,7 @@ const Map = forwardRef<MapHandle, MapProps>(function Map({ places = [], offlineM
   useEffect(() => {
     const map = mapRef.current
     if (!map) return
-    map.setStyle(offlineMapFile ? offlineStyle(offlineMapFile) : `https://tiles.openfreemap.org/styles/${mapStyle}`)
+    map.setStyle(offlineMapFile ? offlineStyle(offlineMapFile) : openFreeMapStyleUrl(mapStyle))
   }, [offlineMapFile, mapStyle])
 
   // Map-pin tap -> essential info popup -> "More Details" (docs/08-mvp.md

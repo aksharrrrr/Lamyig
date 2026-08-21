@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import {
-  downloadOfflinePack, forgetOfflineRegion, formatPackDate, getOfflinePack, isOfflineRegionSlug,
+  downloadOfflinePack, forgetOfflineRegion, formatMegabytes, formatPackDate, getOfflinePack, isOfflineRegionSlug,
   OFFLINE_REGION_CONFIG, offlinePackNeedsUpdate, rememberOfflineRegion, removeOfflinePack, type OfflineRegionPack,
 } from '../lib/offlinePack'
 
@@ -39,7 +39,7 @@ export default function Region() {
     return <p className="text-sm leading-relaxed text-muted">Offline access is not available for this region yet.</p>
   }
 
-  const size = `${(config.mapBytes / 1_000_000).toFixed(1)} MB`
+  const size = formatMegabytes(config.mapBytes)
 
   return (
     <div>
@@ -61,7 +61,7 @@ export default function Region() {
       )}
       {pack && updateAvailable && (
         <p className="mt-3 rounded-xl bg-accent-light px-3 py-2 text-sm font-medium text-accent-text">
-          New community knowledge is ready. Update before your next stretch without signal.
+          A fresher road-book is ready. Update before your next stretch without signal.
         </p>
       )}
       {pack && Boolean(pack.missingPhotoCount) && (

@@ -45,6 +45,13 @@ export const ZOOM_PRECISE = 15
 // roads work against Lamyig's remote-road use case.
 export const MAP_STYLES = ['bright', 'liberty', 'fiord', 'dark'] as const
 export type MapStyleName = (typeof MAP_STYLES)[number]
+export const DEFAULT_MAP_STYLE: MapStyleName = 'bright'
+const OPENFREEMAP_STYLE_BASE_URL = 'https://tiles.openfreemap.org/styles'
+
+export function openFreeMapStyleUrl(style: MapStyleName = DEFAULT_MAP_STYLE): string {
+  return `${OPENFREEMAP_STYLE_BASE_URL}/${style}`
+}
+
 // OpenFreeMap's own style names ("liberty", "positron") mean nothing to a
 // traveller - these are what the map-style toggle actually shows/announces.
 export const MAP_STYLE_LABELS: Record<MapStyleName, string> = {

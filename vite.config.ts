@@ -10,10 +10,9 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      // Map tiles/geocoding/Supabase all need a live network connection
-      // (see D-005/D-014) - this is app-shell caching for fast reloads and
-      // installability, not the offline-map effort, which is a separate,
-      // much larger, still-unbuilt feature.
+      // This service worker updates the app shell. User-selected regional
+      // PMTiles, place snapshots, notes, and photos are versioned separately
+      // in IndexedDB by src/lib/offlinePack.ts (see D-005/D-021).
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico,pbf}'],
       },

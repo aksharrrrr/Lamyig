@@ -50,7 +50,6 @@ export interface PlaceMarker {
 export interface MapHandle {
   locate: () => void
   flyTo: (lat: number, lng: number, zoom: number) => void
-  setMapStyle: (style: MapStyleName) => void
 }
 
 interface MapProps {
@@ -222,14 +221,9 @@ function addOnlineRemoteDetail(map: maplibregl.Map) {
   }
 }
 
-function offlineStyle(file: File): maplibregl.StyleSpecification {
-  const archive = new PMTiles(new FileSource(file))
-  pmtilesProtocol.add(archive)
-  const flavor: Flavor = {
-    ...namedFlavor('light'),
-    // The stock light flavor deliberately makes roads very quiet. Lamyig is
-    // a road-book, so give the hierarchy enough contrast to remain legible
-    // against Himalayan terrain without competing with community pins.
+function offlineFlavor(mapStyle: MapStyleName): Flavor {
+  const base = namedFlavor(mapStyle === 'dark' ? 'dark' : 'light')
+  const roadBookRoads: Partial<Flavor> = {
     other: '#ded8cf',
     minor_service: '#e7e1d8',
     minor_a: '#ded7cc',
@@ -245,6 +239,48 @@ function offlineStyle(file: File): maplibregl.StyleSpecification {
     roads_label_minor: '#6f6965',
     roads_label_major: '#554d47',
   }
+
+  if (mapStyle === 'liberty') return base
+  if (mapStyle === 'fiord') {
+    return {
+      ...base,
+      ...roadBookRoads,
+      earth: '#ddd8c9',
+      park_a: '#c3d3bc',
+      park_b: '#9fbd98',
+      wood_a: '#b9cbb2',
+      wood_b: '#8faf88',
+      scrub_a: '#c9ceb4',
+      scrub_b: '#abb78f',
+      glacier: '#e8eff0',
+      sand: '#ddd0ae',
+      water: '#9bc3ca',
+    }
+  }
+  if (mapStyle === 'dark') {
+    return {
+      ...base,
+      other: '#494743',
+      minor_service: '#514e49',
+      minor_a: '#5c5851',
+      minor_b: '#6a645c',
+      link: '#73695e',
+      major: '#89725e',
+      highway: '#a08062',
+      roads_label_minor: '#d5cec5',
+      roads_label_major: '#f0e5d8',
+    }
+  }
+  return { ...base, ...roadBookRoads }
+}
+
+function offlineStyle(file: File, mapStyle: MapStyleName): maplibregl.StyleSpecification {
+  const archive = new PMTiles(new FileSource(file))
+  pmtilesProtocol.add(archive)
+  // Keep the same four user-facing choices available without a network.
+  // These palettes use only the already-downloaded vector archive.
+  const flavor = offlineFlavor(mapStyle)
+  const dark = mapStyle === 'dark'
   const baseLayers = layers('protomaps', flavor, { lang: 'en' })
     // These layers require sprite icons. Road names, settlements, rivers,
     // and our restrained POI treatment below remain fully local without a
@@ -316,8 +352,8 @@ function offlineStyle(file: File): maplibregl.StyleSpecification {
         filter: ['in', ['get', 'kind'], ['literal', usefulPoiKinds]],
         paint: {
           'circle-radius': ['interpolate', ['linear'], ['zoom'], 13, 2, 17, 3.5],
-          'circle-color': '#82766c',
-          'circle-stroke-color': '#f8f5ef',
+          'circle-color': dark ? '#c9b6a3' : '#82766c',
+          'circle-stroke-color': dark ? '#292827' : '#f8f5ef',
           'circle-stroke-width': 1,
           'circle-opacity': 0.72,
         },
@@ -338,8 +374,8 @@ function offlineStyle(file: File): maplibregl.StyleSpecification {
           'text-max-width': 8,
         },
         paint: {
-          'text-color': '#706861',
-          'text-halo-color': '#f8f5ef',
+          'text-color': dark ? '#ded4ca' : '#706861',
+          'text-halo-color': dark ? '#292827' : '#f8f5ef',
           'text-halo-width': 1.25,
         },
       },
@@ -364,8 +400,8 @@ function offlineStyle(file: File): maplibregl.StyleSpecification {
           'symbol-sort-key': ['coalesce', ['get', 'min_zoom'], 99],
         },
         paint: {
-          'text-color': '#51443d',
-          'text-halo-color': '#f8f5ef',
+          'text-color': dark ? '#eadfd5' : '#51443d',
+          'text-halo-color': dark ? '#292827' : '#f8f5ef',
           'text-halo-width': 1.5,
         },
       },
@@ -397,9 +433,6 @@ const Map = forwardRef<MapHandle, MapProps>(function Map({ places = [], offlineM
       )
     },
     flyTo: (lat, lng, zoom) => mapRef.current?.flyTo({ center: [lng, lat], zoom, duration: 1500 }),
-    // Markers/controls aren't part of the style, so they survive a
-    // setStyle() call - MapLibre re-attaches them once the new style loads.
-    setMapStyle: (style) => mapRef.current?.setStyle(openFreeMapStyleUrl(style)),
   }), [])
 
   useEffect(() => {
@@ -407,7 +440,7 @@ const Map = forwardRef<MapHandle, MapProps>(function Map({ places = [], offlineM
 
     const map = new maplibregl.Map({
       container: containerRef.current,
-      style: initialOfflineFileRef.current ? offlineStyle(initialOfflineFileRef.current) : openFreeMapStyleUrl(),
+      style: initialOfflineFileRef.current ? offlineStyle(initialOfflineFileRef.current, DEFAULT_MAP_STYLE) : openFreeMapStyleUrl(),
       center: [INDIA_CENTER.lng, INDIA_CENTER.lat],
       zoom: ZOOM_INDIA,
       attributionControl: false,
@@ -439,7 +472,7 @@ const Map = forwardRef<MapHandle, MapProps>(function Map({ places = [], offlineM
   useEffect(() => {
     const map = mapRef.current
     if (!map) return
-    map.setStyle(offlineMapFile ? offlineStyle(offlineMapFile) : openFreeMapStyleUrl(mapStyle))
+    map.setStyle(offlineMapFile ? offlineStyle(offlineMapFile, mapStyle) : openFreeMapStyleUrl(mapStyle))
   }, [offlineMapFile, mapStyle])
 
   // Map-pin tap -> essential info popup -> "More Details" (docs/08-mvp.md

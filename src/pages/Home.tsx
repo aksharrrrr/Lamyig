@@ -599,10 +599,9 @@ export default function Home() {
           onClick={() => {
             const next = MAP_STYLES[(MAP_STYLES.indexOf(mapStyle) + 1) % MAP_STYLES.length]
             setMapStyleState(next)
-            mapRef.current?.setMapStyle(next)
             showToast(`Map style: ${MAP_STYLE_LABELS[next]}`)
           }}
-          title="Map style"
+          title={`Map style: ${MAP_STYLE_LABELS[mapStyle]}`}
           className="flex h-11 w-11 items-center justify-center rounded-full border border-ink/[0.08] bg-surface shadow-lg hover:scale-105"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#55525c" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">

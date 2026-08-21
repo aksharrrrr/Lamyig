@@ -64,6 +64,164 @@ interface MapProps {
 const pmtilesProtocol = new Protocol()
 maplibregl.addProtocol('pmtiles', pmtilesProtocol.tile)
 
+const ONLINE_BASEMAP_SOURCE = 'openmaptiles'
+const DETAIL_LAYER_IDS = {
+  remoteRoads: 'lamyig-remote-roads',
+  vehicleTracks: 'lamyig-vehicle-tracks',
+  walkingPaths: 'lamyig-walking-paths',
+  settlements: 'lamyig-remote-settlements',
+  peaks: 'lamyig-mountain-peaks',
+} as const
+
+const onlineName: maplibregl.ExpressionSpecification = [
+  'coalesce',
+  ['get', 'name:en'],
+  ['get', 'name_en'],
+  ['get', 'name:latin'],
+  ['get', 'name'],
+]
+
+/**
+ * OpenFreeMap's styles intentionally stay general-purpose: remote tracks
+ * appear very late, small-place labels use generous collision padding, and
+ * the mountain_peak source is not rendered. Reveal that data without adding
+ * another provider or fetching a separate layer. Every operation is guarded
+ * because OpenFreeMap's individual styles do not share every stock layer id.
+ */
+function addOnlineRemoteDetail(map: maplibregl.Map) {
+  if (!map.getSource(ONLINE_BASEMAP_SOURCE)) return
+
+  const firstSymbol = map.getStyle().layers.find((layer) => layer.type === 'symbol')?.id
+  const addLine = (layer: maplibregl.LineLayerSpecification) => {
+    if (!map.getLayer(layer.id)) map.addLayer(layer, firstSymbol)
+  }
+
+  addLine({
+    id: DETAIL_LAYER_IDS.remoteRoads,
+    type: 'line',
+    source: ONLINE_BASEMAP_SOURCE,
+    'source-layer': 'transportation',
+    minzoom: 10,
+    filter: ['match', ['get', 'class'], ['minor', 'service'], true, false],
+    layout: { 'line-cap': 'round', 'line-join': 'round' },
+    paint: {
+      'line-color': '#c4ad92',
+      'line-opacity': 0.78,
+      'line-width': ['interpolate', ['linear'], ['zoom'], 10, 0.35, 12, 0.8, 15, 1.6],
+    },
+  })
+  addLine({
+    id: DETAIL_LAYER_IDS.vehicleTracks,
+    type: 'line',
+    source: ONLINE_BASEMAP_SOURCE,
+    'source-layer': 'transportation',
+    minzoom: 10.5,
+    filter: ['==', ['get', 'class'], 'track'],
+    layout: { 'line-cap': 'round', 'line-join': 'round' },
+    paint: {
+      'line-color': '#98785f',
+      'line-dasharray': [2.5, 1.5],
+      'line-opacity': 0.82,
+      'line-width': ['interpolate', ['linear'], ['zoom'], 10.5, 0.55, 13, 1, 16, 1.8],
+    },
+  })
+  addLine({
+    id: DETAIL_LAYER_IDS.walkingPaths,
+    type: 'line',
+    source: ONLINE_BASEMAP_SOURCE,
+    'source-layer': 'transportation',
+    minzoom: 11.5,
+    filter: ['match', ['get', 'class'], ['path', 'pedestrian'], true, false],
+    layout: { 'line-cap': 'round', 'line-join': 'round' },
+    paint: {
+      'line-color': '#b35f4b',
+      'line-dasharray': [1.2, 1.4],
+      'line-opacity': 0.8,
+      'line-width': ['interpolate', ['linear'], ['zoom'], 11.5, 0.5, 14, 0.9, 17, 1.6],
+    },
+  })
+
+  // Reduce the stock styles' large collision boxes. We still let MapLibre
+  // resolve actual overlaps, so a dense valley remains readable instead of
+  // turning into a wall of text.
+  for (const id of ['label_other', 'place_other']) {
+    if (!map.getLayer(id)) continue
+    map.setLayoutProperty(id, 'text-padding', 1)
+    map.setLayoutProperty(id, 'text-transform', 'none')
+  }
+  for (const id of ['label_village', 'place_village']) {
+    if (!map.getLayer(id)) continue
+    map.setLayoutProperty(id, 'icon-optional', true)
+    map.setLayoutProperty(id, 'text-padding', 1)
+  }
+
+  // Named rivers, streams, and lakes are orientation landmarks in remote
+  // valleys. Most styles already contain the labels, but conservative zoom
+  // thresholds and padding make them disappear at a region's opening zoom.
+  for (const layer of map.getStyle().layers) {
+    if (layer.type !== 'symbol' || !['waterway', 'water_name'].includes(layer['source-layer'] ?? '')) continue
+    map.setLayoutProperty(layer.id, 'text-padding', 1)
+    if (layer.minzoom != null && layer.minzoom > 9) {
+      map.setLayerZoomRange(layer.id, 9, layer.maxzoom ?? 24)
+    }
+  }
+
+  if (!map.getLayer(DETAIL_LAYER_IDS.settlements)) {
+    map.addLayer({
+      id: DETAIL_LAYER_IDS.settlements,
+      type: 'symbol',
+      source: ONLINE_BASEMAP_SOURCE,
+      'source-layer': 'place',
+      minzoom: 9.5,
+      filter: ['match', ['get', 'class'], ['village', 'hamlet', 'isolated_dwelling', 'locality'], true, false],
+      layout: {
+        'text-field': onlineName,
+        'text-font': ['Noto Sans Regular'],
+        'text-size': ['interpolate', ['linear'], ['zoom'], 9.5, 10, 13, 11.5, 16, 13],
+        'text-max-width': 8,
+        'text-padding': 1,
+        'text-variable-anchor': ['top', 'bottom', 'left', 'right'],
+        'text-radial-offset': 0.35,
+        'symbol-sort-key': ['match', ['get', 'class'], 'village', 0, 'hamlet', 1, 2],
+      },
+      paint: {
+        'text-color': '#403a35',
+        'text-halo-color': 'rgba(250,248,244,0.92)',
+        'text-halo-width': 1.4,
+      },
+    })
+  }
+
+  if (!map.getLayer(DETAIL_LAYER_IDS.peaks)) {
+    map.addLayer({
+      id: DETAIL_LAYER_IDS.peaks,
+      type: 'symbol',
+      source: ONLINE_BASEMAP_SOURCE,
+      'source-layer': 'mountain_peak',
+      minzoom: 9,
+      filter: ['match', ['get', 'class'], ['peak', 'volcano', 'saddle'], true, false],
+      layout: {
+        'text-field': [
+          'case',
+          ['has', 'ele'],
+          ['concat', '▲ ', onlineName, '\n', ['to-string', ['get', 'ele']], ' m'],
+          ['concat', '▲ ', onlineName],
+        ],
+        'text-font': ['Noto Sans Medium'],
+        'text-size': ['interpolate', ['linear'], ['zoom'], 9, 10, 13, 11.5],
+        'text-max-width': 9,
+        'text-padding': 3,
+        'symbol-sort-key': ['coalesce', ['get', 'rank'], 99],
+      },
+      paint: {
+        'text-color': '#51443d',
+        'text-halo-color': 'rgba(250,248,244,0.94)',
+        'text-halo-width': 1.5,
+      },
+    })
+  }
+}
+
 function offlineStyle(file: File): maplibregl.StyleSpecification {
   const archive = new PMTiles(new FileSource(file))
   pmtilesProtocol.add(archive)
@@ -92,12 +250,51 @@ function offlineStyle(file: File): maplibregl.StyleSpecification {
     // and our restrained POI treatment below remain fully local without a
     // second binary sprite dependency.
     .filter((layer) => !['roads_oneway', 'roads_shields', 'pois'].includes(layer.id))
-    .map((layer) => {
+    .map((layer): maplibregl.LayerSpecification => {
       if (layer.type !== 'symbol' || !layer.layout || !('icon-image' in layer.layout)) return layer
       const { 'icon-image': _iconImage, ...textOnlyLayout } = layer.layout
       return { ...layer, layout: textOnlyLayout }
     })
-  const usefulPoiKinds = ['aerodrome', 'station', 'bus_stop', 'ferry_terminal', 'toilets', 'drinking_water', 'restaurant', 'fast_food', 'cafe', 'supermarket', 'convenience', 'hospital', 'clinic', 'pharmacy', 'fuel']
+    .map((layer) => {
+      if (layer.id === 'places_locality' && layer.type === 'symbol') {
+        return {
+          ...layer,
+          layout: {
+            ...layer.layout,
+            'text-padding': ['interpolate', ['linear'], ['zoom'], 5, 2, 9, 2, 12, 3, 15, 5] as maplibregl.ExpressionSpecification,
+          },
+        }
+      }
+      if (layer.type === 'symbol' && layer['source-layer'] === 'water') {
+        return {
+          ...layer,
+          minzoom: layer.id === 'water_waterway_label' ? 9 : layer.minzoom,
+          layout: { ...layer.layout, 'text-padding': 1 },
+        }
+      }
+      if (layer.id === 'roads_other' && layer.type === 'line') {
+        return {
+          ...layer,
+          minzoom: 11,
+          paint: {
+            ...layer.paint,
+            'line-color': '#a98770',
+            'line-dasharray': [1.2, 1.4],
+            'line-width': ['interpolate', ['linear'], ['zoom'], 11, 0.45, 14, 0.9, 18, 2] as maplibregl.ExpressionSpecification,
+          },
+        }
+      }
+      if (layer.id === 'roads_labels_minor' && layer.type === 'symbol') return { ...layer, minzoom: 12.5 }
+      return layer
+    })
+  const usefulPoiKinds = [
+    'aerodrome', 'station', 'bus_stop', 'ferry_terminal',
+    'toilets', 'drinking_water', 'water_point', 'emergency_phone',
+    'restaurant', 'fast_food', 'cafe', 'supermarket', 'convenience',
+    'hospital', 'clinic', 'pharmacy', 'fuel',
+    'alpine_hut', 'wilderness_hut', 'shelter', 'camp_site',
+    'viewpoint', 'waterfall', 'mountain_pass', 'picnic_site', 'ranger_station',
+  ]
   return {
     version: 8,
     sources: {
@@ -146,11 +343,37 @@ function offlineStyle(file: File): maplibregl.StyleSpecification {
           'text-halo-width': 1.25,
         },
       },
+      {
+        id: 'osm-mountain-peak-labels',
+        type: 'symbol',
+        source: 'protomaps',
+        'source-layer': 'pois',
+        minzoom: 9,
+        filter: ['==', ['get', 'kind'], 'peak'],
+        layout: {
+          'text-field': [
+            'case',
+            ['has', 'ele'],
+            ['concat', '▲ ', ['coalesce', ['get', 'name:en'], ['get', 'name']], '\n', ['to-string', ['get', 'ele']], ' m'],
+            ['concat', '▲ ', ['coalesce', ['get', 'name:en'], ['get', 'name']]],
+          ],
+          'text-font': ['Noto Sans Regular'],
+          'text-size': ['interpolate', ['linear'], ['zoom'], 9, 10, 13, 11.5],
+          'text-max-width': 9,
+          'text-padding': 3,
+          'symbol-sort-key': ['coalesce', ['get', 'min_zoom'], 99],
+        },
+        paint: {
+          'text-color': '#51443d',
+          'text-halo-color': '#f8f5ef',
+          'text-halo-width': 1.5,
+        },
+      },
     ],
   }
 }
 
-const Map = forwardRef<MapHandle, MapProps>(function Map({ places = [], offlineMapFile, mapStyle = 'liberty', onSelectPlace, onLocateError }, ref) {
+const Map = forwardRef<MapHandle, MapProps>(function Map({ places = [], offlineMapFile, mapStyle = 'bright', onSelectPlace, onLocateError }, ref) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
   const markersRef = useRef<maplibregl.Marker[]>([])
@@ -184,7 +407,7 @@ const Map = forwardRef<MapHandle, MapProps>(function Map({ places = [], offlineM
 
     const map = new maplibregl.Map({
       container: containerRef.current,
-      style: initialOfflineFileRef.current ? offlineStyle(initialOfflineFileRef.current) : 'https://tiles.openfreemap.org/styles/liberty',
+      style: initialOfflineFileRef.current ? offlineStyle(initialOfflineFileRef.current) : 'https://tiles.openfreemap.org/styles/bright',
       center: [INDIA_CENTER.lng, INDIA_CENTER.lat],
       zoom: ZOOM_INDIA,
       attributionControl: false,
@@ -194,6 +417,7 @@ const Map = forwardRef<MapHandle, MapProps>(function Map({ places = [], offlineM
     // attribution doesn't collide with our floating category-filter panel,
     // which sits low enough on narrow phone screens to overlap it otherwise.
     map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right')
+    map.on('style.load', () => addOnlineRemoteDetail(map))
 
     const geolocate = new maplibregl.GeolocateControl({
       positionOptions: { enableHighAccuracy: true },

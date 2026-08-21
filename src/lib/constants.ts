@@ -38,17 +38,18 @@ export const ZOOM_VILLAGE = 12
 // two names.
 export const ZOOM_PRECISE = 15
 
-// OpenFreeMap serves several real styles beyond our default (liberty) -
-// confirmed live: liberty/bright/positron/dark/fiord all return valid style
-// JSON at tiles.openfreemap.org/styles/{name}. Cycling a curated 3 rather
-// than all 5, matching the original design reference's voyager/light/dark
-// 3-way toggle.
-export const MAP_STYLES = ['liberty', 'positron', 'dark'] as const
+// OpenFreeMap serves these styles from the same free OpenMapTiles source.
+// Bright is the most information-dense road style, while Fiord gives remote
+// mountain areas a more natural land/water treatment without loading a
+// separate terrain service. Positron was intentionally dropped: its faint
+// roads work against Lamyig's remote-road use case.
+export const MAP_STYLES = ['bright', 'liberty', 'fiord', 'dark'] as const
 export type MapStyleName = (typeof MAP_STYLES)[number]
 // OpenFreeMap's own style names ("liberty", "positron") mean nothing to a
 // traveller - these are what the map-style toggle actually shows/announces.
 export const MAP_STYLE_LABELS: Record<MapStyleName, string> = {
-  liberty: 'Default',
-  positron: 'Light',
+  bright: 'Roads',
+  liberty: 'Balanced',
+  fiord: 'Natural',
   dark: 'Dark',
 }

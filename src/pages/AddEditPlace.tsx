@@ -12,6 +12,7 @@ import HoursInput from '../components/HoursInput'
 import type { Region, Village, Trek } from '../lib/types'
 import { MAX_PHOTOS, PHONE_PATTERN } from '../lib/constants'
 import { connectionAwareError, OFFLINE_CONTRIBUTION_MESSAGE } from '../lib/connectivity'
+import { useOverlayClose } from '../lib/useOverlayNavigation'
 
 const inputClass = 'rounded-[10px] border border-ink/[0.14] bg-surface px-3.5 py-2.5 text-sm outline-none focus:border-accent focus:ring-3 focus:ring-accent-light'
 const labelClass = 'text-[11.5px] font-semibold uppercase tracking-wide text-muted'
@@ -26,6 +27,7 @@ function slugify(text: string) {
 export default function AddEditPlace() {
   const { placeId } = useParams()
   const location = useLocation()
+  const close = useOverlayClose()
   const background = (location.state as { background?: Location } | null)?.background ?? location
   const isEdit = Boolean(placeId)
   const navigate = useNavigate()
@@ -289,12 +291,14 @@ export default function AddEditPlace() {
       setUploadProgress(null)
 
       if (isEdit) {
-        navigate(`/place/${id}`)
+        const hasBackground = Boolean((location.state as { background?: Location } | null)?.background)
+        if (hasBackground) navigate(-1)
+        else navigate(`/place/${id}`, { replace: true })
       } else {
         refetch()
         const regionName = regions.find((r) => r.id === regionId)?.name ?? ''
         showToast(`Thanks for sharing "${finalName}"${regionName ? ` in ${regionName}` : ''}.`)
-        navigate('/')
+        close()
       }
     } catch (err) {
       // Supabase throws plain PostgrestError objects, not real Error

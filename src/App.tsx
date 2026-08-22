@@ -16,6 +16,7 @@ import Overlay from './components/Overlay'
 import { ToastProvider } from './lib/useToast'
 import { PlacesProvider } from './lib/usePlacesStore'
 import { isOfflineRegionSlug, OFFLINE_REGION_CONFIG } from './lib/offlinePack'
+import { useOverlayClose } from './lib/useOverlayNavigation'
 
 const INTRO_SEEN_KEY = 'lamyig:introductionSeen'
 
@@ -34,7 +35,7 @@ const INTRO_SEEN_KEY = 'lamyig:introductionSeen'
 // has no prior in-app navigation to carry a background location).
 export default function App() {
   const location = useLocation()
-  const navigate = useNavigate()
+  const closeOverlay = useOverlayClose()
   const background = (location.state as { background?: Location } | null)?.background
   const authTitle = location.search.includes('mode=sign-up')
     ? 'Join Lamyig'
@@ -42,10 +43,9 @@ export default function App() {
       ? 'Reset password'
       : 'Sign in'
   // A cold direct visit (email link) has no in-app history to go back to -
-  // navigate(-1) there could leave the app entirely, so close explicitly to
-  // Home instead. When there IS a background (opened from within the app),
-  // the default navigate(-1) behavior is correct and preserved.
-  const closeToHome = background ? undefined : () => navigate('/')
+  // A cold direct visit must not navigate(-1) out of the app. The shared
+  // overlay close helper returns in-app panels through history and replaces
+  // cold direct panel URLs with Home.
 
   return (
     <ToastProvider>
@@ -70,13 +70,13 @@ export default function App() {
         </Routes>
 
         <Routes>
-          <Route path="/auth" element={<Overlay title={authTitle} onClose={closeToHome}><Auth /></Overlay>} />
-          <Route path="/feedback" element={<Overlay title="Feedback" onClose={closeToHome}><Feedback /></Overlay>} />
-          <Route path="/vision" element={<Overlay title="Welcome to Lamyig" onClose={closeToHome}><Vision onClose={closeToHome} /></Overlay>} />
-          <Route path="/region/:regionSlug" element={<RegionOverlay onClose={closeToHome} />} />
-          <Route path="/offline-maps" element={<Overlay title="Offline maps" onClose={closeToHome}><OfflineMaps /></Overlay>} />
-          <Route path="/privacy" element={<Overlay title="Privacy notice" onClose={closeToHome}><Legal /></Overlay>} />
-          <Route path="/terms" element={<Overlay title="Contribution terms" onClose={closeToHome}><Legal /></Overlay>} />
+          <Route path="/auth" element={<Overlay title={authTitle} onClose={closeOverlay}><Auth /></Overlay>} />
+          <Route path="/feedback" element={<Overlay title="Feedback" onClose={closeOverlay}><Feedback /></Overlay>} />
+          <Route path="/vision" element={<Overlay title="Welcome to Lamyig" onClose={closeOverlay}><Vision onClose={closeOverlay} /></Overlay>} />
+          <Route path="/region/:regionSlug" element={<RegionOverlay onClose={closeOverlay} />} />
+          <Route path="/offline-maps" element={<Overlay title="Offline maps" onClose={closeOverlay}><OfflineMaps /></Overlay>} />
+          <Route path="/privacy" element={<Overlay title="Privacy notice" onClose={closeOverlay}><Legal /></Overlay>} />
+          <Route path="/terms" element={<Overlay title="Contribution terms" onClose={closeOverlay}><Legal /></Overlay>} />
           {/* Every other path lands here otherwise - without it react-router
               logs a "No routes matched" console warning on every load/nav
               (this Routes block uses the real location, not the background

@@ -8,7 +8,7 @@ export default function NotFound() {
       <h1 className="text-2xl font-bold tracking-tight">Lost the trail</h1>
       <p className="text-sm text-muted">This path doesn't exist on Lamyig - might be an old link, or a typo.</p>
       <button
-        onClick={() => navigate('/')}
+        onClick={() => navigate('/', { replace: true })}
         className="mt-2 rounded-full bg-accent px-4 py-2 text-sm font-semibold text-surface"
       >
         Back to the map

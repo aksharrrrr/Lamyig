@@ -1,16 +1,16 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router'
 import { supabase, BACKEND_NOT_CONFIGURED_MESSAGE } from '../lib/supabase'
 import { useAuth } from '../lib/useAuth'
 import { useToast } from '../lib/useToast'
 import { connectionAwareError, OFFLINE_CONTRIBUTION_MESSAGE } from '../lib/connectivity'
+import { useOverlayClose } from '../lib/useOverlayNavigation'
 
 const inputClass = 'rounded-[10px] border border-ink/[0.14] bg-surface px-3.5 py-2.5 text-sm outline-none focus:border-accent focus:ring-3 focus:ring-accent-light'
 
 export default function Feedback() {
   const { session, configured } = useAuth()
   const { showToast } = useToast()
-  const navigate = useNavigate()
+  const close = useOverlayClose()
   const [message, setMessage] = useState('')
   const [email, setEmail] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -39,7 +39,7 @@ export default function Feedback() {
       return
     }
     showToast('Thanks for the feedback.')
-    navigate(-1)
+    close()
   }
 
   return (

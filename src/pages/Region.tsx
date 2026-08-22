@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router'
+import { useLocation, useNavigate, useParams, type Location } from 'react-router'
 import {
   downloadOfflinePack, forgetOfflineRegion, formatMegabytes, formatPackDate, getOfflinePack, isOfflineRegionSlug,
   OFFLINE_REGION_CONFIG, offlinePackNeedsUpdate, rememberOfflineRegion, removeOfflinePack, type OfflineRegionPack,
 } from '../lib/offlinePack'
+import { OPEN_OFFLINE_REGION_EVENT } from '../lib/offlineConfig'
 
 export default function Region() {
   const { regionSlug } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
   const config = isOfflineRegionSlug(regionSlug) ? OFFLINE_REGION_CONFIG[regionSlug] : null
   const [pack, setPack] = useState<OfflineRegionPack | null>(null)
   const [progress, setProgress] = useState<string | null>(null)
@@ -55,8 +57,12 @@ export default function Region() {
 
       {pack && (
         <div className="mt-3 flex items-center gap-2 text-xs font-medium text-accent-text">
-          <span className="h-2 w-2 rounded-full bg-accent" />
-          Ready for the road · updated {formatPackDate(pack.downloadedAt)}
+          <span className={`h-2 w-2 rounded-full ${updateAvailable ? 'bg-danger' : 'bg-accent'}`} />
+          {updateAvailable
+            ? `Saved copy · updated ${formatPackDate(pack.downloadedAt)}`
+            : online
+              ? `Up to date · updated ${formatPackDate(pack.downloadedAt)}`
+              : `Saved offline · updated ${formatPackDate(pack.downloadedAt)}`}
         </div>
       )}
       {pack && updateAvailable && (
@@ -91,22 +97,28 @@ export default function Region() {
             }}
             className="rounded-[11px] bg-accent px-4 py-2.5 text-sm font-semibold text-surface disabled:opacity-50"
           >
-            {pack ? `Update ${config.name}` : `Download ${config.name}`}
+            {pack ? 'Update map' : `Download ${config.name}`}
           </button>
-        )}
-        {pack && !updateAvailable && (
-          <span className="rounded-[11px] bg-accent-light px-4 py-2.5 text-sm font-semibold text-accent-text">
-            {online ? 'Up to date' : 'Saved offline'}
-          </span>
         )}
         {pack && (
           <button
             type="button"
             onClick={() => {
               rememberOfflineRegion(regionSlug)
-              navigate(`/?region=${regionSlug}&offline=${regionSlug}`)
+              const navigationState = location.state as { background?: Location; mapReturnSteps?: number } | null
+              const background = navigationState?.background
+              if (background) {
+                window.addEventListener('popstate', () => {
+                  window.dispatchEvent(new CustomEvent(OPEN_OFFLINE_REGION_EVENT, { detail: regionSlug }))
+                }, { once: true })
+                navigate(-(navigationState?.mapReturnSteps ?? 1))
+              } else {
+                navigate(`/?region=${regionSlug}&offline=${regionSlug}`, { replace: true })
+              }
             }}
-            className="rounded-[11px] border border-ink/10 bg-surface px-4 py-2.5 text-sm font-semibold text-ink hover:bg-ink/5"
+            className={updateAvailable
+              ? 'rounded-[11px] border border-ink/10 bg-surface px-4 py-2.5 text-sm font-semibold text-ink hover:bg-ink/5'
+              : 'rounded-[11px] bg-accent px-4 py-2.5 text-sm font-semibold text-surface hover:brightness-95'}
           >Open map</button>
         )}
         {pack && !confirmingRemove && (
@@ -148,7 +160,7 @@ export default function Region() {
           </div>
         </div>
       )}
-      <p className="mt-4 text-xs leading-relaxed text-muted-light">This copy stays on this device. Refresh it before your next trip to pick up newer community knowledge.</p>
+      <p className="mt-4 text-xs leading-relaxed text-muted-light">This copy stays on this device. When a newer guide is ready, Lamyig will show Update map here.</p>
     </div>
   )
 }

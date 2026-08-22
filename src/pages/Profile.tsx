@@ -1,12 +1,14 @@
-import { Link, useNavigate } from 'react-router'
+import { Link, useLocation } from 'react-router'
 import { useState } from 'react'
 import { supabase, BACKEND_NOT_CONFIGURED_MESSAGE } from '../lib/supabase'
 import { useAuth } from '../lib/useAuth'
 import { OFFLINE_ACCOUNT_MESSAGE } from '../lib/connectivity'
+import { overlayLinkState, useOverlayClose } from '../lib/useOverlayNavigation'
 
 export default function Profile() {
   const { session, configured } = useAuth()
-  const navigate = useNavigate()
+  const location = useLocation()
+  const close = useOverlayClose()
   const [confirmingDelete, setConfirmingDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -28,14 +30,14 @@ export default function Profile() {
       </div>
       <div className="text-[15px] font-semibold">{session.user.email}</div>
       <button
-        onClick={async () => { await supabase!.auth.signOut(); navigate('/') }}
+        onClick={async () => { await supabase!.auth.signOut(); close() }}
         className="mt-2 w-full rounded-[11px] border border-ink/10 bg-surface px-4 py-2.5 text-sm font-semibold text-ink hover:bg-ink/5"
       >
         Sign out
       </button>
       <div className="flex gap-3 text-xs text-muted">
-        <Link to="/privacy" className="underline underline-offset-2">Privacy</Link>
-        <Link to="/terms" className="underline underline-offset-2">Contribution terms</Link>
+        <Link to="/privacy" state={overlayLinkState(location)} className="underline underline-offset-2">Privacy</Link>
+        <Link to="/terms" state={overlayLinkState(location)} className="underline underline-offset-2">Contribution terms</Link>
       </div>
       <div className="mt-4 w-full border-t border-ink/10 pt-4 text-left">
         {!confirmingDelete ? (
@@ -68,7 +70,7 @@ export default function Profile() {
                     return
                   }
                   await supabase!.auth.signOut()
-                  navigate('/')
+                  close()
                 }}
                 className="rounded-[10px] bg-danger px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
               >

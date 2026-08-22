@@ -5,6 +5,8 @@
 ## Frontend
 React, TypeScript, Vite, Tailwind.
 
+The map is the persistent application canvas. Panel routes share `Overlay` and the navigation helpers in `src/lib/useOverlayNavigation.ts`, keeping in-app history, direct-link fallbacks, and nested panel links consistent without remounting the map.
+
 ## Maps
 OpenStreetMap data, MapLibre GL for rendering. See D-006 - Lamyig never builds a mapping engine.
 

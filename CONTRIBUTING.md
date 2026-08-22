@@ -114,6 +114,8 @@ For a maintainer-directed continuous development session, the maintainer may ins
 
 The home map is Lamyig's persistent canvas. Supporting screens and panel-like routes—including authentication, Profile, Feedback, Vision/Info, regions, offline maps, Privacy, and Terms—use the shared desktop-modal/mobile-bottom-sheet overlay with the map behind them, even for direct URLs. Do not add a standalone card over a blank page for this kind of content. Reuse the existing design tokens, typography, spacing, copy voice, and interaction patterns, and verify every new visible state on desktop and mobile.
 
+Use `useOverlayClose` for overlay completion and close actions so in-app panels return through history while cold direct links return safely to Home. Internal links between panels must carry `overlayLinkState(location)`. Navigation changes must preserve the mounted map and be checked with Close/backdrop, Escape, browser Back, browser Forward, and direct refresh.
+
 ### Map and offline changes
 
 - Keep shared map style names, labels, URLs, and defaults in `src/lib/constants.ts`; do not repeat them in individual components.

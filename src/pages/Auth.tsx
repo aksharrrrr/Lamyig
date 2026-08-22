@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Link, useLocation, useNavigate, useSearchParams } from 'react-router'
+import { Link, useLocation, useSearchParams } from 'react-router'
 import { supabase, BACKEND_NOT_CONFIGURED_MESSAGE } from '../lib/supabase'
 import { useAuth } from '../lib/useAuth'
 import { useToast } from '../lib/useToast'
+import { useOverlayClose } from '../lib/useOverlayNavigation'
 
 const inputClass = 'rounded-[10px] border border-ink/[0.14] bg-surface px-3.5 py-2.5 text-sm outline-none focus:border-accent focus:ring-3 focus:ring-accent-light'
 const passwordInputClass = `${inputClass} w-full pr-10`
@@ -36,7 +37,7 @@ function PasswordVisibilityToggle({ visible, onToggle }: { visible: boolean; onT
 export default function Auth() {
   const { session, configured } = useAuth()
   const { showToast } = useToast()
-  const navigate = useNavigate()
+  const close = useOverlayClose()
   const location = useLocation()
   const [searchParams, setSearchParams] = useSearchParams()
   const modeParam = searchParams.get('mode')
@@ -82,7 +83,7 @@ export default function Auth() {
       }
       setRecovering(false)
       showToast('Password updated.')
-      navigate('/')
+      close()
     }
 
     return (
@@ -189,7 +190,7 @@ export default function Auth() {
         setError(error.message)
         return
       }
-      navigate('/')
+      close()
       return
     }
 
@@ -212,7 +213,7 @@ export default function Auth() {
       setSignupConfirmSent(true)
       return
     }
-    navigate('/')
+    close()
   }
 
   if (signupConfirmSent) {

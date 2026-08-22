@@ -1,4 +1,5 @@
 import { Link, useLocation } from 'react-router'
+import { overlayLinkState } from '../lib/useOverlayNavigation'
 
 const sectionClass = 'space-y-2'
 
@@ -11,7 +12,7 @@ function LegalContent({ children }: { children: React.ReactNode }) {
   )
 }
 
-function Privacy() {
+function Privacy({ linkState }: { linkState: ReturnType<typeof overlayLinkState> }) {
   return (
     <LegalContent>
       <section className={sectionClass}>
@@ -42,7 +43,7 @@ function Privacy() {
       </section>
       <section className={sectionClass}>
         <h2 className="text-base font-bold text-ink">Your choices and rights</h2>
-        <p>You may access or update your account, correct public place information, withdraw optional browser location permission, delete your account, or ask about access, correction, erasure, consent, or a grievance. Use the <Link to="/feedback" className="font-semibold text-accent-text underline">feedback form</Link> and include an email if you need a response.</p>
+        <p>You may access or update your account, correct public place information, withdraw optional browser location permission, delete your account, or ask about access, correction, erasure, consent, or a grievance. Use the <Link to="/feedback" state={linkState} className="font-semibold text-accent-text underline">feedback form</Link> and include an email if you need a response.</p>
       </section>
       <section className={sectionClass}>
         <h2 className="text-base font-bold text-ink">Age and security</h2>
@@ -53,7 +54,7 @@ function Privacy() {
   )
 }
 
-function Terms() {
+function Terms({ linkState }: { linkState: ReturnType<typeof overlayLinkState> }) {
   return (
     <LegalContent>
       <section className={sectionClass}>
@@ -74,12 +75,14 @@ function Terms() {
       </section>
       <section className={sectionClass}>
         <h2 className="text-base font-bold text-ink">Accounts</h2>
-        <p>You must be at least 18, keep your account secure, and use one truthful account. You may delete your account from Profile. Public factual contributions can remain after deletion with attribution anonymized, as described in the <Link to="/privacy" className="font-semibold text-accent-text underline">privacy notice</Link>.</p>
+        <p>You must be at least 18, keep your account secure, and use one truthful account. You may delete your account from Profile. Public factual contributions can remain after deletion with attribution anonymized, as described in the <Link to="/privacy" state={linkState} className="font-semibold text-accent-text underline">privacy notice</Link>.</p>
       </section>
     </LegalContent>
   )
 }
 
 export default function Legal() {
-  return useLocation().pathname === '/terms' ? <Terms /> : <Privacy />
+  const location = useLocation()
+  const linkState = overlayLinkState(location)
+  return location.pathname === '/terms' ? <Terms linkState={linkState} /> : <Privacy linkState={linkState} />
 }

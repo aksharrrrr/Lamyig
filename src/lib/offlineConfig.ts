@@ -11,6 +11,7 @@ export const OFFLINE_REGION_CONFIG = {
 
 export type OfflineRegionSlug = keyof typeof OFFLINE_REGION_CONFIG
 export const DEFAULT_OFFLINE_REGION: OfflineRegionSlug = 'spiti'
+export const OPEN_OFFLINE_REGION_EVENT = 'lamyig:open-offline-region'
 
 export function isOfflineRegionSlug(value: string | undefined | null): value is OfflineRegionSlug {
   return Boolean(value && value in OFFLINE_REGION_CONFIG)

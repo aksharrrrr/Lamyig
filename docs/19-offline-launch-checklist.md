@@ -19,7 +19,7 @@ Use a normal browsing profile, not private/incognito mode. Private storage is te
 For each device above:
 
 - [ ] Open Lamyig online, download Spiti, and confirm the progress text advances instead of appearing frozen.
-- [ ] Confirm Spiti says **Ready for the road**, reports its place count, and remains listed under **Offline maps** after closing and reopening the browser/PWA.
+- [ ] Confirm Spiti says **Up to date**, reports its place count, and remains listed under **Offline maps** after closing and reopening the browser/PWA.
 - [ ] Enable airplane mode, fully close Lamyig, reopen it, and open the Spiti map without dismissing an error screen.
 - [ ] While offline, pan and zoom across Spiti and confirm the road map remains visible throughout the downloaded bounds.
 - [ ] Confirm every downloaded Spiti place is represented when **Show all** is active. If filters hide pins, confirm **Showing X of Y places** is visible and the totals are correct.

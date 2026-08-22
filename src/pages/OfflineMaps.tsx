@@ -19,7 +19,9 @@ export default function OfflineMaps() {
           <button
             key={slug}
             type="button"
-            onClick={() => navigate(`/region/${slug}`, { state: location.state })}
+            onClick={() => navigate(`/region/${slug}`, {
+              state: { ...(location.state as object | null), mapReturnSteps: 2 },
+            })}
             className="group flex w-full items-center justify-between rounded-xl border border-ink/[0.08] bg-surface px-4 py-3 text-left transition hover:-translate-y-0.5 hover:border-accent/50 hover:shadow-md"
           >
             <span className="flex items-center gap-3">

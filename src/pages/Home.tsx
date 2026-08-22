@@ -10,7 +10,11 @@ import { CATEGORY_ICONS } from '../lib/categoryIcons'
 import { geocodeSearch, type GeocodeResult } from '../lib/geocode'
 import { DEFAULT_MAP_STYLE, MAP_STYLES, MAP_STYLE_LABELS, ZOOM_VILLAGE } from '../lib/constants'
 import type { Region, Village } from '../lib/types'
-import { getLastOfflineRegion, getOfflinePackStatuses, isOfflineRegionSlug, type OfflinePackStatus } from '../lib/offlinePack'
+import {
+  getLastOfflineRegion, getOfflinePackStatuses, isOfflineRegionSlug,
+  type OfflinePackStatus, type OfflineRegionSlug,
+} from '../lib/offlinePack'
+import { OPEN_OFFLINE_REGION_EVENT } from '../lib/offlineConfig'
 import { OFFLINE_CONTRIBUTION_MESSAGE } from '../lib/connectivity'
 import { matchesJourneySearch } from '../lib/search'
 
@@ -63,7 +67,10 @@ export default function Home() {
   const hasOfflineUpdate = offlineStatuses.some(({ updateAvailable }) => updateAvailable)
   const [online, setOnline] = useState(navigator.onLine)
   const requestedOfflineSlug = new URLSearchParams(location.search).get('offline')
-  const offlineMapRequested = isOfflineRegionSlug(requestedOfflineSlug) ? requestedOfflineSlug : null
+  const [openedOfflineSlug, setOpenedOfflineSlug] = useState<OfflineRegionSlug | null>(
+    isOfflineRegionSlug(requestedOfflineSlug) ? requestedOfflineSlug : null,
+  )
+  const offlineMapRequested = openedOfflineSlug
   const lastOfflineSlug = getLastOfflineRegion()
   const activeOfflinePack = offlinePacks.find((pack) => pack.slug === offlineMapRequested)
     ?? (!online ? offlinePacks.find((pack) => pack.slug === lastOfflineSlug) ?? offlinePacks[0] : null)
@@ -88,6 +95,17 @@ export default function Home() {
       window.removeEventListener('offline', connectionChanged)
       window.removeEventListener('lamyig:offline-pack-updated', refreshPack)
     }
+  }, [])
+
+  useEffect(() => {
+    const openDownloadedRegion = (event: Event) => {
+      const slug = (event as CustomEvent<string>).detail
+      if (!isOfflineRegionSlug(slug)) return
+      setOpenedOfflineSlug(slug)
+      window.history.replaceState(window.history.state, '', `/?region=${slug}&offline=${slug}`)
+    }
+    window.addEventListener(OPEN_OFFLINE_REGION_EVENT, openDownloadedRegion)
+    return () => window.removeEventListener(OPEN_OFFLINE_REGION_EVENT, openDownloadedRegion)
   }, [])
 
   useEffect(() => {
@@ -163,7 +181,10 @@ export default function Home() {
 
   function openRegion(region: Region) {
     flyToRegion(region)
-    openOverlay(`/region/${region.slug}`)
+    setOpenedOfflineSlug(null)
+    const background = { ...location, pathname: '/', search: `?region=${region.slug}`, hash: '' }
+    window.history.replaceState(window.history.state, '', `/?region=${region.slug}`)
+    navigate(`/region/${region.slug}`, { state: { background } })
   }
 
   function flyToVillage(village: Village) {
@@ -236,7 +257,7 @@ export default function Home() {
     : []
 
   function selectSearchResult(result: SearchResult) {
-    if (result.kind === 'region') flyToRegion(result.item)
+    if (result.kind === 'region') openRegion(result.item)
     else if (result.kind === 'village') flyToVillage(result.item)
     else if (result.kind === 'place') {
       mapRef.current?.flyTo(result.item.lat, result.item.lng, 15)

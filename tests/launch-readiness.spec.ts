@@ -33,6 +33,10 @@ test('privacy and contribution terms are directly reachable', async ({ page }) =
   await expect(page.locator('.maplibregl-canvas')).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Privacy notice' })).toBeVisible()
   await expect(page.getByText('You can permanently delete your account from Profile')).toBeVisible()
+  await page.getByRole('link', { name: 'feedback form' }).click()
+  await expect(page.getByRole('heading', { name: 'Feedback' })).toBeVisible()
+  await page.getByTitle('Close').click()
+  await expect(page.getByRole('heading', { name: 'Privacy notice' })).toBeVisible()
   await page.getByTitle('Close').click()
   await expect(page).toHaveURL('/')
 
@@ -40,6 +44,10 @@ test('privacy and contribution terms are directly reachable', async ({ page }) =
   await expect(page.locator('.maplibregl-canvas')).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Contribution terms' })).toBeVisible()
   await expect(page.getByText('Open Database License 1.0')).toBeVisible()
+  await page.getByRole('link', { name: 'privacy notice' }).click()
+  await expect(page.getByRole('heading', { name: 'Privacy notice' })).toBeVisible()
+  await page.goBack()
+  await expect(page.getByRole('heading', { name: 'Contribution terms' })).toBeVisible()
   await page.getByTitle('Close').click()
   await expect(page).toHaveURL('/')
 })
@@ -71,7 +79,144 @@ test('direct region links keep the map behind the consistent overlay', async ({ 
   await expect(page).toHaveURL('/')
 })
 
+test('overlay entry, close, Back, and Forward preserve the map and correct URL', async ({ page }) => {
+  await markIntroductionSeen(page)
+  const regions = [
+    {
+      id: '55555555-5555-4555-8555-555555555555', slug: 'ladakh', name: 'Ladakh', state: 'Ladakh',
+      description: null, featured: true, center_lat: 34.15, center_lng: 77.58, default_zoom: 7,
+    },
+    {
+      id: '77777777-7777-4777-8777-777777777777', slug: 'spiti', name: 'Spiti', state: 'Himachal Pradesh',
+      description: null, featured: true, center_lat: 32.25, center_lng: 78.03, default_zoom: 8,
+    },
+  ]
+  await page.route('**/rest/v1/regions**', (route) => route.fulfill({ json: regions }))
+  await page.route('**/rest/v1/places**', (route) => route.fulfill({ json: [] }))
+  await page.route('**/rest/v1/villages**', (route) => route.fulfill({ json: [] }))
+  await page.route('**/rest/v1/repo_stats**', (route) => route.fulfill({ json: [] }))
+  await blockExternalMapTraffic(page)
+
+  await page.goto('/?region=spiti&offline=spiti')
+  await page.locator('.maplibregl-canvas').evaluate((canvas) => { canvas.dataset.navigationCanvas = 'kept' })
+
+  await page.getByTitle('Offline maps').click()
+  await expect(page).toHaveURL('/offline-maps')
+  await page.goBack()
+  await expect(page).toHaveURL(/\?region=spiti&offline=spiti$/)
+  await expect(page.locator('.maplibregl-canvas[data-navigation-canvas="kept"]')).toBeVisible()
+  await page.goForward()
+  await expect(page.getByRole('heading', { name: 'Offline maps' })).toBeVisible()
+
+  await page.getByRole('button', { name: /Ladakh.*Download/ }).click()
+  await expect(page).toHaveURL('/region/ladakh')
+  await page.getByTitle('Close').click()
+  await expect(page).toHaveURL('/offline-maps')
+  await page.goForward()
+  await expect(page).toHaveURL('/region/ladakh')
+  await page.goBack()
+  await expect(page).toHaveURL('/offline-maps')
+  await page.getByTitle('Close').click()
+
+  const popularDestinations = page.getByRole('button', { name: 'Popular destinations' })
+  if (await popularDestinations.isVisible()) await popularDestinations.click()
+  await page.getByRole('button', { name: 'Ladakh', exact: true }).click()
+  await expect(page).toHaveURL('/region/ladakh')
+  await page.keyboard.press('Escape')
+  await expect(page).toHaveURL(/\?region=ladakh$/)
+  await expect(page.locator('.maplibregl-canvas[data-navigation-canvas="kept"]')).toBeVisible()
+})
+
+test('every Home control keeps its click contract and mounted map', async ({ page, context }) => {
+  await markIntroductionSeen(page)
+  await context.grantPermissions(['geolocation'])
+  await context.setGeolocation({ latitude: 32.25, longitude: 78.03 })
+  const ladakh = {
+    id: '55555555-5555-4555-8555-555555555555', slug: 'ladakh', name: 'Ladakh', state: 'Ladakh',
+    description: null, featured: true, center_lat: 34.15, center_lng: 77.58, default_zoom: 7,
+  }
+  await page.route('**/rest/v1/regions**', (route) => route.fulfill({ json: [ladakh] }))
+  await page.route('**/rest/v1/places**', (route) => route.fulfill({ json: [] }))
+  await page.route('**/rest/v1/villages**', (route) => route.fulfill({ json: [] }))
+  await page.route('**/rest/v1/repo_stats**', (route) => route.fulfill({ json: [] }))
+  await blockExternalMapTraffic(page)
+
+  await page.goto('/')
+  await page.locator('.maplibregl-canvas').evaluate((canvas) => { canvas.dataset.controlCanvas = 'kept' })
+  const expectSameMap = async () => {
+    await expect(page.locator('.maplibregl-canvas[data-control-canvas="kept"]')).toBeVisible()
+  }
+
+  await page.getByTitle('Profile').click()
+  await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible()
+  await page.getByRole('button', { name: "Don't have an account? Sign up" }).click()
+  await expect(page.getByRole('heading', { name: 'Join Lamyig' })).toBeVisible()
+  await page.getByRole('button', { name: 'Already have an account? Sign in' }).click()
+  await page.getByRole('button', { name: 'Forgot password?' }).click()
+  await expect(page.getByRole('heading', { name: 'Reset password' })).toBeVisible()
+  await page.getByRole('button', { name: 'Back to sign in' }).click()
+  await page.getByTitle('Close').click()
+  await expect(page).toHaveURL('/')
+  await expectSameMap()
+
+  await page.getByTitle('Add a place').click()
+  await expect(page.getByRole('heading', { name: 'Add a place' })).toBeVisible()
+  await page.getByRole('button', { name: 'Sign in' }).click()
+  await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible()
+  await page.getByTitle('Close').click()
+  await expect(page.getByRole('heading', { name: 'Add a place' })).toBeVisible()
+  await page.getByTitle('Close').click()
+  await expectSameMap()
+
+  await page.getByTitle('Send feedback').click()
+  await expect(page.getByRole('heading', { name: 'Feedback' })).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(page).toHaveURL('/')
+  await expectSameMap()
+
+  await page.getByTitle('Why Lamyig exists').click()
+  await page.getByRole('button', { name: 'Continue Exploring' }).click()
+  await expect(page).toHaveURL('/')
+  await expectSameMap()
+
+  await page.getByTitle('Map style: Roads').click()
+  await expect(page.getByTitle('Map style: Balanced')).toBeVisible()
+  await expect(page).toHaveURL('/')
+  await page.getByRole('button', { name: /Homestay 0/ }).click()
+  await expect(page).toHaveURL('/')
+  await page.getByRole('button', { name: 'My location', exact: true }).click()
+  await expect(page).toHaveURL('/')
+
+  const popularDestinations = page.getByRole('button', { name: 'Popular destinations' })
+  if (await popularDestinations.isVisible()) await popularDestinations.click()
+  await page.getByRole('button', { name: 'Ladakh', exact: true }).click()
+  await expect(page).toHaveURL('/region/ladakh')
+  await page.getByTitle('Close').click()
+  await expect(page).toHaveURL(/\?region=ladakh$/)
+  await expectSameMap()
+
+  const search = page.getByRole('searchbox')
+  await search.fill('Ladakh')
+  await page.getByRole('button', { name: /Ladakh.*Region/ }).click()
+  await expect(page).toHaveURL('/region/ladakh')
+  await page.getByTitle('Close').click()
+
+  const trekMenu = page.getByRole('button', { name: 'Treks' })
+  if (await popularDestinations.isVisible()) {
+    await popularDestinations.click()
+    await trekMenu.click()
+  } else {
+    await trekMenu.click()
+  }
+  await page.getByRole('button', { name: 'Hampta Pass' }).click()
+  await expect(page).toHaveURL(/\?region=ladakh$/)
+
+  await expect(page.getByTitle(/Made with.*view source on GitHub/)).toHaveAttribute('target', '_blank')
+  await expect(page.getByTitle('Follow on X')).toHaveAttribute('target', '_blank')
+})
+
 test('Spiti pack persists and renders its saved places without network', async ({ page, context }, testInfo) => {
+  test.slow()
   await markIntroductionSeen(page)
   let serverRevision = 1
   const region = {
@@ -138,19 +283,22 @@ test('Spiti pack persists and renders its saved places without network', async (
   await expect(page.getByRole('heading', { name: 'Spiti', exact: true })).toBeVisible()
   await expect(page.locator('.maplibregl-canvas')).toBeVisible()
   await page.getByRole('button', { name: 'Download Spiti' }).click()
-  await expect(page.getByText('Ready for the road', { exact: false })).toBeVisible({ timeout: 60_000 })
+  await expect(page.getByText('Up to date', { exact: false })).toBeVisible({ timeout: 60_000 })
   await expect(page.getByText('Place guide', { exact: true }).locator('..')).toContainText('2')
   await expect(page.getByText('1 photo was unavailable', { exact: false })).toBeVisible()
 
   serverRevision = 2
+  await page.locator('.maplibregl-canvas').evaluate((canvas) => { canvas.dataset.testMapCanvas = 'kept' })
   await page.getByRole('button', { name: 'Open map' }).click()
-  await expect(page).toHaveURL(/offline=spiti/)
-  await expect(page.locator('.maplibregl-canvas')).toBeVisible()
+  await expect(page).toHaveURL(/\?region=spiti&offline=spiti$/)
+  await expect(page.locator('.maplibregl-canvas[data-test-map-canvas="kept"]')).toBeVisible()
   await expect(page.getByTitle('Offline maps')).toHaveText('')
   await expect.poll(() => page.evaluate(() => localStorage.getItem('lamyig:lastOfflineRegion'))).toBe('spiti')
   await page.getByTitle('Offline maps').click()
   await expect(page.getByRole('button', { name: /Spiti.*Update available/ })).toBeVisible()
   await page.getByRole('button', { name: /Spiti.*Update available/ }).click()
+  await page.getByRole('button', { name: 'Update map' }).click()
+  await expect(page.getByText('Up to date', { exact: false })).toBeVisible({ timeout: 60_000 })
   await page.getByRole('button', { name: 'Remove' }).click()
   await expect(page.getByText('Leave Spiti on this device?')).toBeVisible()
   await page.getByRole('button', { name: 'Keep it' }).click()
@@ -176,7 +324,7 @@ test('Spiti pack persists and renders its saved places without network', async (
   await search.fill('')
   await page.getByTitle('Add a place').click()
   await expect(page.getByText("You're offline. Your saved guide is still here—connect to contribute.")).toBeVisible()
-  await expect(page).toHaveURL(/offline=spiti/)
+  await expect(page).toHaveURL(/\?region=spiti&offline=spiti$/)
   await page.getByTitle('Send feedback').click()
   const feedback = page.getByPlaceholder("What's on your mind?")
   await feedback.fill('Keep this note while offline')
@@ -201,4 +349,10 @@ test('Spiti pack persists and renders its saved places without network', async (
   await marker.click()
   await expect(page).toHaveURL(new RegExp(`/place/${place.id}`))
   await expect(page.getByRole('heading', { name: 'Test Spiti Homestay' })).toBeVisible()
+  await page.getByTitle('Close').click()
+  await page.getByTitle('Offline maps').click()
+  await page.getByRole('button', { name: /Spiti.*Photos incomplete/ }).click()
+  await page.getByRole('button', { name: 'Remove' }).click()
+  await page.getByRole('button', { name: 'Remove download' }).click()
+  await expect(page.getByRole('button', { name: 'Download Spiti' })).toBeVisible()
 })

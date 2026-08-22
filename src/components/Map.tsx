@@ -5,6 +5,7 @@ import { FileSource, PMTiles, Protocol } from 'pmtiles'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { categoryDef } from '../lib/categories'
 import { DEFAULT_MAP_STYLE, INDIA_CENTER, openFreeMapStyleUrl, ZOOM_INDIA, ZOOM_PRECISE, type MapStyleName } from '../lib/constants'
+import { TRAVELLER_PEAKS } from '../lib/travellerPeaks'
 
 export type { MapStyleName }
 
@@ -64,6 +65,7 @@ const pmtilesProtocol = new Protocol()
 maplibregl.addProtocol('pmtiles', pmtilesProtocol.tile)
 
 const ONLINE_BASEMAP_SOURCE = 'openmaptiles'
+const TRAVELLER_PEAK_SOURCE = 'lamyig-traveller-peaks'
 const DETAIL_LAYER_IDS = {
   remoteRoads: 'lamyig-remote-roads',
   vehicleTracks: 'lamyig-vehicle-tracks',
@@ -71,6 +73,37 @@ const DETAIL_LAYER_IDS = {
   settlements: 'lamyig-remote-settlements',
   peaks: 'lamyig-mountain-peaks',
 } as const
+
+function addTravellerPeakLabels(map: maplibregl.Map, mapStyle: MapStyleName) {
+  const dark = mapStyle === 'dark'
+  if (!map.getSource(TRAVELLER_PEAK_SOURCE)) {
+    map.addSource(TRAVELLER_PEAK_SOURCE, { type: 'geojson', data: TRAVELLER_PEAKS })
+  }
+
+  if (!map.getLayer('lamyig-traveller-peak-labels')) {
+    const firstBasemapLabel = map.getStyle().layers.find((layer) => layer.type === 'symbol')?.id
+    map.addLayer({
+      id: 'lamyig-traveller-peak-labels',
+      type: 'symbol',
+      source: TRAVELLER_PEAK_SOURCE,
+      minzoom: 7,
+      layout: {
+        'text-field': ['concat', ['get', 'name'], '\n', ['to-string', ['get', 'elevation']], ' m'],
+        'text-font': ['Noto Sans Medium'],
+        'text-size': ['interpolate', ['linear'], ['zoom'], 7, 10, 11, 11.5],
+        'text-max-width': 10,
+        'text-padding': 3,
+        'text-allow-overlap': false,
+        'symbol-sort-key': ['get', 'priority'],
+      },
+      paint: {
+        'text-color': dark ? '#eadfd5' : '#51443d',
+        'text-halo-color': dark ? '#292827' : 'rgba(250,248,244,0.94)',
+        'text-halo-width': 1.5,
+      },
+    }, firstBasemapLabel)
+  }
+}
 
 const onlineName: maplibregl.ExpressionSpecification = [
   'coalesce',
@@ -197,7 +230,7 @@ function addOnlineRemoteDetail(map: maplibregl.Map) {
       type: 'symbol',
       source: ONLINE_BASEMAP_SOURCE,
       'source-layer': 'mountain_peak',
-      minzoom: 9,
+      minzoom: 11,
       filter: ['match', ['get', 'class'], ['peak', 'volcano', 'saddle'], true, false],
       layout: {
         'text-field': [
@@ -384,7 +417,7 @@ function offlineStyle(file: File, mapStyle: MapStyleName): maplibregl.StyleSpeci
         type: 'symbol',
         source: 'protomaps',
         'source-layer': 'pois',
-        minzoom: 9,
+        minzoom: 11,
         filter: ['==', ['get', 'kind'], 'peak'],
         layout: {
           'text-field': [
@@ -416,7 +449,9 @@ const Map = forwardRef<MapHandle, MapProps>(function Map({ places = [], offlineM
   const geolocateRef = useRef<maplibregl.GeolocateControl | null>(null)
   const onLocateErrorRef = useRef(onLocateError)
   const initialOfflineFileRef = useRef(offlineMapFile)
+  const mapStyleRef = useRef(mapStyle)
   onLocateErrorRef.current = onLocateError
+  mapStyleRef.current = mapStyle
 
   useImperativeHandle(ref, () => ({
     // Not geolocateRef.current?.trigger() - the control's own camera move
@@ -450,7 +485,10 @@ const Map = forwardRef<MapHandle, MapProps>(function Map({ places = [], offlineM
     // attribution doesn't collide with our floating category-filter panel,
     // which sits low enough on narrow phone screens to overlap it otherwise.
     map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right')
-    map.on('style.load', () => addOnlineRemoteDetail(map))
+    map.on('style.load', () => {
+      addOnlineRemoteDetail(map)
+      addTravellerPeakLabels(map, mapStyleRef.current)
+    })
 
     const geolocate = new maplibregl.GeolocateControl({
       positionOptions: { enableHighAccuracy: true },

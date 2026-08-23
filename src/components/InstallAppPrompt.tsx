@@ -83,7 +83,7 @@ export default function InstallAppPrompt() {
   return (
     <aside
       aria-labelledby="install-lamyig-title"
-      className="fixed left-4 right-4 top-[194px] z-20 mx-auto max-w-[430px] rounded-2xl border border-ink/[0.10] bg-surface p-3 shadow-xl sm:left-5 sm:right-auto sm:mx-0 sm:p-3.5"
+      className="pointer-events-none fixed left-4 right-[84px] top-1/2 z-20 max-w-[430px] -translate-y-1/2 rounded-2xl border border-ink/[0.10] bg-surface p-3 shadow-xl sm:left-5 sm:right-auto sm:p-3.5"
     >
       <div className="flex items-start gap-3">
         <img src="/pwa-192x192.png" alt="" className="h-10 w-10 flex-none rounded-xl" />
@@ -97,7 +97,7 @@ export default function InstallAppPrompt() {
           type="button"
           onClick={dismiss}
           aria-label="Dismiss install suggestion"
-          className="flex h-9 w-9 flex-none items-center justify-center rounded-full text-muted hover:bg-ink/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          className="pointer-events-auto flex h-9 w-9 flex-none items-center justify-center rounded-full text-muted hover:bg-ink/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         >
           <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
             <path d="m6 6 12 12M18 6 6 18" />
@@ -117,7 +117,7 @@ export default function InstallAppPrompt() {
         type="button"
         onClick={install}
         disabled={installing}
-        className="mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-[14px] font-bold text-white shadow-sm transition hover:bg-accent-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-wait disabled:opacity-70"
+        className="pointer-events-auto mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-[14px] font-bold text-white shadow-sm transition hover:bg-accent-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-wait disabled:opacity-70"
       >
         <svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M12 3v12m0 0 4-4m-4 4-4-4M5 20h14" />

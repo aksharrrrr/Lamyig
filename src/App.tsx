@@ -13,6 +13,7 @@ import NotFound from './pages/NotFound'
 import Legal from './pages/Legal'
 import OfflineMaps from './pages/OfflineMaps'
 import Overlay from './components/Overlay'
+import InstallAppPrompt from './components/InstallAppPrompt'
 import { ToastProvider } from './lib/useToast'
 import { PlacesProvider } from './lib/usePlacesStore'
 import { isOfflineRegionSlug, OFFLINE_REGION_CONFIG } from './lib/offlinePack'
@@ -51,6 +52,7 @@ export default function App() {
     <ToastProvider>
       <PlacesProvider>
         <FirstVisitIntroduction />
+        <InstallAppPrompt />
         <Routes location={background || location}>
           <Route path="/" element={<Home />} />
           <Route path="/region/:regionSlug" element={<Home />} />

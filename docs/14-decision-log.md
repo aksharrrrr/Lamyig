@@ -215,6 +215,8 @@ On first open, the app shows a live map of India with no forced setup; if locati
 
 **Alternatives considered:** Hand-rolled service worker (rejected: `vite-plugin-pwa` wraps Workbox, which is the standard, well-tested approach - no reason to hand-roll cache logic for an app-shell-only PWA). Waiting for the real logo before adding icons (rejected: blocks a cheap, independent win on an unrelated, harder task; icon file is trivially swappable later, matching how the header's own "L" mark is already an acknowledged placeholder).
 
+**Install UX update 2026-08-23:** Installability is now surfaced inside Lamyig instead of relying on people finding a browser-menu command. An accessible, responsive install card hands off to the browser's native installer when available, gives Safari/manual instructions otherwise, disappears in standalone mode or after installation, and remembers dismissal. Installation remains distinct from downloading a regional guide: the installed app provides quick standalone access, while every offline map remains an explicit, user-controlled download.
+
 ---
 
 ## D-018 - General feedback button, separate from place reports

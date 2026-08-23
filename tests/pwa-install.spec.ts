@@ -56,3 +56,13 @@ test('install button gives manual instructions when a native prompt is unavailab
   await page.getByRole('button', { name: 'Install app' }).click()
   await expect(page.getByRole('status')).toContainText(/browser menu|Safari/)
 })
+
+test('app dialogs remain usable while the install suggestion is present', async ({ page }) => {
+  await prepareHome(page)
+
+  await page.getByTitle('Why Lamyig exists').click()
+  await expect(page.getByRole('heading', { name: 'Welcome to Lamyig' })).toBeVisible()
+  await page.getByRole('button', { name: 'Continue Exploring' }).click()
+  await expect(page).toHaveURL('/')
+  await expect(page.getByRole('complementary', { name: 'Install Lamyig' })).toBeVisible()
+})

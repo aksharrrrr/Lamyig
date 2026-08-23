@@ -83,7 +83,7 @@ export default function InstallAppPrompt() {
   return (
     <aside
       aria-labelledby="install-lamyig-title"
-      className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-[430px] rounded-2xl border border-ink/[0.10] bg-surface p-3 shadow-xl sm:bottom-5 sm:left-5 sm:right-auto sm:mx-0 sm:p-3.5"
+      className="fixed left-4 right-4 top-[194px] z-20 mx-auto max-w-[430px] rounded-2xl border border-ink/[0.10] bg-surface p-3 shadow-xl sm:left-5 sm:right-auto sm:mx-0 sm:p-3.5"
     >
       <div className="flex items-start gap-3">
         <img src="/pwa-192x192.png" alt="" className="h-10 w-10 flex-none rounded-xl" />

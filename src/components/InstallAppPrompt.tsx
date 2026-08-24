@@ -19,7 +19,12 @@ function isIos() {
 
 export default function InstallAppPrompt() {
   const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null)
-  const [available, setAvailable] = useState(() => !isStandalone())
+  // Chromium only emits `beforeinstallprompt` when this browser considers the
+  // app installable. In particular, it normally withholds the event once the
+  // PWA is installed, so waiting for it prevents an installed user from seeing
+  // a dead install control in an ordinary browser tab. iOS has no equivalent
+  // event, so Safari keeps the manual Add to Home Screen path available.
+  const [available, setAvailable] = useState(() => isIos() && !isStandalone())
   const [open, setOpen] = useState(false)
   const [showInstructions, setShowInstructions] = useState(false)
   const [installing, setInstalling] = useState(false)

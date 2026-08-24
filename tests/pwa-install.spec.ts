@@ -10,8 +10,20 @@ async function prepareHome(page: Page) {
   await page.goto('/')
 }
 
+async function offerNativeInstall(page: Page) {
+  await page.evaluate(() => {
+    const event = new Event('beforeinstallprompt', { cancelable: true })
+    Object.assign(event, {
+      prompt: async () => { (window as typeof window & { installPromptOpened?: boolean }).installPromptOpened = true },
+      userChoice: Promise.resolve({ outcome: 'accepted', platform: 'web' }),
+    })
+    window.dispatchEvent(event)
+  })
+}
+
 test('install control is accessible and opens the consistent app overlay', async ({ page }) => {
   await prepareHome(page)
+  await offerNativeInstall(page)
 
   const installControl = page.getByRole('button', { name: 'Install Lamyig' })
   await expect(installControl).toBeVisible()
@@ -34,15 +46,7 @@ test('install control is accessible and opens the consistent app overlay', async
 
 test('install button opens the browser-provided installer when available', async ({ page }) => {
   await prepareHome(page)
-
-  await page.evaluate(() => {
-    const event = new Event('beforeinstallprompt', { cancelable: true })
-    Object.assign(event, {
-      prompt: async () => { (window as typeof window & { installPromptOpened?: boolean }).installPromptOpened = true },
-      userChoice: Promise.resolve({ outcome: 'accepted', platform: 'web' }),
-    })
-    window.dispatchEvent(event)
-  })
+  await offerNativeInstall(page)
 
   await page.getByRole('button', { name: 'Install Lamyig' }).click()
   await page.getByRole('button', { name: 'Install app' }).click()
@@ -53,6 +57,9 @@ test('install button opens the browser-provided installer when available', async
 })
 
 test('install button gives manual instructions when a native prompt is unavailable', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'userAgent', { configurable: true, value: 'iPhone Safari' })
+  })
   await prepareHome(page)
 
   await page.getByRole('button', { name: 'Install Lamyig' }).click()
@@ -62,6 +69,7 @@ test('install button gives manual instructions when a native prompt is unavailab
 
 test('install overlay closes cleanly before opening another app dialog', async ({ page }) => {
   await prepareHome(page)
+  await offerNativeInstall(page)
 
   await page.getByRole('button', { name: 'Install Lamyig' }).click()
   await page.getByTitle('Close').click()
@@ -70,4 +78,10 @@ test('install overlay closes cleanly before opening another app dialog', async (
   await page.getByRole('button', { name: 'Continue Exploring' }).click()
   await expect(page).toHaveURL('/')
   await expect(page.getByRole('button', { name: 'Install Lamyig' })).toBeVisible()
+})
+
+test('install control stays hidden when Chromium does not offer installation', async ({ page }) => {
+  await prepareHome(page)
+
+  await expect(page.getByRole('button', { name: 'Install Lamyig' })).not.toBeVisible()
 })

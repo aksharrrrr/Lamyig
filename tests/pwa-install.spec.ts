@@ -10,14 +10,16 @@ async function prepareHome(page: Page) {
   await page.goto('/')
 }
 
-test('install suggestion is responsive, accessible, and dismissible', async ({ page }) => {
+test('install control is accessible and opens the consistent app overlay', async ({ page }) => {
   await prepareHome(page)
 
-  const prompt = page.getByRole('complementary', { name: 'Install Lamyig' })
-  await expect(prompt).toBeVisible()
-  await expect(prompt.getByRole('button', { name: 'Install app' })).toBeVisible()
+  const installControl = page.getByRole('button', { name: 'Install Lamyig' })
+  await expect(installControl).toBeVisible()
+  await installControl.click()
+  await expect(page.getByRole('heading', { name: 'Install Lamyig' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Install app' })).toBeVisible()
 
-  const box = await prompt.boundingBox()
+  const box = await page.getByRole('heading', { name: 'Install Lamyig' }).locator('..').boundingBox()
   const viewport = page.viewportSize()
   expect(box).not.toBeNull()
   expect(viewport).not.toBeNull()
@@ -25,10 +27,9 @@ test('install suggestion is responsive, accessible, and dismissible', async ({ p
   expect(box!.x + box!.width).toBeLessThanOrEqual(viewport!.width)
   expect(box!.y + box!.height).toBeLessThanOrEqual(viewport!.height)
 
-  await prompt.getByRole('button', { name: 'Dismiss install suggestion' }).click()
-  await expect(prompt).not.toBeVisible()
-  await page.reload()
-  await expect(prompt).not.toBeVisible()
+  await page.getByTitle('Close').click()
+  await expect(page.getByRole('heading', { name: 'Install Lamyig' })).not.toBeVisible()
+  await expect(installControl).toBeVisible()
 })
 
 test('install button opens the browser-provided installer when available', async ({ page }) => {
@@ -43,26 +44,30 @@ test('install button opens the browser-provided installer when available', async
     window.dispatchEvent(event)
   })
 
+  await page.getByRole('button', { name: 'Install Lamyig' }).click()
   await page.getByRole('button', { name: 'Install app' }).click()
   await expect.poll(() => page.evaluate(() => (
     window as typeof window & { installPromptOpened?: boolean }
   ).installPromptOpened)).toBe(true)
-  await expect(page.getByRole('complementary', { name: 'Install Lamyig' })).not.toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Install Lamyig' })).not.toBeVisible()
 })
 
 test('install button gives manual instructions when a native prompt is unavailable', async ({ page }) => {
   await prepareHome(page)
 
+  await page.getByRole('button', { name: 'Install Lamyig' }).click()
   await page.getByRole('button', { name: 'Install app' }).click()
   await expect(page.getByRole('status')).toContainText(/browser menu|Safari/)
 })
 
-test('app dialogs remain usable while the install suggestion is present', async ({ page }) => {
+test('install overlay closes cleanly before opening another app dialog', async ({ page }) => {
   await prepareHome(page)
 
+  await page.getByRole('button', { name: 'Install Lamyig' }).click()
+  await page.getByTitle('Close').click()
   await page.getByTitle('Why Lamyig exists').click()
   await expect(page.getByRole('heading', { name: 'Welcome to Lamyig' })).toBeVisible()
   await page.getByRole('button', { name: 'Continue Exploring' }).click()
   await expect(page).toHaveURL('/')
-  await expect(page.getByRole('complementary', { name: 'Install Lamyig' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Install Lamyig' })).toBeVisible()
 })

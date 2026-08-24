@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router'
 import Map, { type MapHandle, type MapStyleName } from '../components/Map'
+import InstallAppPrompt from '../components/InstallAppPrompt'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/useAuth'
 import { usePlacesStore } from '../lib/usePlacesStore'
@@ -572,6 +573,7 @@ export default function Home() {
 
       {/* Utility stack */}
       <div className="absolute bottom-[30px] right-[14px] z-10 flex flex-col items-center gap-2.5">
+        <InstallAppPrompt />
         <button
           onClick={() => openOverlay('/offline-maps')}
           title="Offline maps"

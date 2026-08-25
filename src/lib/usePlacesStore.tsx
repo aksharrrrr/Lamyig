@@ -3,6 +3,7 @@ import { supabase } from './supabase'
 import type { PlaceMarker } from '../components/Map'
 import { getOfflinePacks } from './offlinePack'
 import { mergeOfflinePackContent } from './offlineMerge'
+import { curatedPlacePhoto } from './curatedPlacePhotos'
 
 interface PlacesContextValue {
   places: PlaceMarker[]
@@ -53,7 +54,7 @@ export function PlacesProvider({ children }: { children: ReactNode }) {
           const storagePath = place.place_photos?.[0]?.storage_path
           const photoUrl = storagePath
             ? client.storage.from('place-photos').getPublicUrl(storagePath).data.publicUrl
-            : undefined
+            : curatedPlacePhoto(place.id)?.url
           return { ...place, photoUrl }
         }))
       } else if (error) void loadOfflinePack()

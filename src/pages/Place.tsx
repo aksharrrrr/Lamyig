@@ -9,6 +9,7 @@ import { getOfflinePacks } from '../lib/offlinePack'
 import { mergeOfflinePackContent } from '../lib/offlineMerge'
 import { connectionAwareError, OFFLINE_CONTRIBUTION_MESSAGE } from '../lib/connectivity'
 import { useToast } from '../lib/useToast'
+import { curatedPlacePhoto } from '../lib/curatedPlacePhotos'
 
 const pillButtonClass = 'rounded-full border border-ink/10 bg-surface px-3.5 py-1.5 text-[13px] font-medium text-ink disabled:opacity-50'
 const noteIconButtonClass = 'flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-muted-light hover:bg-ink/5'
@@ -120,6 +121,7 @@ export default function Place() {
   if (!place) return <p className="text-sm text-muted">Finding this place…</p>
 
   const def = categoryDef(place.category)
+  const curatedPhoto = curatedPlacePhoto(place.id)
   const publicUrl = (path: string) => offlinePhotoUrls[path] ?? supabase!.storage.from('place-photos').getPublicUrl(path).data.publicUrl
 
   return (
@@ -146,6 +148,18 @@ export default function Place() {
             <img key={p.id} src={publicUrl(p.storage_path)} alt={place.name} className="h-40 w-56 shrink-0 rounded-xl object-cover" />
           ))}
         </div>
+      )}
+
+      {photos.length === 0 && curatedPhoto && (
+        <figure className="mt-4">
+          <img src={curatedPhoto.url} alt={curatedPhoto.alt} className="h-56 w-full rounded-xl object-cover" />
+          <figcaption className="mt-1.5 text-[11px] leading-4 text-muted-light">
+            Photo by{' '}
+            <a href={curatedPhoto.sourceUrl} target="_blank" rel="noreferrer" className="underline">{curatedPhoto.credit}</a>
+            {' · '}
+            <a href={curatedPhoto.licenseUrl} target="_blank" rel="noreferrer" className="underline">{curatedPhoto.license}</a>
+          </figcaption>
+        </figure>
       )}
 
       {place.description && <p className="mt-4 whitespace-pre-wrap text-sm">{place.description}</p>}

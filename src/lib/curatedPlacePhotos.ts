@@ -27,6 +27,15 @@ const photos: CuratedPlacePhoto[] = [
     license: 'CC BY 2.0',
     licenseUrl: 'https://creativecommons.org/licenses/by/2.0/',
   },
+  {
+    placeId: '68fb81a0-06a6-4d5e-8dd4-25ac00308cab',
+    url: '/place-photos/tara-homestay-mudh.jpg',
+    alt: 'View up the Pin Valley from Tara Homestay in Mudh',
+    credit: 'Timothy A. Gonsalves',
+    sourceUrl: 'https://commons.wikimedia.org/wiki/File:Mudh_Tara_Up_Pin_Spiti_Himachal_Jun18_D72_7086.jpg',
+    license: 'CC BY-SA 4.0',
+    licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/',
+  },
 ]
 
 const byPlaceId = new Map(photos.map((photo) => [photo.placeId, photo]))
@@ -34,4 +43,3 @@ const byPlaceId = new Map(photos.map((photo) => [photo.placeId, photo]))
 export function curatedPlacePhoto(placeId: string): CuratedPlacePhoto | undefined {
   return byPlaceId.get(placeId)
 }
-

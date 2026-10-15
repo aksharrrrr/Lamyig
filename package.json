@@ -33,7 +33,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.3",
     "husky": "^9.1.7",
-    "lint-staged": "^17.0.8",
+    "lint-staged": "^17.3.0",
     "oxlint": "^1.74.0",
     "typescript": "~7.0.2",
     "vite": "^8.1.1",
